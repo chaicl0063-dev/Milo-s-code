@@ -34,6 +34,8 @@ export interface PlaceSummary {
   extract: string;
   thumbnail?: { source: string; width: number; height: number };
   originalImage?: { source: string; width: number; height: number };
+  /** 详情页头图：优先 Action API 选出的照片，其次 REST 的原图/缩略图 */
+  image?: { source: string; width: number; height: number };
   coordinates?: { lat: number; lon: number };
   /** Wikipedia 桌面版页面链接 */
   url: string;
@@ -122,10 +124,40 @@ export async function nearbyPlaces(
     .sort((a, b) => a.dist - b.dist);
 }
 
+/**
+ * 词条的头图（原图 + 指定宽度的缩略图）。
+ * 为什么不用 REST 摘要里自带的图：REST 用的「页面图片」偶尔是 LOGO（埃菲尔铁塔就是），
+ * 而 Action API 默认只选自由版权图片，通常是信息框里的照片。拿不到时返回 null。
+ */
+export async function pageImage(
+  lang: string,
+  title: string,
+  thumbWidth = 960,
+): Promise<{ source: string; width: number; height: number } | null> {
+  const params = new URLSearchParams({
+    action: "query",
+    prop: "pageimages",
+    piprop: "thumbnail",
+    pithumbsize: String(thumbWidth),
+    titles: title,
+    redirects: "1",
+    format: "json",
+    formatversion: "2",
+  });
+  const res = await wikiFetch(`https://${lang}.wikipedia.org/w/api.php?${params}`, 3600);
+  if (!res.ok) return null;
+  const data = await res.json();
+  const page = data?.query?.pages?.[0];
+  return page?.thumbnail ?? null;
+}
+
 /** 单个词条摘要。词条不存在时返回 null。 */
 export async function placeSummary(lang: string, title: string): Promise<PlaceSummary | null> {
   const slug = encodeURIComponent(title.trim().replace(/ /g, "_"));
-  const res = await wikiFetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${slug}`, 3600);
+  const [res, image] = await Promise.all([
+    wikiFetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${slug}`, 3600),
+    pageImage(lang, title).catch(() => null),
+  ]);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Wikipedia summary failed: HTTP ${res.status}`);
   const d = await res.json();
@@ -136,6 +168,7 @@ export async function placeSummary(lang: string, title: string): Promise<PlaceSu
     extract: d.extract ?? "",
     thumbnail: d.thumbnail,
     originalImage: d.originalimage,
+    image: image ?? d.originalimage ?? d.thumbnail,
     coordinates: d.coordinates,
     url: d.content_urls?.desktop?.page ?? `https://${lang}.wikipedia.org/wiki/${slug}`,
   };

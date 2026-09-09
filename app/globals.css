@@ -1,26 +1,81 @@
 @import "tailwindcss";
 
+/*
+ * 设计令牌（方向 A · 暖色编辑风）。
+ * 想换成方向 B（夜间）或 C（干净工具风），只改这一段的颜色和字体即可，
+ * 所有组件都通过 bg-surface / text-ink / text-accent 这类类名引用这里。
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f4f1ea;          /* 页面底色，米白纸感 */
+  --surface: #fbf9f5;     /* 卡片、底部面板 */
+  --surface-2: #f1ece2;   /* 选中行、次级面板 */
+  --ink: #1b1f1d;         /* 主文字、主按钮 */
+  --ink-soft: #2e332f;    /* 正文 */
+  --muted: #6f6b63;       /* 次级文字 */
+  --faint: #8a867d;       /* 说明文字 */
+  --line: #ddd7cb;        /* 边框、分隔线 */
+  --accent: #b85c38;      /* 唯一强调色：距离、链接、地图图钉 */
+  --accent-soft: #d9b49c;
+  --locate: #2f6b8a;      /* 当前位置蓝点 */
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-locate: var(--locate);
+  --font-sans: var(--font-manrope), "Segoe UI", system-ui, sans-serif;
+  --font-serif: var(--font-instrument-serif), Georgia, serif;
+  --radius-sheet: 28px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Leaflet 地图容器需要明确高度，否则不显示 */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: #ece6da;
+  font-family: var(--font-sans);
+}
+
+/* 让地图弹窗跟随设计令牌 */
+.leaflet-popup-content-wrapper {
+  border-radius: 14px;
+  background: var(--ink);
+  color: var(--surface);
+  box-shadow: 0 6px 18px rgba(27, 31, 29, 0.18);
+}
+.leaflet-popup-tip {
+  background: var(--ink);
+}
+.leaflet-popup-content {
+  margin: 10px 14px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.leaflet-popup-content a {
+  color: var(--accent-soft);
+  font-weight: 600;
+  text-decoration: none;
+}
+.leaflet-container a.leaflet-popup-close-button {
+  color: var(--accent-soft);
 }
