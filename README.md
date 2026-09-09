@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Around You · AI 导游 App（练手项目）
 
-## Getting Started
+打开网页，看到身边 1 公里内有哪些值得了解的地方，点进去读介绍。数据来自 Wikipedia，地图来自 OpenStreetMap，全部免费、不需要 API Key。第二阶段会加上 AI 讲解。
 
-First, run the development server:
+## 本地运行
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+然后打开 http://localhost:3000 。固定测试用例：埃菲尔铁塔 http://localhost:3000/?lat=48.8584&lon=2.2945
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+如果你的网络访问 Wikipedia 需要代理，把 `.env.example` 复制为 `.env.local`，打开里面的代理四行。`pnpm dev` 走的是 `scripts/dev.mjs`，它会在 Node 启动前把这些变量放进环境（Node 的 fetch 不认系统代理）。
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 常用命令
 
-## Learn More
+| 命令 | 作用 |
+|---|---|
+| `pnpm dev` | 开发服务器，改代码自动刷新 |
+| `pnpm build` | 生产构建，部署前跑一次确认没错 |
+| `pnpm exec tsc --noEmit` | 只做类型检查 |
+| `pnpm lint` | 代码规范检查 |
 
-To learn more about Next.js, take a look at the following resources:
+## 目录
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+app/
+  page.tsx                     首页（地图 + 周边列表），实际内容在 components/HomeScreen.tsx
+  place/[lang]/[title]/        地点详情页，服务端渲染
+  api/nearby/route.ts          GET ?lat&lon&lang&radius   周边地点（代理 Wikipedia GeoSearch）
+  api/place/route.ts           GET ?lang&title            地点摘要（代理 Wikipedia REST）
+  globals.css                  设计令牌：颜色、字体都在这里改
+components/
+  HomeScreen.tsx               首页状态：定位、坐标、范围、请求周边
+  PlacesMap.tsx                Leaflet 地图（只在浏览器端渲染）
+  PlaceList.tsx                周边列表
+  LocatePanel.tsx              定位失败 / 换地方时的选城市面板
+  LanguageProvider.tsx         en / zh 切换，存 localStorage
+lib/
+  wikipedia.ts                 所有 Wikipedia 请求的封装
+  i18n.ts                      界面文案
+  cities.ts                    备选城市坐标
+  geo.ts                       距离、坐标格式化
+design/                        设计稿源文件（Claude Design 画布用）
+scripts/dev.mjs                开发启动器，负责把 .env.local 里的代理变量提前放进环境
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 阶段
 
-## Deploy on Vercel
+1. **MVP（本阶段）**：定位、地图、周边列表、详情、en/zh、部署 Vercel。
+2. AI 讲解：`/api/guide` 调 LLM 流式生成导游口吻介绍，Key 放服务端。
+3. PWA、Overpass 补充景点、收藏、拍照识别。
+4. 以后：语音、路线、离线。
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 部署到 Vercel
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. 把仓库推到 GitHub。
+2. 在 vercel.com 用 GitHub 登录，Import 这个仓库，默认设置直接 Deploy。
+3. 用手机浏览器打开 Vercel 给的 https 地址，允许定位。浏览器定位只在 https 下可用，所以本地用局域网 IP 访问拿不到定位是正常的。
+
+线上不需要任何环境变量；第二阶段接 LLM 时再在 Vercel 后台加 `LLM_API_KEY` 等。
