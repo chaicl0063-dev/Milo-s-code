@@ -75,8 +75,14 @@ scripts/dev.mjs                开发启动器，负责把 .env.local 里的代�
 
 1. **MVP（已完成）**：定位、地图、周边列表、详情、en/zh、部署 Vercel。
 2. **AI 讲解（已完成）**：`/api/guide` 流式讲解、风格选择、追问、限流降级。
-3. PWA、收藏、拍照识别、高德 Key 接入。
-4. 以后：语音、路线、离线。
+3. **PWA（已完成）**：manifest、图标、Service Worker 离线缓存、安装引导。剩余：收藏、拍照识别、高德 Key 接入。
+4. 以后：语音、路线。
+
+## PWA
+
+- `app/manifest.ts` 生成 `/manifest.webmanifest`；图标由 `node scripts/make-icons.mjs` 从一段内联 SVG 渲染（改图标改那段 SVG 再重跑）。
+- `public/sw.js` 只在线上注册（开发时不注册，免得缓存干扰热更新）。策略：页面和 `/api/*` 网络优先、失败回缓存；`/_next/static` 缓存优先；OSM 瓦片和 Wikimedia 图片缓存优先加后台更新，各有条数上限。改了 sw.js 要把里面的 `VERSION` 加一。
+- 安卓 Chrome 首页会出现「安装」按钮；iPhone 只能提示手动「分享 → 添加到主屏幕」，这是 iOS 的限制。
 
 ## 部署到 Vercel
 
