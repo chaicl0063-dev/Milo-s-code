@@ -1,5 +1,7 @@
 # Around You · AI 导游 App（练手项目）
 
+线上地址：https://milo-s-code.vercel.app （推送到 main 分支后 Vercel 自动重新部署）
+
 打开网页，看到身边 1 公里内有哪些值得了解的地方，点进去读介绍。数据来自 Wikipedia，地图来自 OpenStreetMap，全部免费、不需要 API Key。第二阶段会加上 AI 讲解。
 
 ## 本地运行
