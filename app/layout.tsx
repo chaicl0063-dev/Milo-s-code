@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, Manrope } from "next/font/google";
+import Script from "next/script";
 import "leaflet/dist/leaflet.css";
 import "./globals.css";
 import { LanguageProvider } from "@/components/LanguageProvider";
@@ -36,6 +37,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${manrope.variable} ${instrumentSerif.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        {/* 尽早抓住浏览器的「可以安装」事件：它可能在 React 挂载前就触发，错过就不再来 */}
+        <Script id="pwa-install-capture" strategy="beforeInteractive">
+          {`window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__installPrompt=e;window.dispatchEvent(new Event('pwa:installable'));});`}
+        </Script>
         <LanguageProvider>{children}</LanguageProvider>
         <PwaRegister />
       </body>

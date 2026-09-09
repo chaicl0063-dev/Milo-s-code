@@ -62,6 +62,7 @@ const en = {
   installApp: "Install",
   installAppHint: "Add Around You to your home screen for quick access.",
   iosInstallTip: "To install: tap Share, then “Add to Home Screen”.",
+  androidInstallTip: "To install: open the browser menu and choose “Add to Home screen” or “Install app”.",
   dismiss: "Not now",
 } as const;
 
@@ -116,6 +117,7 @@ const zh: Record<keyof typeof en, string> = {
   installApp: "安装",
   installAppHint: "把「身边」加到手机桌面，下次一点就开。",
   iosInstallTip: "安装方法：点底部分享按钮，选「添加到主屏幕」。",
+  androidInstallTip: "安装方法：打开浏览器菜单，选「添加到桌面」或「安装应用」。微信里请先用浏览器打开。",
   dismiss: "先不用",
 };
 
