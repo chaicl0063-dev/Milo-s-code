@@ -1,0 +1,16 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "A · Home", "x": 0, "y": 0, "w": 390, "h": 844 },
+    { "file": "Detail.dc.html", "title": "A · Place detail", "x": 480, "y": 0, "w": 390, "h": 844 },
+    { "file": "PickCity.dc.html", "title": "A · Pick a city", "x": 960, "y": 0, "w": 390, "h": 844 },
+    { "file": "DirectionB.dc.html", "title": "B · Night map (sketch)", "x": 0, "y": 1000, "w": 390, "h": 844 },
+    { "file": "DirectionC.dc.html", "title": "C · Clean utility (sketch)", "x": 480, "y": 1000, "w": 390, "h": 844 }
+  ],
+  "annotations": [
+    { "id": "direction-a", "x": 1440, "y": 0, "w": 300, "text": "方向 A · 暖色编辑风（完整三屏）\n米白纸感底色，深墨色主按钮，赭石色作为唯一强调色；标题用衬线体 Instrument Serif，正文 Manrope。\n地图占首屏 64%，列表是可上拉的底部面板。\n取舍：气质偏人文旅行，不如方案 C 直白。" },
+    { "id": "direction-b", "x": 1440, "y": 1000, "w": 300, "text": "方向 B · 夜间地图（仅首页草图）\n深色底 + 矿物青强调色，接近导航类 App 的夜间模式，夜游和博物馆暗环境下更舒服。\n取舍：白天户外强光下可读性较差，图片类内容在深色底上不好看。" },
+    { "id": "direction-c", "x": 1440, "y": 1240, "w": 300, "text": "方向 C · 干净工具风（仅首页草图）\n纯白底 + 钴蓝强调色，地图放在卡片里，列表是标准分隔线行。最接近常见的地图工具类 App，实现成本最低。\n取舍：辨识度最低，容易显得像模板。" },
+    { "id": "phase-note", "x": 480, "y": -140, "w": 380, "text": "说明：详情页底部「Ask the guide」按钮属于第二阶段（AI 讲解），第一阶段实现时先隐藏。所有图片位置在 App 里会被 Wikipedia 的真实图片替换。" }
+  ],
+  "launch": { "view": "canvas" }
+}

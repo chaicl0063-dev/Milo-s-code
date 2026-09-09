@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap">
+  <style>
+    body { margin: 0; background: #FFFFFF; font-family: Manrope, "Segoe UI", system-ui, sans-serif; color: #101418; }
+    a { color: #1F4FD8; } a:hover { color: #173DA8; }
+  </style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #FFFFFF; font-family: Manrope, 'Segoe UI', system-ui, sans-serif; color: #101418; display: flex; flex-direction: column;">
+  <div style="display: flex; flex-direction: column; gap: 14px; padding: 64px 20px 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em;">Nearby</div>
+      <div style="height: 36px; padding: 0 12px; display: flex; align-items: center; border: 1.5px solid #101418; border-radius: 8px; font-size: 13px; font-weight: 800;">EN</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px; background: #F2F4F7; border-radius: 12px; font-size: 15px; color: #6B7280;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+      <span>Paris, 7e</span>
+    </div>
+  </div>
+  <div style="position: relative; height: 300px; margin: 0 20px; border-radius: 16px; overflow: hidden;">
+    <svg width="350" height="300" viewBox="0 0 350 300" xmlns="http://www.w3.org/2000/svg" style="display: block;">
+      <rect width="350" height="300" fill="#EEF1F5"></rect>
+      <path d="M-20 90 C 80 60, 140 130, 230 100 S 340 40, 380 80 L 380 140 C 300 120, 260 180, 190 160 S 60 110, -20 150 Z" fill="#D6E3F2"></path>
+      <g stroke="#FFFFFF" stroke-width="6" fill="none" stroke-linecap="round"><path d="M0 200 L 350 170"></path><path d="M110 0 L 130 300"></path><path d="M250 0 L 270 300"></path></g>
+      <g fill="#1F4FD8"><circle cx="86" cy="222" r="8"></circle><circle cx="232" cy="192" r="8"></circle><circle cx="288" cy="255" r="8"></circle><circle cx="206" cy="90" r="8"></circle></g>
+      <circle cx="170" cy="230" r="8" fill="#101418" stroke="#FFFFFF" stroke-width="3"></circle>
+    </svg>
+  </div>
+  <div style="display: flex; flex-direction: column; padding: 20px 20px 0;">
+    <div style="font-size: 13px; font-weight: 700; color: #6B7280; padding-bottom: 8px;">30 PLACES WITHIN 1 KM</div>
+    <div style="display: flex; align-items: center; gap: 14px; height: 68px; border-bottom: 1px solid #E5E7EB;">
+      <div style="width: 48px; height: 48px; border-radius: 10px; background: #D9DEE6;"></div>
+      <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1;"><div style="font-size: 16px; font-weight: 700;">Eiffel Tower</div><div style="font-size: 13px; color: #6B7280;">Tower in Paris, France</div></div>
+      <div style="font-size: 13px; font-weight: 800; color: #1F4FD8;">20 m</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 14px; height: 68px; border-bottom: 1px solid #E5E7EB;">
+      <div style="width: 48px; height: 48px; border-radius: 10px; background: #D9DEE6;"></div>
+      <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1;"><div style="font-size: 16px; font-weight: 700;">Pont d'Iéna</div><div style="font-size: 13px; color: #6B7280;">Bridge in Paris</div></div>
+      <div style="font-size: 13px; font-weight: 800; color: #1F4FD8;">220 m</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 14px; height: 68px; border-bottom: 1px solid #E5E7EB;">
+      <div style="width: 48px; height: 48px; border-radius: 10px; background: #D9DEE6;"></div>
+      <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1;"><div style="font-size: 16px; font-weight: 700;">Musée du quai Branly</div><div style="font-size: 13px; color: #6B7280;">Museum for indigenous art</div></div>
+      <div style="font-size: 13px; font-weight: 800; color: #1F4FD8;">350 m</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
