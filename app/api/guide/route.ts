@@ -37,7 +37,8 @@ export async function POST(req: NextRequest) {
     .slice(-6)
     .map((m) => ({ role: m.role, content: m.content.slice(0, 1000) }));
   const isOpening = history.length === 0;
-  const cacheKey = `${lang}:${style}:${id}`;
+  // v2：提示词改过后旧缓存作废
+  const cacheKey = `v2:${lang}:${style}:${id}`;
 
   if (isOpening && narrationCache.has(cacheKey)) {
     return new Response(narrationCache.get(cacheKey)!, {
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
 
   const messages: ChatMessage[] = [
     { role: "system", content: systemPrompt(place, lang, style) },
-    ...(isOpening ? [{ role: "user" as const, content: openingUserMessage(lang) }] : history),
+    ...(isOpening ? [{ role: "user" as const, content: openingUserMessage(lang, style) }] : history),
   ];
 
   try {

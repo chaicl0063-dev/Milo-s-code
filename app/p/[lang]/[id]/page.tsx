@@ -8,7 +8,8 @@ import { homeHref } from "@/lib/links";
 import { llmConfigured } from "@/lib/guide";
 import { BackButton } from "@/components/BackButton";
 import { GuidePanel } from "@/components/GuidePanel";
-import { ExternalIcon, PinIcon } from "@/components/Icons";
+import { SourceLinks } from "@/components/SourceLinks";
+import { PinIcon } from "@/components/Icons";
 
 type Params = Promise<{ lang: string; id: string }>;
 
@@ -44,14 +45,12 @@ export default async function PlacePage({ params }: { params: Params }) {
   if (place.phone) facts.push({ label: t(lang, "phone"), value: place.phone, href: `tel:${place.phone}` });
   if (place.website) facts.push({ label: t(lang, "website"), value: place.website.replace(/^https?:\/\//, ""), href: place.website });
 
-  const links: Array<{ label: string; href: string }> = [];
-  if (place.links.wikipedia) links.push({ label: t(lang, "readOnWikipedia"), href: place.links.wikipedia });
-  if (place.links.osm) links.push({ label: t(lang, "viewOnOsm"), href: place.links.osm });
-  if (place.links.amap) links.push({ label: t(lang, "viewOnAmap"), href: place.links.amap });
-  if (place.links.wikidata) links.push({ label: t(lang, "viewOnWikidata"), href: place.links.wikidata });
-
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[520px] flex-col bg-surface">
+      {/* 返回按钮：sticky 且高度为 0，滚到讲解那里也一直停在顶部 */}
+      <div className="pointer-events-none sticky top-5 z-20 h-0 px-5">
+        <BackButton label={t(lang, "back")} className="pointer-events-auto" />
+      </div>
       {/* 头图 */}
       <div className="relative h-[380px] w-full overflow-hidden bg-[#d9c8b2]">
         {image ? (
@@ -61,9 +60,6 @@ export default async function PlacePage({ params }: { params: Params }) {
           <div className="h-full w-full bg-gradient-to-b from-[#e7d6c4] to-[#c8b39a]" />
         )}
         <div className="absolute inset-x-0 bottom-0 h-[140px] bg-gradient-to-b from-transparent to-surface" />
-        <div className="absolute left-5 top-5">
-          <BackButton label={t(lang, "back")} />
-        </div>
       </div>
 
       {/* 正文；relative 让它压在头图的渐变层之上 */}
@@ -106,18 +102,7 @@ export default async function PlacePage({ params }: { params: Params }) {
 
         {llmConfigured() && <GuidePanel placeId={place.id} lang={lang} />}
 
-        {links.length > 0 && (
-          <ul className="flex flex-col gap-3">
-            {links.map((l) => (
-              <li key={l.href}>
-                <a href={l.href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[14px] font-semibold text-accent">
-                  <span>{l.label}</span>
-                  <ExternalIcon />
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
+        <SourceLinks links={place.links} lang={lang} />
       </article>
     </main>
   );

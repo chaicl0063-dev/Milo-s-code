@@ -40,11 +40,26 @@ const LANGUAGE_NAME: Record<Lang, string> = {
   zh: "简体中文 (Simplified Chinese; convert any Traditional characters from the fact sheet, e.g. 艾菲爾鐵塔 → 埃菲尔铁塔)",
 };
 
+/**
+ * 每种风格既说「讲什么」也说「用什么语气」，并明确排除其他风格的腔调，
+ * 否则小模型容易把所有风格都讲成一个味。
+ */
 const STYLE_BRIEF: Record<GuideStyle, string> = {
-  history: "Focus on the history: when and why it was built or came to be, who was involved, how it changed over time.",
-  architecture: "Focus on what the visitor can see: form, materials, construction, design choices, details worth looking for.",
-  stories: "Focus on anecdotes, legends, surprising facts and human stories connected to the place.",
-  kids: "Explain for a curious 8-year-old: simple words, vivid comparisons, one fun fact, warm and playful tone.",
+  history:
+    "STYLE = HISTORY. Audience: an educated adult. Tone: calm, measured, like a documentary narrator. Content: when and why it came to be, who built or shaped it, what happened here, how it changed over time; mention concrete years where they are certain. Forbidden: childlike comparisons, exclamations, playful asides, second-person quizzes.",
+  architecture:
+    "STYLE = ARCHITECTURE. Audience: an adult with an eye for design. Tone: precise, observant, unhurried. Content: what the visitor can see right now: overall form, materials, structure and construction method, proportions, notable details and where to look for them; explain design choices. Forbidden: long historical narrative, anecdotes, childlike language.",
+  stories:
+    "STYLE = STORIES. Audience: a curious adult. Tone: conversational, lively, a little witty, like a well-read friend. Content: anecdotes, legends, controversies, surprising facts and the people connected to the place; each story must be one you are confident is real, not invented. Forbidden: dry chronology, technical description, talking down to the listener.",
+  kids:
+    "STYLE = KIDS. Audience: a curious 8-year-old. Tone: warm, playful, simple words, short sentences, vivid comparisons to everyday things, one fun fact, may ask the child a question. Forbidden: exact dates lists, technical jargon, long sentences.",
+};
+
+const STYLE_ASK: Record<GuideStyle, Record<Lang, string>> = {
+  history: { en: "Tell me the history of this place.", zh: "请讲讲这个地方的历史。" },
+  architecture: { en: "Tell me what I am looking at, as architecture.", zh: "请从建筑的角度讲讲我眼前看到的东西。" },
+  stories: { en: "Tell me the stories and anecdotes about this place.", zh: "请讲讲这个地方的趣闻和故事。" },
+  kids: { en: "Explain this place to me like I am eight years old.", zh: "请把这个地方讲给一个八岁的孩子听。" },
 };
 
 /** 把地点事实整理成给模型看的资料卡 */
@@ -73,15 +88,16 @@ export function systemPrompt(place: PlaceDetail, lang: Lang, style: GuideStyle):
       : "- 150 to 250 words for the first introduction; answers to follow-up questions should be shorter.",
     "- Ground yourself in the fact sheet below plus well-established general knowledge about this place. Never invent a date, name or number; if unsure, say you are not certain.",
     "- Do not mention the fact sheet, Wikipedia, or that you are an AI. Do not repeat the place name more than twice.",
+    "- Start with the content itself. No openers like 'Sure', 'Of course', '当然可以', '好的'.",
     "",
     "FACT SHEET",
     factSheet(place),
   ].join("\n");
 }
 
-/** 首次讲解的用户消息 */
-export function openingUserMessage(lang: Lang): string {
-  return lang === "zh" ? "请给我讲讲眼前这个地方。" : "Tell me about this place.";
+/** 首次讲解的用户消息，把风格再说一遍，小模型对用户消息里的要求更敏感 */
+export function openingUserMessage(lang: Lang, style: GuideStyle): string {
+  return STYLE_ASK[style][lang];
 }
 
 /**
@@ -96,7 +112,7 @@ function modelCandidates(baseUrl: string): string[] {
 }
 
 async function requestCompletion(baseUrl: string, model: string, messages: ChatMessage[], signal?: AbortSignal): Promise<Response> {
-  const body: Record<string, unknown> = { model, messages, stream: true, temperature: 0.7, max_tokens: 700 };
+  const body: Record<string, unknown> = { model, messages, stream: true, temperature: 0.5, max_tokens: 700 };
   // 智谱的 Flash 模型默认开思考模式，讲解场景不需要，关掉更快也更省额度
   if (baseUrl.includes("bigmodel.cn")) body.thinking = { type: "disabled" };
   const res = await fetch(`${baseUrl}/chat/completions`, {

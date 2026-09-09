@@ -82,8 +82,8 @@ export function GuidePanel({ placeId, lang }: Props) {
 
   return (
     <section className="flex flex-col gap-4">
-      {/* 风格选择 */}
-      <div className="flex flex-wrap gap-2">
+      {/* 风格选择 + 右侧一个不起眼的「AI 生成」标注 */}
+      <div className="flex flex-wrap items-center gap-2">
         {GUIDE_STYLES.map((s) => {
           const active = s === style && started;
           return (
@@ -100,6 +100,7 @@ export function GuidePanel({ placeId, lang }: Props) {
             </button>
           );
         })}
+        <span className="ml-auto text-[11px] text-faint">{t(lang, "guideDisclaimer")}</span>
       </div>
 
       {!started && !streaming && (
@@ -163,8 +164,6 @@ export function GuidePanel({ placeId, lang }: Props) {
           </button>
         </form>
       )}
-
-      {started && <p className="text-[12px] text-faint">{t(lang, "guideDisclaimer")}</p>}
     </section>
   );
 }
