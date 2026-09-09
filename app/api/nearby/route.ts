@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isValidLang, nearbyPlaces } from "@/lib/wikipedia";
+import { isValidLang } from "@/lib/wikipedia";
+import { searchNearby } from "@/lib/places/nearby";
 
 /**
  * GET /api/nearby?lat=48.8584&lon=2.2945&lang=en&radius=1000
- * 返回当前坐标周边的 Wikipedia 地点，按距离排序。
+ * 返回当前坐标周边的地点（Wikipedia + OpenStreetMap + 境内高德，已合并去重），按距离排序。
  */
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
@@ -21,8 +22,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const places = await nearbyPlaces(lat, lon, lang, radius);
-    return NextResponse.json({ lang, center: { lat, lon }, radius, count: places.length, places });
+    const { places, sources } = await searchNearby(lat, lon, lang, radius);
+    return NextResponse.json({ lang, center: { lat, lon }, radius, count: places.length, sources, places });
   } catch (err) {
     const message = err instanceof Error ? err.message : "unknown error";
     return NextResponse.json({ error: message }, { status: 502 });

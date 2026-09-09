@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { NearbyPlace } from "@/lib/wikipedia";
+import type { Place } from "@/lib/places/types";
 import { t } from "@/lib/i18n";
 import { formatCoords, formatDistance, isValidCoords } from "@/lib/geo";
 import { homeHref } from "@/lib/links";
@@ -40,12 +40,12 @@ export function HomeScreen() {
   const bootedRef = useRef(false); // 首次进入的初始化只跑一次
 
   const [radius, setRadius] = useState(1000);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0); // 点「重试」时 +1，触发重新请求
 
   // 一次请求的结果。key 记录这批结果对应的「坐标+语言+范围」，
   // 和当前 requestKey 不一致就说明还在加载，不需要单独的 loading 状态。
-  const [result, setResult] = useState<{ key: string; places: NearbyPlace[]; error: string | null }>({
+  const [result, setResult] = useState<{ key: string; places: Place[]; error: string | null }>({
     key: "",
     places: [],
     error: null,
@@ -123,9 +123,9 @@ export function HomeScreen() {
     })
       .then(async (res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = (await res.json()) as { places: NearbyPlace[] };
+        const data = (await res.json()) as { places: Place[] };
         setResult({ key: requestKey, places: data.places, error: null });
-        setSelectedId(data.places[0]?.pageid ?? null);
+        setSelectedId(data.places[0]?.id ?? null);
       })
       .catch((err: unknown) => {
         if (err instanceof DOMException && err.name === "AbortError") return;

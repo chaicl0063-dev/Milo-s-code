@@ -2,6 +2,8 @@
  * 界面文案。key 相同，两种语言各一份。
  * 用法：t(lang, "aroundYou") 或 t(lang, "placesWithin", { n: 30, r: "1 km" })
  */
+import type { PlaceCategory } from "@/lib/places/types";
+
 export const LANGS = ["en", "zh"] as const;
 export type Lang = (typeof LANGS)[number];
 
@@ -13,7 +15,7 @@ const en = {
   appName: "Around You",
   aroundYou: "Around you",
   placesWithin: "{n} places within {r}",
-  noPlaces: "Nothing on Wikipedia within {r}. Try a wider radius.",
+  noPlaces: "Nothing found within {r}. Try a wider radius.",
   loadingPlaces: "Looking around…",
   loadError: "Couldn't load nearby places.",
   retry: "Retry",
@@ -31,9 +33,17 @@ const en = {
   radius: "Radius",
   back: "Back",
   readOnWikipedia: "Read on Wikipedia",
+  viewOnOsm: "View on OpenStreetMap",
+  viewOnAmap: "Open in Amap",
+  viewOnWikidata: "View on Wikidata",
   coordinates: "Coordinates",
+  address: "Address",
+  openingHours: "Opening hours",
+  phone: "Phone",
+  website: "Website",
+  noExtract: "No written introduction yet for this place.",
   notFoundTitle: "We don't know this place yet",
-  notFoundBody: "There is no Wikipedia article for it in this language.",
+  notFoundBody: "None of our sources has an entry for it in this language.",
   language: "Language",
   yourLocation: "You are here",
   view: "View",
@@ -43,7 +53,7 @@ const zh: Record<keyof typeof en, string> = {
   appName: "身边",
   aroundYou: "你身边",
   placesWithin: "{r} 内有 {n} 个地点",
-  noPlaces: "{r} 内没有维基百科条目，试试放大范围。",
+  noPlaces: "{r} 内没有找到地点，试试放大范围。",
   loadingPlaces: "正在环顾四周…",
   loadError: "周边地点加载失败。",
   retry: "重试",
@@ -61,9 +71,17 @@ const zh: Record<keyof typeof en, string> = {
   radius: "范围",
   back: "返回",
   readOnWikipedia: "在维基百科阅读",
+  viewOnOsm: "在 OpenStreetMap 查看",
+  viewOnAmap: "在高德地图打开",
+  viewOnWikidata: "在 Wikidata 查看",
   coordinates: "坐标",
+  address: "地址",
+  openingHours: "开放时间",
+  phone: "电话",
+  website: "网站",
+  noExtract: "这个地方还没有文字介绍。",
   notFoundTitle: "还不认识这个地方",
-  notFoundBody: "这个语言的维基百科里没有它的条目。",
+  notFoundBody: "所有数据源里都没有它这个语言的条目。",
   language: "语言",
   yourLocation: "你在这里",
   view: "查看",
@@ -78,4 +96,43 @@ export function t(lang: Lang, key: MessageKey, vars?: Record<string, string | nu
     for (const [k, v] of Object.entries(vars)) text = text.replaceAll(`{${k}}`, String(v));
   }
   return text;
+}
+
+const categories: Record<Lang, Record<PlaceCategory, string>> = {
+  en: {
+    attraction: "Attraction",
+    museum: "Museum",
+    gallery: "Gallery",
+    viewpoint: "Viewpoint",
+    artwork: "Public art",
+    monument: "Monument",
+    memorial: "Memorial",
+    historic: "Historic site",
+    religious: "Place of worship",
+    park: "Park",
+    zoo: "Zoo",
+    theme_park: "Theme park",
+    theatre: "Theatre",
+    other: "Place",
+  },
+  zh: {
+    attraction: "景点",
+    museum: "博物馆",
+    gallery: "美术馆",
+    viewpoint: "观景点",
+    artwork: "公共艺术",
+    monument: "纪念建筑",
+    memorial: "纪念碑",
+    historic: "历史遗迹",
+    religious: "宗教场所",
+    park: "公园",
+    zoo: "动物园",
+    theme_park: "主题公园",
+    theatre: "剧院",
+    other: "地点",
+  },
+};
+
+export function categoryLabel(lang: Lang, category: PlaceCategory): string {
+  return categories[lang][category] ?? categories.en[category];
 }

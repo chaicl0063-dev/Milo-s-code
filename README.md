@@ -2,7 +2,20 @@
 
 线上地址：https://milo-s-code.vercel.app （推送到 main 分支后 Vercel 自动重新部署）
 
-打开网页，看到身边 1 公里内有哪些值得了解的地方，点进去读介绍。数据来自 Wikipedia，地图来自 OpenStreetMap，全部免费、不需要 API Key。第二阶段会加上 AI 讲解。
+打开网页，看到身边 1 公里内有哪些值得了解的地方，点进去读介绍。地图来自 OpenStreetMap，地点数据来自 Wikipedia、OpenStreetMap、Wikidata 三个免费来源合并去重，中国境内可选叠加高德。全部免费、默认不需要任何 Key。第二阶段会加上 AI 讲解。
+
+## 数据源
+
+| 来源 | 提供什么 | Key |
+|---|---|---|
+| Wikipedia GeoSearch + REST | 有百科词条的地点、摘要、图片 | 不需要 |
+| OpenStreetMap（Overpass） | 景点、博物馆、观景点、公共艺术、历史遗迹、宗教场所、剧院 | 不需要 |
+| Wikidata | 给 OSM 的点补描述、图片、维基百科链接；也是三个来源合并去重的依据 | 不需要 |
+| 高德（可选） | 中国境内的景点和博物馆，含地址、电话、开放时间 | 需要 `AMAP_KEY`，没配就跳过 |
+
+合并规则在 `lib/places/nearby.ts`：Wikidata 编号相同视为同一地点；否则名字归一化后相同且 120 米内视为同一地点。高德坐标是 GCJ-02，进出都在 `lib/geo.ts` 里转成 WGS-84。
+
+地点 id 带来源前缀：`wp:Eiffel_Tower`、`osm:n123~Q243`（`~Q` 是顺带的 Wikidata 编号，Overpass 超时时退回 Wikidata）、`wd:Q243`、`amap:B0FFG...`。
 
 ## 本地运行
 

@@ -3,18 +3,18 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
-import type { NearbyPlace } from "@/lib/wikipedia";
+import type { Place } from "@/lib/places/types";
 import { t, type Lang } from "@/lib/i18n";
 import { formatDistance } from "@/lib/geo";
 import { placeHref } from "@/lib/links";
 
 interface Props {
   center: { lat: number; lon: number };
-  places: NearbyPlace[];
+  places: Place[];
   lang: Lang;
   radius: number;
-  selectedId: number | null;
-  onSelect: (pageid: number) => void;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
 }
 
 /** MapContainer 的 center 只在首次渲染生效，坐标变化时用这个小组件手动移动视图 */
@@ -63,10 +63,10 @@ export default function PlacesMap({ center, places, lang, radius, selectedId, on
       </CircleMarker>
 
       {places.map((p) => {
-        const selected = p.pageid === selectedId;
+        const selected = p.id === selectedId;
         return (
           <CircleMarker
-            key={p.pageid}
+            key={p.id}
             center={[p.lat, p.lon]}
             radius={selected ? 12 : 9}
             pathOptions={{
@@ -75,12 +75,12 @@ export default function PlacesMap({ center, places, lang, radius, selectedId, on
               fillColor: selected ? "#1b1f1d" : "#b85c38",
               fillOpacity: 1,
             }}
-            eventHandlers={{ click: () => onSelect(p.pageid) }}
+            eventHandlers={{ click: () => onSelect(p.id) }}
           >
             <Popup>
               <strong>{p.title}</strong>
               <br />
-              {formatDistance(p.dist)} · <Link href={placeHref(lang, p.title)}>{t(lang, "view")}</Link>
+              {formatDistance(p.dist)} · <Link href={placeHref(lang, p.id)}>{t(lang, "view")}</Link>
             </Popup>
           </CircleMarker>
         );
