@@ -3,6 +3,7 @@ import { Instrument_Serif, Manrope } from "next/font/google";
 import "leaflet/dist/leaflet.css";
 import "./globals.css";
 import { LanguageProvider } from "@/components/LanguageProvider";
+import { PwaRegister } from "@/components/PwaRegister";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -19,6 +20,9 @@ const instrumentSerif = Instrument_Serif({
 export const metadata: Metadata = {
   title: "Around You · AI Tour Guide",
   description: "See what is around you and learn its story, anywhere in the world.",
+  applicationName: "Around You",
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "Around You" },
+  formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
@@ -33,6 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${manrope.variable} ${instrumentSerif.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <LanguageProvider>{children}</LanguageProvider>
+        <PwaRegister />
       </body>
     </html>
   );

@@ -59,6 +59,10 @@ const en = {
   styleArchitecture: "Architecture",
   styleStories: "Stories",
   styleKids: "For kids",
+  installApp: "Install",
+  installAppHint: "Add Around You to your home screen for quick access.",
+  iosInstallTip: "To install: tap Share, then “Add to Home Screen”.",
+  dismiss: "Not now",
 } as const;
 
 const zh: Record<keyof typeof en, string> = {
@@ -109,6 +113,10 @@ const zh: Record<keyof typeof en, string> = {
   styleArchitecture: "建筑",
   styleStories: "趣闻",
   styleKids: "讲给孩子",
+  installApp: "安装",
+  installAppHint: "把「身边」加到手机桌面，下次一点就开。",
+  iosInstallTip: "安装方法：点底部分享按钮，选「添加到主屏幕」。",
+  dismiss: "先不用",
 };
 
 export const dict = { en, zh } as const;

@@ -11,6 +11,7 @@ import type { City } from "@/lib/cities";
 import { useLanguage } from "@/components/LanguageProvider";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { LocatePanel } from "@/components/LocatePanel";
+import { InstallHint } from "@/components/InstallHint";
 import { PlaceList } from "@/components/PlaceList";
 import { LocateIcon, PinIcon } from "@/components/Icons";
 
@@ -201,6 +202,7 @@ export function HomeScreen() {
       {/* 底部面板 / 桌面右栏 */}
       <section className="z-[1001] flex h-[46dvh] shrink-0 flex-col rounded-t-sheet bg-surface shadow-[0_-10px_30px_rgba(27,31,29,0.12)] md:h-auto md:w-[420px] md:rounded-none md:shadow-[-10px_0_30px_rgba(27,31,29,0.08)]">
         <div className="mx-auto mt-2.5 h-1 w-10 rounded-full bg-[#D8D2C6] md:hidden" />
+        <InstallHint lang={lang} />
 
         <header className="flex items-end justify-between px-6 pt-3.5">
           <div className="flex flex-col gap-0.5">
