@@ -37,7 +37,7 @@ export default async function PlacePage({ params }: { params: Params }) {
   }
 
   const image = place.image?.source;
-  const backHref = place.coordinates ? homeHref(place.coordinates.lat, place.coordinates.lon) : "/";
+  const mapHref = place.coordinates ? homeHref(place.coordinates.lat, place.coordinates.lon, place.id) : "/";
   const eyebrow = place.description || (place.category ? categoryLabel(lang, place.category) : "");
   const facts: Array<{ label: string; value: string; href?: string }> = [];
   if (place.address) facts.push({ label: t(lang, "address"), value: place.address });
@@ -68,12 +68,14 @@ export default async function PlacePage({ params }: { params: Params }) {
           {eyebrow && <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-accent">{eyebrow}</p>}
           <h1 className="font-serif text-[38px] leading-[42px]">{place.title}</h1>
           {place.coordinates && (
-            <Link href={backHref} className="flex items-center gap-2 text-[13px] text-muted">
+            <Link href={mapHref} className="flex items-center gap-2 text-[13px] text-muted">
               <PinIcon size={16} />
               <span>{formatCoords(place.coordinates.lat, place.coordinates.lon)}</span>
             </Link>
           )}
         </div>
+
+        {llmConfigured() && <GuidePanel placeId={place.id} uiLang={lang} />}
 
         {place.extract ? (
           <p className="text-[15px] leading-6 text-ink-soft">{place.extract}</p>
@@ -100,7 +102,6 @@ export default async function PlacePage({ params }: { params: Params }) {
           </dl>
         )}
 
-        {llmConfigured() && <GuidePanel placeId={place.id} lang={lang} />}
 
         <SourceLinks links={place.links} lang={lang} />
       </article>

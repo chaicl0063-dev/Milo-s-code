@@ -8,8 +8,9 @@
 import type { PlaceDetail } from "@/lib/places/types";
 import type { Lang } from "@/lib/i18n";
 
-export const GUIDE_STYLES = ["history", "architecture", "stories", "kids"] as const;
+export const GUIDE_STYLES = ["guide", "history", "architecture", "stories", "kids"] as const;
 export type GuideStyle = (typeof GUIDE_STYLES)[number];
+export const DEFAULT_STYLE: GuideStyle = "guide";
 
 export function isGuideStyle(v: unknown): v is GuideStyle {
   return typeof v === "string" && (GUIDE_STYLES as readonly string[]).includes(v);
@@ -45,6 +46,8 @@ const LANGUAGE_NAME: Record<Lang, string> = {
  * 否则小模型容易把所有风格都讲成一个味。
  */
 const STYLE_BRIEF: Record<GuideStyle, string> = {
+  guide:
+    "STYLE = GUIDE. Audience: an adult traveler standing here. Tone: warm, clear, unhurried, like a good local guide. Content, in this order: one sentence on what this is; the most important piece of its history or origin; what to look at right now (one or two concrete details); one memorable anecdote or fact if you are confident it is true. Forbidden: childlike language, lists, exclamations.",
   history:
     "STYLE = HISTORY. Audience: an educated adult. Tone: calm, measured, like a documentary narrator. Content: when and why it came to be, who built or shaped it, what happened here, how it changed over time; mention concrete years where they are certain. Forbidden: childlike comparisons, exclamations, playful asides, second-person quizzes.",
   architecture:
@@ -56,6 +59,7 @@ const STYLE_BRIEF: Record<GuideStyle, string> = {
 };
 
 const STYLE_ASK: Record<GuideStyle, Record<Lang, string>> = {
+  guide: { en: "Tell me about this place.", zh: "请给我讲讲眼前这个地方。" },
   history: { en: "Tell me the history of this place.", zh: "请讲讲这个地方的历史。" },
   architecture: { en: "Tell me what I am looking at, as architecture.", zh: "请从建筑的角度讲讲我眼前看到的东西。" },
   stories: { en: "Tell me the stories and anecdotes about this place.", zh: "请讲讲这个地方的趣闻和故事。" },

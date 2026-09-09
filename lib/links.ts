@@ -5,7 +5,8 @@ export function placeHref(lang: Lang, id: string): string {
   return `/p/${lang}/${encodeURIComponent(id)}`;
 }
 
-/** 首页地址，把坐标带在 URL 上，返回时列表还在，也方便分享 */
-export function homeHref(lat: number, lon: number): string {
-  return `/?lat=${lat.toFixed(5)}&lon=${lon.toFixed(5)}`;
+/** 首页地址，把坐标带在 URL 上，返回时列表还在，也方便分享；focus 是要高亮的地点 id */
+export function homeHref(lat: number, lon: number, focusId?: string): string {
+  const base = `/?lat=${lat.toFixed(5)}&lon=${lon.toFixed(5)}`;
+  return focusId ? `${base}&focus=${encodeURIComponent(focusId)}` : base;
 }

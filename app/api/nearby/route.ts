@@ -21,9 +21,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "invalid lang" }, { status: 400 });
   }
 
+  // ?sources=fast 只查 Wikipedia，用于首屏先出结果
+  const fast = sp.get("sources") === "fast";
+
   try {
-    const { places, sources } = await searchNearby(lat, lon, lang, radius);
-    return NextResponse.json({ lang, center: { lat, lon }, radius, count: places.length, sources, places });
+    const { places, sources } = await searchNearby(lat, lon, lang, radius, { fast });
+    return NextResponse.json({ lang, center: { lat, lon }, radius, fast, count: places.length, sources, places });
   } catch (err) {
     const message = err instanceof Error ? err.message : "unknown error";
     return NextResponse.json({ error: message }, { status: 502 });

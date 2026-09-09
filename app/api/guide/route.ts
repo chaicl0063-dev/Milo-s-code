@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPlaceDetail } from "@/lib/places/detail";
 import { isLang } from "@/lib/i18n";
-import { LlmError, isGuideStyle, llmConfigured, openingUserMessage, streamChat, systemPrompt, type ChatMessage } from "@/lib/guide";
+import { DEFAULT_STYLE, LlmError, isGuideStyle, llmConfigured, openingUserMessage, streamChat, systemPrompt, type ChatMessage } from "@/lib/guide";
 
 /**
  * POST /api/guide
@@ -26,7 +26,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid json" }, { status: 400 });
   }
 
-  const { id, lang, style } = body;
+  const { id, lang } = body;
+  const style = body.style ?? DEFAULT_STYLE; // 界面上已不再选风格，默认综合讲解
   if (!id || typeof id !== "string" || id.length > 300) return NextResponse.json({ error: "missing id" }, { status: 400 });
   if (!isLang(lang)) return NextResponse.json({ error: "invalid lang" }, { status: 400 });
   if (!isGuideStyle(style)) return NextResponse.json({ error: "invalid style" }, { status: 400 });
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
     .map((m) => ({ role: m.role, content: m.content.slice(0, 1000) }));
   const isOpening = history.length === 0;
   // v2：提示词改过后旧缓存作废
-  const cacheKey = `v2:${lang}:${style}:${id}`;
+  const cacheKey = `v3:${lang}:${style}:${id}`;
 
   if (isOpening && narrationCache.has(cacheKey)) {
     return new Response(narrationCache.get(cacheKey)!, {

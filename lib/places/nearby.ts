@@ -74,17 +74,24 @@ function dedupe(candidates: Place[]): Place[] {
   return kept;
 }
 
-export async function searchNearby(lat: number, lon: number, lang: string, radiusMeters: number, limit = 60): Promise<NearbyResult> {
+export interface NearbyOptions {
+  limit?: number;
+  /** fast = 只查 Wikipedia（一两秒就回），给首屏先用；之后再来一次完整查询 */
+  fast?: boolean;
+}
+
+export async function searchNearby(lat: number, lon: number, lang: string, radiusMeters: number, options: NearbyOptions = {}): Promise<NearbyResult> {
+  const { limit = 60, fast = false } = options;
   const sources: SourceReport = { wikipedia: "skipped", osm: "skipped", wikidata: "skipped", amap: "skipped" };
-  const useAmap = amapEnabled() && isInChina(lat, lon);
+  const useAmap = !fast && amapEnabled() && isInChina(lat, lon);
 
   const [wpResult, osmResult, amapResult] = await Promise.allSettled([
     wikipediaNearby(lat, lon, lang, radiusMeters),
-    overpassNearby(lat, lon, lang, radiusMeters),
+    fast ? Promise.resolve<Place[]>([]) : overpassNearby(lat, lon, lang, radiusMeters),
     useAmap ? amapNearby(lat, lon, radiusMeters) : Promise.resolve<Place[]>([]),
   ]);
   const wikipedia = settled(wpResult, "wikipedia", sources);
-  const osm = settled(osmResult, "osm", sources);
+  const osm = fast ? [] : settled(osmResult, "osm", sources);
   const amap = useAmap ? settled(amapResult, "amap", sources) : [];
 
   // 用 Wikidata 给缺描述或缺图的 OSM 地点补信息
