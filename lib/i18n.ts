@@ -47,6 +47,18 @@ const en = {
   language: "Language",
   yourLocation: "You are here",
   view: "View",
+  askGuide: "Ask the guide",
+  guideHint: "A short spoken-style introduction, in your language",
+  guideThinking: "The guide is thinking…",
+  guideError: "The guide is unavailable right now. Please try again.",
+  guideBusy: "The guide is busy with other travelers. Try again in a moment.",
+  guideDisclaimer: "AI-generated from public sources. Double-check dates and figures.",
+  askFollowUp: "Ask a follow-up…",
+  send: "Send",
+  styleHistory: "History",
+  styleArchitecture: "Architecture",
+  styleStories: "Stories",
+  styleKids: "For kids",
 } as const;
 
 const zh: Record<keyof typeof en, string> = {
@@ -85,6 +97,18 @@ const zh: Record<keyof typeof en, string> = {
   language: "语言",
   yourLocation: "你在这里",
   view: "查看",
+  askGuide: "听导游讲讲",
+  guideHint: "一段口语化的简短介绍，用你的语言",
+  guideThinking: "导游在想…",
+  guideError: "导游暂时不在，请稍后再试。",
+  guideBusy: "导游正忙着接待别的游客，稍等一下再试。",
+  guideDisclaimer: "由 AI 根据公开资料生成，日期和数字请自行核对。",
+  askFollowUp: "继续问点什么…",
+  send: "发送",
+  styleHistory: "历史",
+  styleArchitecture: "建筑",
+  styleStories: "趣闻",
+  styleKids: "讲给孩子",
 };
 
 export const dict = { en, zh } as const;

@@ -5,7 +5,9 @@ import { getPlaceDetail } from "@/lib/places/detail";
 import { categoryLabel, isLang, t } from "@/lib/i18n";
 import { formatCoords } from "@/lib/geo";
 import { homeHref } from "@/lib/links";
+import { llmConfigured } from "@/lib/guide";
 import { BackButton } from "@/components/BackButton";
+import { GuidePanel } from "@/components/GuidePanel";
 import { ExternalIcon, PinIcon } from "@/components/Icons";
 
 type Params = Promise<{ lang: string; id: string }>;
@@ -101,6 +103,8 @@ export default async function PlacePage({ params }: { params: Params }) {
             ))}
           </dl>
         )}
+
+        {llmConfigured() && <GuidePanel placeId={place.id} lang={lang} />}
 
         {links.length > 0 && (
           <ul className="flex flex-col gap-3">

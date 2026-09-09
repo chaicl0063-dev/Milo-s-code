@@ -44,6 +44,15 @@ export function ExternalIcon({ size = 16, className }: IconProps) {
   );
 }
 
+export function SparkIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M12 3l1.8 4.6 4.7 1.8-4.7 1.8L12 16l-1.8-4.8L5.5 9.4l4.7-1.8z" />
+      <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" />
+    </svg>
+  );
+}
+
 export function LocationOffIcon({ size = 56, className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 56 56" className={className} aria-hidden="true">
