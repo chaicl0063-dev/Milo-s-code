@@ -48,6 +48,43 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* 地图图钉（divIcon）：普通点、选中点、我的位置、聚合圆 */
+.rr-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 6px rgba(27, 31, 29, 0.25);
+}
+.rr-dot-selected {
+  width: 28px;
+  height: 28px;
+  background: var(--ink);
+}
+.rr-me {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--locate);
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 10px rgba(47, 107, 138, 0.18);
+}
+.rr-cluster {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--bg);
+  border: 3px solid var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(27, 31, 29, 0.25);
+}
+
 /* Leaflet 地图容器需要明确高度，否则不显示 */
 .leaflet-container {
   width: 100%;

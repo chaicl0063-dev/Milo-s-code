@@ -67,7 +67,7 @@ async function geosearch(lat: number, lon: number, lang: string, radiusMeters: n
 async function pageExtras(
   lang: string,
   pageids: number[],
-  thumbSize = 240,
+  thumbSize = 480,
 ): Promise<Map<number, { thumbnail?: string; description?: string; wikidata?: string }>> {
   const result = new Map<number, { thumbnail?: string; description?: string; wikidata?: string }>();
   if (pageids.length === 0) return result;

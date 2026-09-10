@@ -11,9 +11,12 @@ import { BackButton } from "@/components/BackButton";
 import { GuidePanel } from "@/components/GuidePanel";
 import { SourceLinks } from "@/components/SourceLinks";
 import { FavoriteStar } from "@/components/FavoriteStar";
+import { ShareButton } from "@/components/ShareButton";
+import { DetailFacts, type Fact } from "@/components/DetailFacts";
 import { PinIcon } from "@/components/Icons";
 
 type Params = Promise<{ lang: string; id: string }>;
+type Search = Promise<{ guide?: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { lang, id } = await params;
@@ -22,8 +25,9 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return place ? { title: `${place.title} · ReAround You`, description: place.description } : {};
 }
 
-export default async function PlacePage({ params }: { params: Params }) {
+export default async function PlacePage({ params, searchParams }: { params: Params; searchParams: Search }) {
   const { lang, id } = await params;
+  const { guide } = await searchParams;
   if (!isLang(lang)) notFound();
 
   const place = await getPlaceDetail(lang, decodeURIComponent(id));
@@ -41,7 +45,7 @@ export default async function PlacePage({ params }: { params: Params }) {
   const image = place.image?.source;
   const mapHref = place.coordinates ? homeHref(place.coordinates.lat, place.coordinates.lon, place.id) : "/";
   const eyebrow = place.description || (place.category ? categoryLabel(lang, place.category) : "");
-  const facts: Array<{ label: string; value: string; href?: string }> = [];
+  const facts: Fact[] = [];
   if (place.address) facts.push({ label: t(lang, "address"), value: place.address });
   if (place.openingHours) facts.push({ label: t(lang, "openingHours"), value: place.openingHours });
   if (place.phone) facts.push({ label: t(lang, "phone"), value: place.phone, href: `tel:${place.phone}` });
@@ -49,21 +53,11 @@ export default async function PlacePage({ params }: { params: Params }) {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[520px] flex-col bg-surface">
-      {/* 返回按钮：sticky 且高度为 0，滚到讲解那里也一直停在顶部 */}
-      <div className="pointer-events-none sticky top-5 z-20 h-0 px-5">
+      {/* 顶部三个图标：返回 · 收藏 · 分享。sticky 且高度为 0，滚到讲解那里也一直停在顶部 */}
+      <div className="pointer-events-none sticky top-5 z-20 flex h-0 items-start justify-between px-5">
         <BackButton label={t(lang, "back")} className="pointer-events-auto" />
-      </div>
-      {/* 头图 */}
-      <div className="relative h-[380px] w-full overflow-hidden bg-[#d9c8b2]">
-        {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={image} alt={place.title} className="h-full w-full object-cover" />
-        ) : (
-          <div className="h-full w-full bg-gradient-to-b from-[#e7d6c4] to-[#c8b39a]" />
-        )}
-        <div className="absolute inset-x-0 bottom-0 h-[140px] bg-gradient-to-b from-transparent to-surface" />
-        {place.coordinates && (
-          <div className="absolute right-5 top-5">
+        <div className="pointer-events-auto flex items-center gap-2">
+          {place.coordinates && (
             <FavoriteStar
               uiLang={lang}
               size={22}
@@ -79,50 +73,40 @@ export default async function PlacePage({ params }: { params: Params }) {
                 category: place.category,
               }}
             />
-          </div>
+          )}
+          <ShareButton title={place.title} lang={lang} />
+        </div>
+      </div>
+
+      {/* 头图 */}
+      <div className="relative h-[340px] w-full overflow-hidden bg-[#d9c8b2]">
+        {image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={image} alt={place.title} className="h-full w-full object-cover" />
+        ) : (
+          <div className="h-full w-full bg-gradient-to-b from-[#e7d6c4] to-[#c8b39a]" />
         )}
+        <div className="absolute inset-x-0 bottom-0 h-[140px] bg-gradient-to-b from-transparent to-surface" />
       </div>
 
       {/* 正文；relative 让它压在头图的渐变层之上 */}
-      <article className="relative -mt-16 flex flex-1 flex-col gap-5 px-6 pb-10">
+      <article className="relative -mt-16 flex flex-1 flex-col gap-5 px-6 pb-4">
         <div className="flex flex-col gap-2">
           {eyebrow && <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-accent">{eyebrow}</p>}
           <h1 className="font-serif text-[38px] leading-[42px]">{place.title}</h1>
-          {place.coordinates && (
-            <Link href={mapHref} className="flex items-center gap-2 text-[13px] text-muted">
-              <PinIcon size={16} />
-              <span>{formatCoords(place.coordinates.lat, place.coordinates.lon)}</span>
-            </Link>
-          )}
+          <div className="flex flex-col gap-1 text-[13px] leading-5 text-muted">
+            {place.coordinates && (
+              <Link href={mapHref} className="flex items-center gap-2">
+                <PinIcon size={16} />
+                <span>{formatCoords(place.coordinates.lat, place.coordinates.lon)}</span>
+              </Link>
+            )}
+            <DetailFacts facts={facts} lang={lang} />
+          </div>
+          {place.extract && <p className="pt-1 text-[14px] leading-6 text-ink-soft">{place.extract}</p>}
         </div>
 
-        {llmConfigured() && <GuidePanel placeId={place.id} uiLang={lang} asrEnabled={asrConfigured()} />}
-
-        {place.extract ? (
-          <p className="text-[15px] leading-6 text-ink-soft">{place.extract}</p>
-        ) : (
-          <p className="text-[14px] leading-6 text-faint">{t(lang, "noExtract")}</p>
-        )}
-
-        {facts.length > 0 && (
-          <dl className="flex flex-col divide-y divide-line rounded-[18px] bg-surface-2/70 px-4">
-            {facts.map((f) => (
-              <div key={f.label} className="flex flex-col gap-0.5 py-3">
-                <dt className="text-[11px] font-bold uppercase tracking-[0.1em] text-faint">{f.label}</dt>
-                <dd className="text-[14px] leading-5 text-ink-soft">
-                  {f.href ? (
-                    <a href={f.href} className="text-accent" target={f.href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer">
-                      {f.value}
-                    </a>
-                  ) : (
-                    f.value
-                  )}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        )}
-
+        {llmConfigured() && <GuidePanel placeId={place.id} uiLang={lang} asrEnabled={asrConfigured()} autoStart={guide === "1"} />}
 
         <SourceLinks links={place.links} lang={lang} />
       </article>

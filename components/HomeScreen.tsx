@@ -2,20 +2,23 @@
 
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { Place } from "@/lib/places/types";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Place, PlaceCategory } from "@/lib/places/types";
 import { t } from "@/lib/i18n";
 import { formatCoords, formatDistance, haversine, isValidCoords } from "@/lib/geo";
 import { homeHref } from "@/lib/links";
 import type { City } from "@/lib/cities";
 import { isOnboarded, readCoords, resolveGuideLang, writeCoords } from "@/lib/prefs";
+import { useFavorites } from "@/lib/favorites";
 import { useLanguage } from "@/components/LanguageProvider";
 import { LocatePanel } from "@/components/LocatePanel";
 import { Onboarding } from "@/components/Onboarding";
 import { PhotoIdentify } from "@/components/PhotoIdentify";
 import { PlaceList } from "@/components/PlaceList";
+import { PlaceCard } from "@/components/PlaceCard";
+import { HomeHeader, type HomeFilter, type HomeView } from "@/components/HomeHeader";
 import { TabBar, TAB_BAR_HEIGHT } from "@/components/TabBar";
-import { BackIcon, LocateIcon, PinIcon, SearchIcon } from "@/components/Icons";
+import { LocateIcon, SearchIcon } from "@/components/Icons";
 
 // Leaflet 依赖 window，只能在浏览器端渲染，所以关闭服务端渲染
 const PlacesMap = dynamic(() => import("@/components/PlacesMap"), {
@@ -25,8 +28,6 @@ const PlacesMap = dynamic(() => import("@/components/PlacesMap"), {
 
 type Coords = { lat: number; lon: number };
 const RADIUS_OPTIONS = [500, 1000, 2000, 5000];
-/** 底部面板收起时露出的高度（把手 + 标题行） */
-const PEEK_HEIGHT = 136;
 
 function coordsFromParams(sp: URLSearchParams): Coords | null {
   const lat = Number(sp.get("lat"));
@@ -47,6 +48,7 @@ export function HomeScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const focusId = searchParams.get("focus");
+  const { favorites } = useFavorites();
 
   // 「浏览中心」和「我的位置」是两回事：搜索围着前者，蓝点画在后者
   const [center, setCenter] = useState<Coords | null>(() => coordsFromParams(searchParams));
@@ -59,6 +61,8 @@ export function HomeScreen() {
   const [onboarded, setOnboardedState] = useState<boolean | null>(null);
   const bootedRef = useRef(false);
 
+  const [view, setView] = useState<HomeView>("map");
+  const [filter, setFilter] = useState<HomeFilter>("all");
   const [radius, setRadius] = useState(1000);
   const [selectedId, setSelectedId] = useState<string | null>(focusId);
   const [reloadKey, setReloadKey] = useState(0);
@@ -70,10 +74,22 @@ export function HomeScreen() {
   const hasResults = requestKey !== null && result.key === requestKey;
   const loading = requestKey !== null && !hasResults;
   const partial = hasResults && !result.complete;
-  const places = hasResults ? result.places : [];
+  const places = useMemo(() => (hasResults ? result.places : []), [hasResults, result.places]);
   const error = hasResults ? result.error : null;
-  // 选中项：优先用户点的，其次 URL 带来的 focus，都没有就第一个
-  const effectiveSelected = places.some((p) => p.id === selectedId) ? selectedId : (places[0]?.id ?? null);
+
+  // 筛选：全部 / 收藏 / 某个分类
+  const favoriteIds = useMemo(() => new Set(favorites.map((f) => f.id)), [favorites]);
+  const categories = useMemo(() => {
+    const seen = new Set<PlaceCategory>();
+    for (const p of places) if (p.category && p.category !== "other") seen.add(p.category);
+    return [...seen];
+  }, [places]);
+  const visiblePlaces = useMemo(() => {
+    if (filter === "all") return places;
+    if (filter === "favorites") return places.filter((p) => favoriteIds.has(p.id));
+    return places.filter((p) => p.category === filter);
+  }, [places, filter, favoriteIds]);
+  const selectedPlace = visiblePlaces.find((p) => p.id === selectedId) ?? null;
 
   // 浏览中心的地名（反向地理编码）
   const centerKey = center ? `${center.lat.toFixed(3)},${center.lon.toFixed(3)},${lang}` : "";
@@ -88,6 +104,8 @@ export function HomeScreen() {
       setCenter(next);
       setPendingCenter(null);
       setShowPicker(false);
+      setPickerQuery("");
+      setSelectedId(null);
       writeCoords("center", next);
       router.replace(homeHref(next.lat, next.lon));
     },
@@ -219,87 +237,6 @@ export function HomeScreen() {
     requestLocation({ silent: Boolean(myLocation) });
   }
 
-  /* ---------- 底部面板拖动：三档停靠（收起 / 半屏 / 接近全屏） ---------- */
-  const sheetRef = useRef<HTMLElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
-  const [sheetHeight, setSheetHeight] = useState<number | null>(null);
-  const [dragging, setDragging] = useState(false);
-
-  const usableHeight = () => window.innerHeight - TAB_BAR_HEIGHT;
-  const snapPoints = () => {
-    const vh = usableHeight();
-    return [PEEK_HEIGHT, Math.round(vh * 0.46), Math.round(vh * 0.88)];
-  };
-  const currentSheetHeight = () => sheetRef.current?.getBoundingClientRect().height ?? 0;
-  const snapTo = (h: number) => {
-    const nearest = snapPoints().reduce((a, b) => (Math.abs(b - h) < Math.abs(a - h) ? b : a));
-    setSheetHeight(nearest);
-  };
-
-  // 挂载后把默认高度换成像素值：百分比高度和像素之间的过渡在部分浏览器里不会动
-  useEffect(() => {
-    if (sheetHeight !== null || !center) return;
-    if (window.matchMedia("(min-width: 768px)").matches) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSheetHeight(Math.round(usableHeight() * 0.46));
-  }, [center, sheetHeight]);
-
-  /**
-   * 触摸拖动用原生监听（passive: false），这样能 preventDefault 不让浏览器把手势当成页面滚动。
-   * 规则很简单：只有把手和标题行能拖面板；列表区域永远是普通滚动，怎么滑都不会误触。
-   */
-  useEffect(() => {
-    const sheet = sheetRef.current;
-    if (!sheet || !center) return;
-    let startY = 0;
-    let startH = 0;
-    let dragging = false;
-
-    const onStart = (e: TouchEvent) => {
-      if (window.matchMedia("(min-width: 768px)").matches) return;
-      const target = e.target as HTMLElement;
-      if (target.closest("select,a")) return;
-      if (listRef.current && listRef.current.contains(target)) return; // 列表区不拖
-      startY = e.touches[0].clientY;
-      startH = currentSheetHeight();
-      dragging = true;
-      setDragging(true);
-    };
-    const onMove = (e: TouchEvent) => {
-      if (!dragging) return;
-      e.preventDefault();
-      const dy = e.touches[0].clientY - startY; // 正 = 手指往下
-      const max = Math.round(usableHeight() * 0.88);
-      setSheetHeight(Math.min(Math.max(startH - dy, PEEK_HEIGHT), max));
-    };
-    const onEnd = () => {
-      if (!dragging) return;
-      dragging = false;
-      snapTo(currentSheetHeight());
-      setDragging(false);
-    };
-
-    sheet.addEventListener("touchstart", onStart, { passive: true });
-    sheet.addEventListener("touchmove", onMove, { passive: false });
-    sheet.addEventListener("touchend", onEnd);
-    sheet.addEventListener("touchcancel", onEnd);
-    return () => {
-      sheet.removeEventListener("touchstart", onStart);
-      sheet.removeEventListener("touchmove", onMove);
-      sheet.removeEventListener("touchend", onEnd);
-      sheet.removeEventListener("touchcancel", onEnd);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [center]);
-
-  /** 点一下把手：收起 → 半屏 → 全屏 → 收起 循环（按记录的高度算，不依赖动画是否播完） */
-  function toggleSheet() {
-    const snaps = snapPoints();
-    const h = sheetHeight ?? currentSheetHeight();
-    const idx = snaps.reduce((best, s, i) => (Math.abs(s - h) < Math.abs(snaps[best] - h) ? i : best), 0);
-    setSheetHeight(snaps[(idx + 1) % snaps.length]);
-  }
-
   // 首次进入：选择导游（语言 + 受众），完成后进入定位授权
   if (onboarded === false) {
     return (
@@ -344,139 +281,113 @@ export function HomeScreen() {
   }
 
   const radiusLabel = formatDistance(radius);
+  const header = (
+    <HomeHeader
+      lang={lang}
+      placeName={placeName ?? formatCoords(center.lat, center.lon)}
+      showBack={Boolean(focusId)}
+      onBack={() => router.back()}
+      onOpenSearch={() => setShowPicker(true)}
+      view={view}
+      onView={setView}
+      filter={filter}
+      onFilter={setFilter}
+      categories={categories}
+      radius={radius}
+      radiusOptions={RADIUS_OPTIONS}
+      onRadius={setRadius}
+      overlay={view === "map"}
+    />
+  );
+  const statusLine = loading
+    ? t(lang, "loadingPlaces")
+    : partial
+      ? `${t(lang, "placesWithin", { n: visiblePlaces.length, r: radiusLabel })} · ${t(lang, "loadingMore")}`
+      : t(lang, "placesWithin", { n: visiblePlaces.length, r: radiusLabel });
+
+  if (view === "list") {
+    return (
+      <>
+        <main className="mx-auto flex w-full max-w-[520px] flex-col" style={{ paddingBottom: `calc(${TAB_BAR_HEIGHT + 16}px + env(safe-area-inset-bottom))` }}>
+          {header}
+          <p className="px-6 pb-1 pt-2 text-[13px] text-muted">{statusLine}</p>
+          {error ? (
+            <div className="flex flex-col items-start gap-3 px-6 py-4 text-[14px] text-muted">
+              <span>{error}</span>
+              <button type="button" onClick={() => setReloadKey((k) => k + 1)} className="rounded-full bg-ink px-4 py-2 text-[13px] font-bold text-bg">
+                {t(lang, "retry")}
+              </button>
+            </div>
+          ) : loading ? (
+            <SkeletonList />
+          ) : visiblePlaces.length === 0 ? (
+            <p className="px-6 py-4 text-[14px] text-muted">{t(lang, "noPlaces", { r: radiusLabel })}</p>
+          ) : (
+            <PlaceList places={visiblePlaces} lang={lang} selectedId={selectedId} onSelect={setSelectedId} />
+          )}
+        </main>
+        <TabBar lang={lang} />
+      </>
+    );
+  }
 
   return (
     <>
-      <main
-        className="flex flex-col md:flex-row"
-        style={{ height: `calc(100dvh - ${TAB_BAR_HEIGHT}px - env(safe-area-inset-bottom))` }}
-      >
-        {/* 地图 */}
-        <section className="relative min-h-0 flex-1">
-          <PlacesMap
-            center={center}
-            myLocation={myLocation}
-            places={places}
-            lang={lang}
-            radius={radius}
-            selectedId={effectiveSelected}
-            onSelect={setSelectedId}
-            onMoved={onMapMoved}
-          />
+      <main className="relative" style={{ height: `calc(100dvh - ${TAB_BAR_HEIGHT}px - env(safe-area-inset-bottom))` }}>
+        <PlacesMap
+          center={center}
+          myLocation={myLocation}
+          places={visiblePlaces}
+          radius={radius}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          onMoved={onMapMoved}
+        />
 
-          <div className="pointer-events-none absolute inset-x-5 top-5 z-[1000] flex items-center gap-2">
-            {focusId && (
+        {header}
+
+        {pendingCenter && (
+          <button
+            type="button"
+            onClick={() => applyCenter(pendingCenter)}
+            className="absolute left-1/2 top-[128px] z-[1000] flex h-10 -translate-x-1/2 items-center gap-2 rounded-full bg-ink px-4 text-[13px] font-bold text-bg shadow-[0_6px_16px_rgba(27,31,29,0.2)]"
+          >
+            <SearchIcon size={16} />
+            <span>{t(lang, "searchThisArea")}</span>
+          </button>
+        )}
+
+        {/* 底部：有选中就是卡片，否则是状态行 + 右侧按钮 */}
+        {selectedPlace ? (
+          <div className="absolute inset-x-4 bottom-4 z-[1000]">
+            <PlaceCard place={selectedPlace} lang={lang} onClose={() => setSelectedId(null)} />
+          </div>
+        ) : (
+          <>
+            <div className="pointer-events-none absolute bottom-5 left-4 z-[1000] rounded-full bg-surface/95 px-3.5 py-2 text-[12px] font-semibold text-muted shadow-[0_4px_14px_rgba(27,31,29,0.10)]">
+              {error ?? statusLine}
+            </div>
+            <div className="absolute bottom-5 right-4 z-[1000] flex flex-col gap-3">
+              <PhotoIdentify
+                lang={lang}
+                guideLang={resolveGuideLang(lang)}
+                candidates={places}
+                onSearchName={(name) => {
+                  setPickerQuery(name);
+                  setShowPicker(true);
+                }}
+              />
               <button
                 type="button"
-                onClick={() => router.back()}
-                aria-label={t(lang, "back")}
-                className="pointer-events-auto flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface/95 text-ink shadow-[0_4px_14px_rgba(27,31,29,0.10)]"
+                onClick={goToMyLocation}
+                title={t(lang, "myLocation")}
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-surface text-ink shadow-[0_6px_16px_rgba(27,31,29,0.14)]"
               >
-                <BackIcon />
+                <LocateIcon />
               </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setShowPicker(true)}
-              title={t(lang, "changePlace")}
-              className="pointer-events-auto flex h-11 min-w-0 items-center gap-2 rounded-full bg-surface/95 pl-3 pr-4 text-[14px] font-semibold shadow-[0_4px_14px_rgba(27,31,29,0.10)]"
-            >
-              <PinIcon className="shrink-0 text-accent" />
-              <span className="truncate">{placeName ?? formatCoords(center.lat, center.lon)}</span>
-            </button>
-          </div>
-
-          {pendingCenter && (
-            <button
-              type="button"
-              onClick={() => applyCenter(pendingCenter)}
-              className="absolute left-1/2 top-[76px] z-[1000] flex h-10 -translate-x-1/2 items-center gap-2 rounded-full bg-ink px-4 text-[13px] font-bold text-bg shadow-[0_6px_16px_rgba(27,31,29,0.2)]"
-            >
-              <SearchIcon size={16} />
-              <span>{t(lang, "searchThisArea")}</span>
-            </button>
-          )}
-
-          <div className="absolute bottom-5 right-5 z-[1000] flex flex-col gap-3">
-            <PhotoIdentify
-              lang={lang}
-              guideLang={resolveGuideLang(lang)}
-              candidates={places}
-              onSearchName={(name) => {
-                setPickerQuery(name);
-                setShowPicker(true);
-              }}
-            />
-            <button
-              type="button"
-              onClick={goToMyLocation}
-              title={t(lang, "myLocation")}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-surface text-ink shadow-[0_6px_16px_rgba(27,31,29,0.14)]"
-            >
-              <LocateIcon />
-            </button>
-          </div>
-        </section>
-
-        {/* 底部面板（手机可拖）/ 桌面右栏 */}
-        <section
-          ref={sheetRef}
-          style={sheetHeight !== null ? { height: sheetHeight } : undefined}
-          className={`z-[1001] flex h-[46%] shrink-0 flex-col rounded-t-sheet bg-surface shadow-[0_-10px_30px_rgba(27,31,29,0.12)] md:!h-auto md:w-[420px] md:rounded-none md:shadow-[-10px_0_30px_rgba(27,31,29,0.08)] ${
-            dragging ? "" : "transition-[height] duration-200 ease-out"
-          }`}
-        >
-          {/* 把手 + 标题行 = 拖动区 */}
-          <div className="touch-none select-none">
-            <button
-              type="button"
-              onClick={toggleSheet}
-              aria-label={t(lang, "sheetHandle")}
-              className="mx-auto flex h-10 w-full items-center justify-center md:hidden"
-            >
-              <span className="h-1 w-10 rounded-full bg-[#D8D2C6]" />
-            </button>
-            <header className="flex items-end justify-between px-6 pt-1 md:pt-5">
-              <div className="flex min-w-0 flex-col gap-0.5">
-                <h1 className="font-serif text-[28px] leading-8">{t(lang, "aroundYou")}</h1>
-                <p className="truncate text-[13px] text-muted">
-                  {loading
-                    ? t(lang, "loadingPlaces")
-                    : partial
-                      ? `${t(lang, "placesWithin", { n: places.length, r: radiusLabel })} · ${t(lang, "loadingMore")}`
-                      : t(lang, "placesWithin", { n: places.length, r: radiusLabel })}
-                </p>
-              </div>
-              <label className="flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-line px-3 text-[13px] font-semibold">
-                <span className="sr-only">{t(lang, "radius")}</span>
-                <select value={radius} onChange={(e) => setRadius(Number(e.target.value))} className="bg-transparent outline-none">
-                  {RADIUS_OPTIONS.map((r) => (
-                    <option key={r} value={r}>
-                      {formatDistance(r)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </header>
-          </div>
-
-          <div ref={listRef} className="mt-3 min-h-0 flex-1 overflow-y-auto [touch-action:pan-y]">
-            {error ? (
-              <div className="flex flex-col items-start gap-3 px-6 py-4 text-[14px] text-muted">
-                <span>{error}</span>
-                <button type="button" onClick={() => setReloadKey((k) => k + 1)} className="rounded-full bg-ink px-4 py-2 text-[13px] font-bold text-bg">
-                  {t(lang, "retry")}
-                </button>
-              </div>
-            ) : loading ? (
-              <SkeletonList />
-            ) : places.length === 0 ? (
-              <p className="px-6 py-4 text-[14px] text-muted">{t(lang, "noPlaces", { r: radiusLabel })}</p>
-            ) : (
-              <PlaceList places={places} lang={lang} selectedId={effectiveSelected} onSelect={setSelectedId} />
-            )}
-          </div>
-        </section>
+            </div>
+          </>
+        )}
       </main>
       <TabBar lang={lang} />
     </>
@@ -487,7 +398,7 @@ export function HomeScreen() {
 function SkeletonList() {
   return (
     <ul className="flex flex-col gap-1 px-3 pb-6" aria-hidden="true">
-      {Array.from({ length: 5 }).map((_, i) => (
+      {Array.from({ length: 6 }).map((_, i) => (
         <li key={i} className="flex items-center gap-3.5 px-2 py-2.5">
           <div className="h-14 w-14 shrink-0 animate-pulse rounded-[14px] bg-surface-2" />
           <div className="flex flex-1 flex-col gap-2">

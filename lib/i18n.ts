@@ -155,6 +155,14 @@ const en = {
   transcribing: "Transcribing…",
   micDenied: "Microphone access was denied.",
   asrFailed: "Couldn't hear that clearly. Try again.",
+  viewMap: "Map",
+  viewList: "List",
+  filterAll: "All",
+  moreInfo: "More info",
+  lessInfo: "Less",
+  share: "Share",
+  linkCopied: "Link copied",
+  close: "Close",
 } as const;
 
 const zh: Record<keyof typeof en, string> = {
@@ -282,6 +290,14 @@ const zh: Record<keyof typeof en, string> = {
   transcribing: "识别中…",
   micDenied: "没有拿到麦克风权限。",
   asrFailed: "没听清，再说一次。",
+  viewMap: "地图",
+  viewList: "列表",
+  filterAll: "全部",
+  moreInfo: "更多信息",
+  lessInfo: "收起",
+  share: "分享",
+  linkCopied: "链接已复制",
+  close: "关闭",
 };
 
 export const dict = { en, zh } as const;

@@ -18,16 +18,19 @@ interface Props {
   allowFollowUp?: boolean;
   /** 服务端配了语音识别才显示「按住说话」 */
   asrEnabled?: boolean;
+  /** 从地图卡片的「听导游讲讲」进来时，不用再点一次按钮 */
+  autoStart?: boolean;
 }
 
 type Turn = { role: "assistant" | "user"; content: string };
 
-/** 详情页的「听导游讲讲」：一键讲解，流式显示，逐句朗读，可以继续追问（打字或按住说话） */
-export function GuidePanel({ placeId, uiLang, initialNarration, initialGuideLang, allowFollowUp = true, asrEnabled = false }: Props) {
+/** 讲解对话：聊天式布局。导游在左（浅底气泡带头像），你在右（深底气泡），输入栏固定在底部。 */
+export function GuidePanel({ placeId, uiLang, initialNarration, initialGuideLang, allowFollowUp = true, asrEnabled = false, autoStart = false }: Props) {
   const [guideLang, setGuideLang] = useState<GuideLang>(initialGuideLang ?? uiLang);
   const [style, setStyle] = useState<"guide" | "kids">("guide");
   const [autoSpeak, setAutoSpeak] = useState(false);
   const [voiceEngine, setVoiceEngine] = useState<VoiceEnginePref>("cloud");
+  const [prefsReady, setPrefsReady] = useState(false);
   const [turns, setTurns] = useState<Turn[]>(initialNarration ? [{ role: "assistant", content: initialNarration }] : []);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,8 +43,8 @@ export function GuidePanel({ placeId, uiLang, initialNarration, initialGuideLang
     setStyle(audienceStyle(getAudience()));
     setAutoSpeak(getAutoSpeak());
     setVoiceEngine(getVoiceEngine());
-    if (initialGuideLang) return;
-    setGuideLang(resolveGuideLang(uiLang));
+    if (!initialGuideLang) setGuideLang(resolveGuideLang(uiLang));
+    setPrefsReady(true);
   }, [uiLang, initialGuideLang]);
 
   const started = turns.length > 0;
@@ -96,6 +99,15 @@ export function GuidePanel({ placeId, uiLang, initialNarration, initialGuideLang
       if (abortRef.current === controller) setStreaming(false);
     }
   }
+
+  // 从地图卡片直达：偏好读完后自动开讲（只跑一次）
+  const autoRunRef = useRef(false);
+  useEffect(() => {
+    if (!autoStart || !prefsReady || autoRunRef.current || started) return;
+    autoRunRef.current = true;
+    void run([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart, prefsReady]);
 
   function ask(e: React.FormEvent) {
     e.preventDefault();
@@ -162,24 +174,11 @@ export function GuidePanel({ placeId, uiLang, initialNarration, initialGuideLang
 
   /* ---------- 渲染 ---------- */
   const speakLabel = narrator.state === "playing" ? "pause" : narrator.state === "paused" ? "resume" : "listen";
-  const speakButton =
-    narrator.supported && latestNarration ? (
-      <button
-        type="button"
-        onClick={() => (narrator.state === "playing" ? narrator.pause() : narrator.play())}
-        aria-label={t(uiLang, speakLabel)}
-        className="flex h-9 items-center gap-1.5 rounded-full bg-ink px-3 text-[12px] font-bold text-bg"
-      >
-        {narrator.state === "playing" ? <PauseIcon size={16} /> : <PlayIcon size={16} />}
-        <span>{t(uiLang, speakLabel)}</span>
-      </button>
-    ) : null;
-
   const inputPlaceholder =
     voiceState === "recording" ? t(uiLang, "listening") : voiceState === "transcribing" ? t(uiLang, "transcribing") : t(uiLang, "askFollowUp");
 
   return (
-    <section className="flex flex-col gap-4">
+    <section className="flex flex-col gap-3">
       {!started && !streaming && (
         <div className="flex flex-col gap-2">
           <button
@@ -194,80 +193,104 @@ export function GuidePanel({ placeId, uiLang, initialNarration, initialGuideLang
         </div>
       )}
 
-      {turns.length > 0 && (
-        <div className="flex flex-col gap-3">
+      {started && (
+        <>
+          {/* 对话区标题行：名称 · 朗读 · AI 生成 */}
           <div className="flex items-center justify-between gap-3">
             <span className="flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.12em] text-accent">
               <SparkIcon size={14} />
               {t(uiLang, initialNarration ? "downloadedGuide" : "askGuide")}
             </span>
             <span className="flex items-center gap-3">
-              {speakButton}
+              {narrator.supported && latestNarration && (
+                <button
+                  type="button"
+                  onClick={() => (narrator.state === "playing" ? narrator.pause() : narrator.play())}
+                  aria-label={t(uiLang, speakLabel)}
+                  className="flex h-8 items-center gap-1.5 rounded-full bg-ink px-3 text-[12px] font-bold text-bg"
+                >
+                  {narrator.state === "playing" ? <PauseIcon size={14} /> : <PlayIcon size={14} />}
+                  <span>{t(uiLang, speakLabel)}</span>
+                </button>
+              )}
               <span className="text-[11px] text-faint">{t(uiLang, "guideDisclaimer")}</span>
             </span>
           </div>
-          {turns.map((turn, i) =>
-            turn.role === "user" ? (
-              <p key={i} className="max-w-[85%] self-end rounded-[16px] rounded-br-[6px] bg-surface-2 px-4 py-2.5 text-[14px] leading-6 text-ink">
-                {turn.content}
-              </p>
-            ) : (
-              <p key={i} className="min-w-0 whitespace-pre-wrap text-[15px] leading-7 text-ink-soft">
-                {i === lastAssistantIdx && turn.content
-                  ? splitSentences(turn.content).sentences.map((s, si) => (
-                      <span key={si} className={si === narrator.currentIndex ? "rounded bg-accent/15 text-ink" : undefined}>
-                        {s}
-                      </span>
-                    ))
-                  : turn.content || (streaming && i === turns.length - 1 ? t(uiLang, "guideThinking") : "")}
-                {streaming && i === turns.length - 1 && turn.content && (
-                  <span className="ml-0.5 inline-block h-[1em] w-[2px] translate-y-[2px] animate-pulse bg-accent align-baseline" />
-                )}
-              </p>
-            ),
-          )}
-        </div>
-      )}
 
-      {error && <p className="text-[13px] text-accent">{error}</p>}
-
-      {started && allowFollowUp && (
-        <form onSubmit={ask} className="flex flex-col gap-2">
-          <div className="flex gap-2">
-            {canRecord && (
-              <button
-                type="button"
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  void startRecording();
-                }}
-                onPointerUp={stopRecording}
-                onPointerLeave={stopRecording}
-                onPointerCancel={stopRecording}
-                disabled={streaming || voiceState === "transcribing"}
-                aria-label={t(uiLang, "holdToTalk")}
-                title={t(uiLang, "holdToTalk")}
-                className={`flex h-12 w-12 shrink-0 select-none items-center justify-center rounded-2xl border transition-colors [touch-action:none] ${
-                  voiceState === "recording" ? "border-accent bg-accent text-bg" : "border-line bg-surface text-ink"
-                } disabled:opacity-60`}
-              >
-                <MicIcon size={20} />
-              </button>
+          {/* 气泡 */}
+          <div className="flex flex-col gap-3">
+            {turns.map((turn, i) =>
+              turn.role === "user" ? (
+                <div key={i} className="flex justify-end">
+                  <p className="max-w-[86%] whitespace-pre-wrap rounded-[18px] rounded-br-[6px] bg-ink px-4 py-2.5 text-[15px] leading-6 text-bg">{turn.content}</p>
+                </div>
+              ) : (
+                <div key={i} className="flex items-end gap-2">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent">
+                    <SparkIcon size={14} />
+                  </span>
+                  <p className="min-w-0 max-w-[86%] whitespace-pre-wrap rounded-[18px] rounded-bl-[6px] bg-surface-2 px-4 py-3 text-[15px] leading-7 text-ink-soft">
+                    {i === lastAssistantIdx && turn.content
+                      ? splitSentences(turn.content).sentences.map((s, si) => (
+                          <span key={si} className={si === narrator.currentIndex ? "rounded bg-accent/15 text-ink" : undefined}>
+                            {s}
+                          </span>
+                        ))
+                      : turn.content || (streaming && i === turns.length - 1 ? t(uiLang, "guideThinking") : "")}
+                    {streaming && i === turns.length - 1 && turn.content && (
+                      <span className="ml-0.5 inline-block h-[1em] w-[2px] translate-y-[2px] animate-pulse bg-accent align-baseline" />
+                    )}
+                  </p>
+                </div>
+              ),
             )}
-            <input
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder={inputPlaceholder}
-              maxLength={300}
-              disabled={streaming}
-              className="h-12 min-w-0 flex-1 rounded-2xl border border-line bg-surface px-4 text-[15px] outline-none focus:border-ink disabled:opacity-60"
-            />
-            <button type="submit" disabled={streaming || !question.trim()} className="h-12 rounded-2xl bg-ink px-5 text-[15px] font-bold text-bg disabled:opacity-40">
-              {t(uiLang, "send")}
-            </button>
           </div>
-          {voiceError && <p className="text-[13px] text-accent">{voiceError}</p>}
-        </form>
+
+          {error && <p className="text-[13px] text-accent">{error}</p>}
+
+          {/* 输入栏：贴在屏幕底部，读长讲解时也一直在 */}
+          {allowFollowUp && (
+            <form
+              onSubmit={ask}
+              className="sticky bottom-0 -mx-6 mt-1 flex flex-col gap-1 border-t border-line bg-surface/95 px-6 pb-[max(6px,env(safe-area-inset-bottom))] pt-1.5 backdrop-blur"
+            >
+              <div className="flex gap-2">
+                {canRecord && (
+                  <button
+                    type="button"
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      void startRecording();
+                    }}
+                    onPointerUp={stopRecording}
+                    onPointerLeave={stopRecording}
+                    onPointerCancel={stopRecording}
+                    disabled={streaming || voiceState === "transcribing"}
+                    aria-label={t(uiLang, "holdToTalk")}
+                    title={t(uiLang, "holdToTalk")}
+                    className={`flex h-11 w-11 shrink-0 select-none items-center justify-center rounded-full border transition-colors [touch-action:none] ${
+                      voiceState === "recording" ? "border-accent bg-accent text-bg" : "border-line bg-surface text-ink"
+                    } disabled:opacity-60`}
+                  >
+                    <MicIcon size={20} />
+                  </button>
+                )}
+                <input
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  placeholder={inputPlaceholder}
+                  maxLength={300}
+                  disabled={streaming}
+                  className="h-11 min-w-0 flex-1 rounded-full border border-line bg-surface px-4 text-[15px] outline-none focus:border-ink disabled:opacity-60"
+                />
+                <button type="submit" disabled={streaming || !question.trim()} className="h-11 rounded-full bg-ink px-4 text-[14px] font-bold text-bg disabled:opacity-40">
+                  {t(uiLang, "send")}
+                </button>
+              </div>
+              {voiceError && <p className="text-[12px] text-accent">{voiceError}</p>}
+            </form>
+          )}
+        </>
       )}
     </section>
   );

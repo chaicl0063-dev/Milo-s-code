@@ -103,7 +103,7 @@ export async function searchNearby(lat: number, lon: number, lang: string, radiu
         const e = p.wikidata ? entities.get(p.wikidata) : undefined;
         if (!e) continue;
         p.description ??= e.description;
-        if (!p.thumbnail && e.imageFile) p.thumbnail = commonsThumb(e.imageFile, 240);
+        if (!p.thumbnail && e.imageFile) p.thumbnail = commonsThumb(e.imageFile, 480);
         p.wikipedia ??= e.sitelink;
       }
       sources.wikidata = "ok";

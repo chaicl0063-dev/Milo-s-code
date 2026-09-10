@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     format: "jsonv2",
     lat: lat.toFixed(3),
     lon: lon.toFixed(3),
-    zoom: "14",
+    zoom: "15",
     "accept-language": lang === "zh" ? "zh-CN,zh,en" : `${lang},en`,
   });
   try {
@@ -33,8 +33,9 @@ export async function GET(req: NextRequest) {
     const d = await res.json();
     const a = d?.address ?? {};
     const city: string | undefined = a.city ?? a.town ?? a.village ?? a.municipality ?? a.county ?? a.state;
-    const area: string | undefined = a.city_district ?? a.suburb ?? a.quarter ?? a.neighbourhood ?? a.borough;
-    const parts = [city, area && area !== city ? area : undefined].filter(Boolean);
+    // 巴黎这种 city_district 和 city 同名的，跳过重复项，往下取第七区这一级
+    const area = [a.city_district, a.borough, a.suburb, a.quarter, a.neighbourhood].find((v): v is string => typeof v === "string" && v.length > 0 && v !== city);
+    const parts = [city, area].filter(Boolean);
     const name = parts.length ? parts.join(" · ") : (d?.name as string | undefined) ?? null;
     return NextResponse.json({ name, country: a.country ?? null });
   } catch (err) {

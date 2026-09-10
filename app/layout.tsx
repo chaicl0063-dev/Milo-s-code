@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, Manrope } from "next/font/google";
 import Script from "next/script";
 import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
 import "./globals.css";
 import { LanguageProvider } from "@/components/LanguageProvider";
 import { PwaRegister } from "@/components/PwaRegister";
