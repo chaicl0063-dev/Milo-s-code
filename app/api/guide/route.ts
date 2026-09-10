@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPlaceDetail } from "@/lib/places/detail";
 import { isGuideLang, isLang } from "@/lib/i18n";
+import { DEFAULT_PERSONA, isPersona } from "@/lib/personas";
 import { DEFAULT_STYLE, LlmError, isGuideStyle, llmConfigured, openingUserMessage, streamChat, systemPrompt, type ChatMessage } from "@/lib/guide";
 
 /**
  * POST /api/guide
- * body: { id, lang, dataLang?, style?, messages?: [{role:"assistant"|"user", content}] }
+ * body: { id, lang, dataLang?, style?, persona?, messages?: [{role:"assistant"|"user", content}] }
  *   lang     讲解语言（8 种之一）
  *   dataLang 取资料用的语言（en / zh，默认 en）；Wikipedia 的 id 是分语言的，要和 id 匹配
  * 不带 messages 表示要「首次讲解」，带 messages 表示在已有讲解基础上追问。
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "llm_not_configured" }, { status: 503 });
   }
 
-  let body: { id?: string; lang?: string; dataLang?: string; style?: string; messages?: ChatMessage[] };
+  let body: { id?: string; lang?: string; dataLang?: string; style?: string; persona?: string; messages?: ChatMessage[] };
   try {
     body = await req.json();
   } catch {
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
   const { id, lang } = body;
   const dataLang = isLang(body.dataLang) ? body.dataLang : "en";
   const style = body.style ?? DEFAULT_STYLE; // 成人 → guide，儿童 → kids
+  const persona = isPersona(body.persona) ? body.persona : DEFAULT_PERSONA;
   if (!id || typeof id !== "string" || id.length > 300) return NextResponse.json({ error: "missing id" }, { status: 400 });
   if (!isGuideLang(lang)) return NextResponse.json({ error: "invalid lang" }, { status: 400 });
   if (!isGuideStyle(style)) return NextResponse.json({ error: "invalid style" }, { status: 400 });
@@ -42,7 +44,7 @@ export async function POST(req: NextRequest) {
     .map((m) => ({ role: m.role, content: m.content.slice(0, 1000) }));
   const isOpening = history.length === 0;
   // v2：提示词改过后旧缓存作废
-  const cacheKey = `v4:${lang}:${dataLang}:${style}:${id}`;
+  const cacheKey = `v5:${lang}:${dataLang}:${style}:${persona}:${id}`;
 
   if (isOpening && narrationCache.has(cacheKey)) {
     return new Response(narrationCache.get(cacheKey)!, {
@@ -54,7 +56,7 @@ export async function POST(req: NextRequest) {
   if (!place) return NextResponse.json({ error: "place not found" }, { status: 404 });
 
   const messages: ChatMessage[] = [
-    { role: "system", content: systemPrompt(place, lang, style) },
+    { role: "system", content: systemPrompt(place, lang, style, persona) },
     ...(isOpening ? [{ role: "user" as const, content: openingUserMessage(lang, style) }] : history),
   ];
 

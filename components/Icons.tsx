@@ -107,6 +107,15 @@ export function SpeakerIcon({ size = 20, className }: IconProps) {
   );
 }
 
+export function SpeakerOffIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M4 10v4h3l4 3.5V6.5L7 10H4z" />
+      <path d="M16 9l5 5M21 9l-5 5" />
+    </svg>
+  );
+}
+
 export function PauseIcon({ size = 20, className }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">

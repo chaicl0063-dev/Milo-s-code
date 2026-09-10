@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { GUIDE_LANGS, GUIDE_LANG_LABEL, t, type GuideLang, type Lang } from "@/lib/i18n";
-import { browserGuideLang, setAudience, setGuideLangPref, setOnboarded, type Audience } from "@/lib/prefs";
+import { browserGuideLang, setGuideLangPref, setOnboarded, setPersona } from "@/lib/prefs";
+import { DEFAULT_PERSONA, type PersonaId } from "@/lib/personas";
+import { PersonaPicker } from "@/components/PersonaPicker";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { Segmented } from "@/components/SubpageShell";
 import { SparkIcon } from "@/components/Icons";
@@ -12,10 +14,10 @@ interface Props {
   onDone: () => void;
 }
 
-/** 首次进入的第一步：选讲解语言和受众。第二步（定位授权）由首页的正常流程接管。 */
+/** 首次进入的第一步：选讲解语言和导游人物。第二步（定位授权）由首页的正常流程接管。 */
 export function Onboarding({ lang, onDone }: Props) {
   const [guideLang, setGuideLang] = useState<GuideLang>(lang);
-  const [audience, setAud] = useState<Audience>("adult");
+  const [persona, setPersonaState] = useState<PersonaId>(DEFAULT_PERSONA);
 
   // 浏览器语言只能在客户端读
   useEffect(() => {
@@ -25,7 +27,7 @@ export function Onboarding({ lang, onDone }: Props) {
 
   function finish() {
     setGuideLangPref(guideLang);
-    setAudience(audience);
+    setPersona(persona);
     setOnboarded();
     onDone();
   }
@@ -54,15 +56,8 @@ export function Onboarding({ lang, onDone }: Props) {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-[12px] font-bold uppercase tracking-[0.12em] text-faint">{t(lang, "audience")}</h2>
-        <Segmented
-          options={[
-            { value: "adult", label: t(lang, "audienceAdult") },
-            { value: "kids", label: t(lang, "audienceKids") },
-          ]}
-          value={audience}
-          onChange={(v) => setAud(v as Audience)}
-        />
+        <h2 className="text-[12px] font-bold uppercase tracking-[0.12em] text-faint">{t(lang, "yourGuide")}</h2>
+        <PersonaPicker value={persona} onChange={setPersonaState} lang={lang} />
       </section>
 
       <div className="flex-1" />

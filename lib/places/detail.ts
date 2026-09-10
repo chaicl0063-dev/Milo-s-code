@@ -7,20 +7,71 @@ import { amapDetail, amapEnabled } from "@/lib/places/amap";
 import { categoryFromTags, nameFromTags, overpassElement, parseShortOsmId, parseWikipediaTag, elementCoords } from "@/lib/places/overpass";
 import { commonsThumb, wikidataEntities, type WikidataEntity } from "@/lib/places/wikidata";
 import { parsePlaceId, type PlaceDetail } from "@/lib/places/types";
+import { unescoByQid, unescoHeritageName, unescoMatch, unescoName, unescoUrl } from "@/lib/places/unesco";
+import { wikivoyageGuide } from "@/lib/places/wikivoyage";
 
 export async function getPlaceDetail(lang: string, id: string): Promise<PlaceDetail | null> {
   const parsed = parsePlaceId(id);
   if (!parsed) return null;
+  let detail: PlaceDetail | null;
   switch (parsed.prefix) {
     case "wp":
-      return fromWikipedia(lang, parsed.rest);
+      detail = await fromWikipedia(lang, parsed.rest);
+      break;
     case "wd":
-      return fromWikidata(lang, parsed.rest);
+      detail = await fromWikidata(lang, parsed.rest);
+      break;
     case "osm":
-      return fromOsm(lang, parsed.rest);
+      detail = await fromOsm(lang, parsed.rest);
+      break;
     case "amap":
-      return amapEnabled() ? amapDetail(parsed.rest) : null;
+      detail = amapEnabled() ? await amapDetail(parsed.rest) : null;
+      break;
+    case "unesco":
+      detail = await fromUnesco(lang, parsed.rest);
+      break;
   }
+  if (!detail) return null;
+  return enrich(lang, detail);
+}
+
+/** 给任何来源的详情补两样：是不是世界遗产、最近的 Wikivoyage 目的地指南 */
+async function enrich(lang: string, detail: PlaceDetail): Promise<PlaceDetail> {
+  const qid = detail.links.wikidata?.split("/").pop();
+  const site = unescoMatch({ wikidata: qid, lat: detail.coordinates?.lat, lon: detail.coordinates?.lon });
+  if (site && !detail.unesco) {
+    detail.unesco = { whs: site.whs ?? site.qid, name: unescoHeritageName(site, lang), url: unescoUrl(site) };
+    detail.links.unesco = unescoUrl(site);
+  }
+  if (detail.coordinates && !detail.travelGuide) {
+    const guide = await wikivoyageGuide(detail.coordinates.lat, detail.coordinates.lon, lang).catch(() => null);
+    if (guide) detail.travelGuide = guide;
+  }
+  return detail;
+}
+
+/** 世界遗产条目：静态表给名字/坐标/编号，Wikidata + Wikipedia 给正文和图 */
+async function fromUnesco(lang: string, qid: string): Promise<PlaceDetail | null> {
+  const site = unescoByQid(qid);
+  if (!site) return null;
+  const entities = await wikidataEntities([qid], lang).catch(() => new Map<string, WikidataEntity>());
+  const e = entities.get(qid);
+  const base: Partial<PlaceDetail> = {
+    id: `unesco:${qid}`,
+    source: "unesco",
+    title: unescoName(site, lang),
+    coordinates: { lat: site.lat, lon: site.lon },
+    category: "historic",
+    unesco: { whs: site.whs ?? qid, name: unescoHeritageName(site, lang), url: unescoUrl(site) },
+    links: { unesco: unescoUrl(site) },
+  };
+  if (e) return detailFromEntity(lang, e, base);
+  return {
+    ...(base as PlaceDetail),
+    description: lang === "zh" ? "UNESCO 世界遗产" : "UNESCO World Heritage",
+    extract: "",
+    image: site.image ? { source: commonsThumb(site.image, 960) } : undefined,
+  };
 }
 
 async function fromWikipedia(lang: string, title: string): Promise<PlaceDetail | null> {

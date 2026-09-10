@@ -6,7 +6,7 @@
  *  - 地图瓦片和 Wikimedia 图片：缓存优先 + 后台更新，并限制条数防止撑爆
  * 改这个文件后把 VERSION 加一，旧缓存会被清掉。
  */
-const VERSION = "v3";
+const VERSION = "v4";
 const SHELL = `shell-${VERSION}`;
 const STATIC = `static-${VERSION}`;
 const TILES = `tiles-${VERSION}`;

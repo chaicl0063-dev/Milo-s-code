@@ -7,7 +7,7 @@ import { categoryLabel } from "@/lib/i18n";
 import { placeHref } from "@/lib/links";
 import { useFavorites, type Favorite } from "@/lib/favorites";
 import { downloadPlace, removeSaved, savedKey, useSavedKeys } from "@/lib/offline";
-import { audienceStyle, getAudience, resolveGuideLang } from "@/lib/prefs";
+import { audienceStyle, getAudience, getPersona, resolveGuideLang } from "@/lib/prefs";
 import { useLanguage } from "@/components/LanguageProvider";
 import { SubpageShell } from "@/components/SubpageShell";
 import { FavoriteStar } from "@/components/FavoriteStar";
@@ -31,7 +31,7 @@ export function FavoritesScreen() {
     setFailed(null);
     setBusy((s) => new Set(s).add(key));
     try {
-      await downloadPlace(fav, resolveGuideLang(lang), audienceStyle(getAudience()));
+      await downloadPlace(fav, resolveGuideLang(lang), audienceStyle(getAudience()), getPersona());
     } catch {
       setFailed(key);
     } finally {

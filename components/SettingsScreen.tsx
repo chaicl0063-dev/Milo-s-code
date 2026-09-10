@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GUIDE_LANGS, GUIDE_LANG_LABEL, LANGS, t, type GuideLang, type Lang } from "@/lib/i18n";
-import { clearAllLocalData, getAudience, getAutoSpeak, getVoiceEngine, resolveGuideLang, setAudience, setAutoSpeak, setGuideLangPref, setVoiceEngine, type Audience, type VoiceEnginePref } from "@/lib/prefs";
+import { clearAllLocalData, getAudience, getAutoSpeak, getPersona, getVoiceEngine, resolveGuideLang, setAudience, setAutoSpeak, setGuideLangPref, setPersona, setVoiceEngine, type Audience, type VoiceEnginePref } from "@/lib/prefs";
+import { DEFAULT_PERSONA, type PersonaId } from "@/lib/personas";
+import { PersonaPicker } from "@/components/PersonaPicker";
 import { speechSupported } from "@/lib/speech";
 import { useLanguage } from "@/components/LanguageProvider";
 import { Section, Segmented, SubpageShell } from "@/components/SubpageShell";
@@ -16,6 +18,7 @@ export function SettingsScreen() {
   const router = useRouter();
   const [guideLang, setGuideLangState] = useState<GuideLang>(lang);
   const [audience, setAudienceState] = useState<Audience>("adult");
+  const [persona, setPersonaState] = useState<PersonaId>(DEFAULT_PERSONA);
   const [autoSpeak, setAutoSpeakState] = useState(false);
   const [voiceEngine, setVoiceEngineState] = useState<VoiceEnginePref>("cloud");
   const [canSpeak, setCanSpeak] = useState(false);
@@ -26,6 +29,7 @@ export function SettingsScreen() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setGuideLangState(resolveGuideLang(lang));
     setAudienceState(getAudience());
+    setPersonaState(getPersona());
     setAutoSpeakState(getAutoSpeak());
     setVoiceEngineState(getVoiceEngine());
     setCanSpeak(speechSupported());
@@ -85,6 +89,17 @@ export function SettingsScreen() {
             setGuideLangState(v as GuideLang);
             setGuideLangPref(v as GuideLang);
           }}
+        />
+      </Section>
+
+      <Section title={t(lang, "yourGuide")}>
+        <PersonaPicker
+          value={persona}
+          onChange={(v) => {
+            setPersonaState(v);
+            setPersona(v);
+          }}
+          lang={lang}
         />
       </Section>
 

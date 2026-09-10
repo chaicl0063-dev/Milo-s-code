@@ -6,6 +6,7 @@
  *   LLM_MODEL     例如 glm-4.7-flash
  */
 import type { PlaceDetail } from "@/lib/places/types";
+import { DEFAULT_PERSONA, PERSONA, type PersonaId } from "@/lib/personas";
 import type { GuideLang } from "@/lib/i18n";
 
 export const GUIDE_STYLES = ["guide", "history", "architecture", "stories", "kids"] as const;
@@ -82,13 +83,16 @@ function factSheet(place: PlaceDetail): string {
   if (place.coordinates) lines.push(`Coordinates: ${place.coordinates.lat.toFixed(4)}, ${place.coordinates.lon.toFixed(4)}`);
   if (place.extract) lines.push(`Encyclopedia summary: ${place.extract}`);
   else lines.push("Encyclopedia summary: (none available)");
+  if (place.unesco) lines.push(`UNESCO World Heritage: yes (${place.unesco.name})`);
+  if (place.travelGuide) lines.push(`Travel guide for the surrounding area (Wikivoyage, "${place.travelGuide.title}"): ${place.travelGuide.extract.slice(0, 600)}`);
   return lines.join("\n");
 }
 
-export function systemPrompt(place: PlaceDetail, lang: GuideLang, style: GuideStyle): string {
+export function systemPrompt(place: PlaceDetail, lang: GuideLang, style: GuideStyle, persona: PersonaId = DEFAULT_PERSONA): string {
   const thin = !place.extract;
   return [
-    "You are a warm, knowledgeable local tour guide. The traveler is standing right in front of this place and listening to you.",
+    "You are a knowledgeable local tour guide. The traveler is standing right in front of this place and listening to you.",
+    PERSONA[persona].brief + " Do not introduce yourself by name unless the traveler asks who you are.",
     `Speak in ${LANGUAGE_NAME[lang]} only.`,
     STYLE_BRIEF[style],
     "Rules:",

@@ -13,6 +13,7 @@ import { SourceLinks } from "@/components/SourceLinks";
 import { FavoriteStar } from "@/components/FavoriteStar";
 import { ShareButton } from "@/components/ShareButton";
 import { DetailFacts, type Fact } from "@/components/DetailFacts";
+import { DetailSources } from "@/components/DetailSources";
 import { PinIcon } from "@/components/Icons";
 
 type Params = Promise<{ lang: string; id: string }>;
@@ -107,6 +108,8 @@ export default async function PlacePage({ params, searchParams }: { params: Para
         </div>
 
         {llmConfigured() && <GuidePanel placeId={place.id} uiLang={lang} asrEnabled={asrConfigured()} autoStart={guide === "1"} />}
+
+        <DetailSources place={place} lang={lang} />
 
         <SourceLinks links={place.links} lang={lang} />
       </article>

@@ -26,10 +26,12 @@ export function speechSupported(): boolean {
  * 最后一段如果没有句尾标点，视为「还没写完」（流式输出时用）。
  */
 export function splitSentences(text: string): { sentences: string[]; lastComplete: boolean } {
-  const parts = text.match(/[^。！？!?\n]+[。！？!?]*[”」』"')）]*\s*|\n+/g) ?? [];
+  // 英文句号后面跟空格才算句子结束（3.5 这类小数不会被切开），先换成换行再统一切
+  const prepared = text.replace(/\.([”」』"')）]*)[ \t]+/g, ".$1\n");
+  const parts = prepared.match(/[^。！？!?\n]+[。！？!?]*[”」』"')）]*\s*|\n+/g) ?? [];
   const sentences = parts.map((p) => p.trim()).filter((p) => p.length > 0);
   const tail = sentences[sentences.length - 1] ?? "";
-  const lastComplete = /[。！？!?][”」』"')）]*$/.test(tail);
+  const lastComplete = /[。！？!?.][”」』"')）]*$/.test(tail);
   return { sentences, lastComplete };
 }
 

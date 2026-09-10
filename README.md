@@ -12,10 +12,13 @@
 | OpenStreetMap（Overpass） | 景点、博物馆、观景点、公共艺术、历史遗迹、宗教场所、剧院 | 不需要 |
 | Wikidata | 给 OSM 的点补描述、图片、维基百科链接；也是三个来源合并去重的依据 | 不需要 |
 | 高德（可选） | 中国境内的景点和博物馆，含地址、电话、开放时间 | 需要 `AMAP_KEY`，没配就跳过 |
+| UNESCO 世界遗产 | 静态表 `lib/data/unesco.json`（约 8800 条，含系列遗产的组成部分），由 `node scripts/fetch-unesco.mjs` 从 Wikidata 抓；周边列表和详情页给世界遗产打标并链到官网 | 不需要 |
+| Wikivoyage | 详情页「更多来源」里最近的目的地指南摘要（10 公里内，优先城市/街区条目），也喂给 AI 讲解 | 不需要 |
+| TripAdvisor 论坛 | 没有开放接口，详情页只放一个「旅行者论坛观点 · 付费预览」占位，以后由 AI 检索 | 暂无 |
 
 合并规则在 `lib/places/nearby.ts`：Wikidata 编号相同视为同一地点；否则名字归一化后相同且 120 米内视为同一地点。高德坐标是 GCJ-02，进出都在 `lib/geo.ts` 里转成 WGS-84。
 
-地点 id 带来源前缀：`wp:Eiffel_Tower`、`osm:n123~Q243`（`~Q` 是顺带的 Wikidata 编号，Overpass 超时时退回 Wikidata）、`wd:Q243`、`amap:B0FFG...`。
+地点 id 带来源前缀：`wp:Eiffel_Tower`、`osm:n123~Q243`（`~Q` 是顺带的 Wikidata 编号，Overpass 超时时退回 Wikidata）、`wd:Q243`、`amap:B0FFG...`、`unesco:Q80290`。
 
 ## 本地运行
 
@@ -75,6 +78,8 @@ scripts/dev.mjs                开发启动器，负责把 .env.local 里的代�
 
 详情页的「听导游讲讲」调 `/api/guide`，服务端把地点的事实（名字、描述、百科摘要、地址等）整理成资料卡喂给模型，用导游口吻生成 150 到 250 字的口语化介绍，流式返回，可以继续追问。界面上不再选风格，接口仍接受 `style` 参数（history / architecture / stories / kids），默认综合讲解。讲解语言可在「我的」里单独设置。
 
+导游人物在 `lib/personas.ts`：Mia（女声，温和爱讲细节）和 Milo（男声，爽朗爱讲故事），首次引导时选，设置里可改。人物决定朗读的声音性别、系统提示里的性格说明和对话区的头像；讲解缓存键也带人物。
+
 - 走 OpenAI 兼容接口，服务商由 `LLM_BASE_URL` / `LLM_API_KEY` / `LLM_MODEL` 三个环境变量决定，Key 只在服务端。
 - 主模型被限流（429）时自动换 `LLM_FALLBACK_MODEL`；用智谱时默认退到 glm-4-flash-250414。
 - 首次讲解按「语言+风格+地点」在服务实例内存里缓存，同一地方不重复花额度。
@@ -83,7 +88,7 @@ scripts/dev.mjs                开发启动器，负责把 .env.local 里的代�
 
 ## 语音与拍照
 
-- **朗读**：默认「自然音色」，即 `/api/tts` 用 `msedge-tts` 调微软 Edge「大声朗读」背后的神经网络语音（晓晓、Jenny、Nanami 等，免费无 Key，但非官方签约接口，失效时前端自动退回手机自带语音）；设置里可切「手机自带」（`speechSynthesis`，离线可用）。`lib/useNarrator.ts` 按句切开逐句读、边读边预取下一句、当前句高亮；设置里有「自动朗读」开关。音频响应带一天的缓存头。
+- **朗读**：默认「自然音色」，即 `/api/tts` 用 `msedge-tts` 调微软 Edge「大声朗读」背后的神经网络语音（每种语言一男一女，随导游人物切换：Mia 用晓晓、Jenny 等，Milo 用云希、Guy 等；免费无 Key，但非官方签约接口，失效时前端自动退回手机自带语音）；设置里可切「手机自带」（`speechSynthesis`，离线可用）。`lib/useNarrator.ts` 按句切开逐句读、边读边预取下一句、当前句高亮；设置里有「自动朗读」开关。音频响应带一天的缓存头。
 - **拍照识别**：首页地图右下的相机按钮，照片前端压到 1024 像素后发 `/api/identify`，走多模态模型（智谱时默认 `glm-4v-flash`，可用 `LLM_VISION_MODEL` 覆盖），同时把周边地点列表给模型做匹配，匹配上直接跳详情，否则用识别出的名字去搜索。照片不落盘。
 - **语音提问**：追问框旁「按住说话」，录音发 `/api/transcribe`，转发到任何 OpenAI 兼容的 `/audio/transcriptions`（`ASR_BASE_URL` / `ASR_API_KEY` / `ASR_MODEL`，见 `.env.example`）。没配就不显示按钮。
 
@@ -92,7 +97,8 @@ scripts/dev.mjs                开发启动器，负责把 .env.local 里的代�
 1. **MVP（已完成）**：定位、地图、周边列表、详情、en/zh、部署 Vercel。
 2. **AI 讲解（已完成）**：`/api/guide` 流式讲解、风格选择、追问、限流降级。
 3. **PWA、收藏、离线、搜索、高德、拍照识别（已完成）**。
-4. **语音（已完成朗读；语音提问需配 ASR 服务）**。以后：路线。
+4. **语音（已完成朗读；语音提问需配 ASR 服务）**。
+5. **导游人物、UNESCO / Wikivoyage 数据、开屏（已完成）**。以后：路线、AI 行程规划等 AI 功能入口。
 
 ## PWA
 

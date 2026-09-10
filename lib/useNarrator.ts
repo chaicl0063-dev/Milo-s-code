@@ -10,11 +10,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GuideLang } from "@/lib/i18n";
 import { GUIDE_LANG_BCP47, pickVoice, speechSupported, splitSentences } from "@/lib/speech";
+import type { VoiceGender } from "@/lib/personas";
 
 export type NarratorState = "idle" | "playing" | "paused" | "done";
 export type VoiceEngine = "cloud" | "browser";
 
-export function useNarrator(text: string, lang: GuideLang, streaming: boolean, engine: VoiceEngine = "cloud") {
+export function useNarrator(text: string, lang: GuideLang, streaming: boolean, engine: VoiceEngine = "cloud", voice: VoiceGender = "female") {
   const [state, setState] = useState<NarratorState>("idle");
   const [currentIndex, setCurrentIndex] = useState(-1);
   const browserOk = speechSupported();
@@ -25,6 +26,7 @@ export function useNarrator(text: string, lang: GuideLang, streaming: boolean, e
   const streamingRef = useRef(streaming);
   const langRef = useRef(lang);
   const engineRef = useRef<VoiceEngine>(engine);
+  const voiceRef = useRef<VoiceGender>(voice);
   const nextIdxRef = useRef(0);
   const stateRef = useRef<NarratorState>("idle");
   const busyRef = useRef(false); // 当前有没有一句在读或在取
@@ -38,7 +40,8 @@ export function useNarrator(text: string, lang: GuideLang, streaming: boolean, e
     streamingRef.current = streaming;
     langRef.current = lang;
     engineRef.current = engine;
-  }, [text, streaming, lang, engine]);
+    voiceRef.current = voice;
+  }, [text, streaming, lang, engine, voice]);
 
   const setBoth = useCallback((s: NarratorState) => {
     stateRef.current = s;
@@ -54,10 +57,10 @@ export function useNarrator(text: string, lang: GuideLang, streaming: boolean, e
 
   /** 取某句的音频地址（带缓存），失败返回 null */
   const fetchAudioUrl = useCallback((sentence: string): Promise<string | null> => {
-    const key = `${langRef.current}:${sentence}`;
+    const key = `${langRef.current}:${voiceRef.current}:${sentence}`;
     const cached = urlCacheRef.current.get(key);
     if (cached) return cached;
-    const p = fetch(`/api/tts?lang=${langRef.current}&text=${encodeURIComponent(sentence)}`)
+    const p = fetch(`/api/tts?lang=${langRef.current}&voice=${voiceRef.current}&text=${encodeURIComponent(sentence)}`)
       .then(async (r) => (r.ok ? URL.createObjectURL(await r.blob()) : null))
       .catch(() => null);
     urlCacheRef.current.set(key, p);

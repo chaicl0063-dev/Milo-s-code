@@ -42,7 +42,10 @@ export function PlaceList({ places, lang, selectedId, onSelect }: Props) {
                 )}
               </div>
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <div className="truncate text-[16px] font-bold leading-5">{p.title}</div>
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <span className="truncate text-[16px] font-bold leading-5">{p.title}</span>
+                  {p.unesco && <span className="shrink-0 rounded-full bg-ink px-1.5 py-0.5 text-[9px] font-bold leading-none text-bg">UNESCO</span>}
+                </div>
                 {secondary && <div className="truncate text-[13px] text-muted">{secondary}</div>}
               </div>
             </Link>

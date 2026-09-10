@@ -87,7 +87,7 @@ async function readAll(res: Response): Promise<string> {
 /**
  * 下载一个地点：资料 + 讲解 + 头图。讲解或头图拿不到不算失败，资料拿不到才算。
  */
-export async function downloadPlace(fav: Favorite, guideLang: GuideLang, style: "guide" | "kids" = "guide"): Promise<SavedPlace> {
+export async function downloadPlace(fav: Favorite, guideLang: GuideLang, style: "guide" | "kids" = "guide", persona?: string): Promise<SavedPlace> {
   const placeRes = await fetch(`/api/place?lang=${fav.lang}&id=${encodeURIComponent(fav.id)}`);
   if (!placeRes.ok) throw new Error(`place HTTP ${placeRes.status}`);
   const place = (await placeRes.json()) as PlaceDetail;
@@ -96,7 +96,7 @@ export async function downloadPlace(fav: Favorite, guideLang: GuideLang, style: 
     fetch("/api/guide", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: fav.id, lang: guideLang, dataLang: fav.lang, style }),
+      body: JSON.stringify({ id: fav.id, lang: guideLang, dataLang: fav.lang, style, persona }),
     })
       .then(readAll)
       .catch(() => ""),

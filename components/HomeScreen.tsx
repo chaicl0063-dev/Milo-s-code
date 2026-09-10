@@ -17,6 +17,7 @@ import { PhotoIdentify } from "@/components/PhotoIdentify";
 import { PlaceList } from "@/components/PlaceList";
 import { PlaceCard } from "@/components/PlaceCard";
 import { HomeHeader, type HomeFilter, type HomeView } from "@/components/HomeHeader";
+import { Splash } from "@/components/Splash";
 import { TabBar, TAB_BAR_HEIGHT } from "@/components/TabBar";
 import { LocateIcon, SearchIcon } from "@/components/Icons";
 
@@ -308,6 +309,7 @@ export function HomeScreen() {
   if (view === "list") {
     return (
       <>
+        <Splash ready={hasResults} />
         <main className="mx-auto flex w-full max-w-[520px] flex-col" style={{ paddingBottom: `calc(${TAB_BAR_HEIGHT + 16}px + env(safe-area-inset-bottom))` }}>
           {header}
           <p className="px-6 pb-1 pt-2 text-[13px] text-muted">{statusLine}</p>
@@ -333,6 +335,7 @@ export function HomeScreen() {
 
   return (
     <>
+      <Splash ready={hasResults} />
       <main className="relative" style={{ height: `calc(100dvh - ${TAB_BAR_HEIGHT}px - env(safe-area-inset-bottom))` }}>
         <PlacesMap
           center={center}

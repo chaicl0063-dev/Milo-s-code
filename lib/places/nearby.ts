@@ -8,6 +8,7 @@ import { wikipediaNearby } from "@/lib/wikipedia";
 import { amapEnabled, amapNearby } from "@/lib/places/amap";
 import { overpassNearby } from "@/lib/places/overpass";
 import { commonsThumb, wikidataEntities } from "@/lib/places/wikidata";
+import { unescoNearby } from "@/lib/places/unesco";
 import type { Place, PlaceSource } from "@/lib/places/types";
 
 export type SourceStatus = "ok" | "error" | "skipped";
@@ -44,6 +45,7 @@ function mergeInto(a: Place, b: Place): void {
   a.category ??= b.category;
   a.wikidata ??= b.wikidata;
   a.wikipedia ??= b.wikipedia;
+  a.unesco ??= b.unesco;
 }
 
 /**
@@ -82,7 +84,7 @@ export interface NearbyOptions {
 
 export async function searchNearby(lat: number, lon: number, lang: string, radiusMeters: number, options: NearbyOptions = {}): Promise<NearbyResult> {
   const { limit = 60, fast = false } = options;
-  const sources: SourceReport = { wikipedia: "skipped", osm: "skipped", wikidata: "skipped", amap: "skipped" };
+  const sources: SourceReport = { wikipedia: "skipped", osm: "skipped", wikidata: "skipped", amap: "skipped", unesco: "ok" };
   const useAmap = !fast && amapEnabled() && isInChina(lat, lon);
 
   const [wpResult, osmResult, amapResult] = await Promise.allSettled([
@@ -113,7 +115,10 @@ export async function searchNearby(lat: number, lon: number, lang: string, radiu
     }
   }
 
-  // 优先级：Wikipedia（有正文）> 高德（境内更准）> OSM
-  const places = dedupe([...wikipedia, ...amap, ...osm]).sort((a, b) => a.dist - b.dist).slice(0, limit);
+  // 世界遗产：静态表，零成本；带 Wikidata 编号，和 Wikipedia 的同一条会合并并给它打上 unesco 标记
+  const unesco = unescoNearby(lat, lon, radiusMeters, lang);
+
+  // 优先级：Wikipedia（有正文）> UNESCO > 高德（境内更准）> OSM
+  const places = dedupe([...wikipedia, ...unesco, ...amap, ...osm]).sort((a, b) => a.dist - b.dist).slice(0, limit);
   return { places, sources };
 }

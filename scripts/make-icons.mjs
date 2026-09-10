@@ -14,11 +14,11 @@ function iconSvg({ padding = 0, rounded = true }) {
   return `
 <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
   <rect x="${padding}" y="${padding}" width="${inner}" height="${inner}" rx="${r}" fill="#1B1F1D"/>
-  <g transform="translate(${size / 2} ${size / 2 + 12}) scale(${(inner / 512) * 0.9})">
-    <path d="M0 -150 C -78 -150 -132 -96 -132 -22 C -132 70 0 176 0 176 S 132 70 132 -22 C 132 -96 78 -150 0 -150 Z" fill="#B85C38"/>
-    <path d="M-158 -22 A 158 158 0 0 1 158 -22" fill="none" stroke="#F4F1EA" stroke-width="26" stroke-linecap="round"/>
-    <rect x="-192" y="-70" width="54" height="96" rx="22" fill="#F4F1EA"/>
-    <rect x="138" y="-70" width="54" height="96" rx="22" fill="#F4F1EA"/>
+  <g transform="translate(${size / 2} ${size / 2 + 14}) scale(${(inner / 512) * 0.82})">
+    <path d="M -152 -30 A 152 152 0 1 1 152 -30 C 152 56 44 108 14 176 Q 0 196 -14 176 C -44 108 -152 56 -152 -30 Z" fill="#B85C38"/>
+    <path d="M -176 -30 A 176 176 0 0 1 176 -30" fill="none" stroke="#F4F1EA" stroke-width="30" stroke-linecap="round"/>
+    <rect x="-206" y="-82" width="58" height="108" rx="29" fill="#F4F1EA"/>
+    <rect x="148" y="-82" width="58" height="108" rx="29" fill="#F4F1EA"/>
   </g>
 </svg>`;
 }

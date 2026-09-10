@@ -2,6 +2,7 @@
  * 浏览器端的偏好设置，都存 localStorage。服务端渲染时拿不到，调用方要在 useEffect 里读。
  */
 import { GUIDE_LANGS, isGuideLang, type GuideLang, type Lang } from "@/lib/i18n";
+import { DEFAULT_PERSONA, isPersona, type PersonaId } from "@/lib/personas";
 
 export type GuideLangPref = "auto" | GuideLang;
 export type Audience = "adult" | "kids";
@@ -15,7 +16,18 @@ const KEYS = {
   audience: "tourguide.audience",
   onboarded: "tourguide.onboarded",
   autoSpeak: "tourguide.autoSpeak",
+  persona: "tourguide.persona",
 } as const;
+
+/** 选的导游人物（Mia / Milo） */
+export function getPersona(): PersonaId {
+  const v = read(KEYS.persona);
+  return isPersona(v) ? v : DEFAULT_PERSONA;
+}
+
+export function setPersona(p: PersonaId): void {
+  write(KEYS.persona, p);
+}
 
 export type VoiceEnginePref = "cloud" | "browser";
 
@@ -28,12 +40,13 @@ export function setVoiceEngine(v: VoiceEnginePref): void {
   write("tourguide.voiceEngine", v === "cloud" ? null : v);
 }
 
+/** 自动朗读默认开；用户关过才为 false */
 export function getAutoSpeak(): boolean {
-  return read(KEYS.autoSpeak) === "1";
+  return read(KEYS.autoSpeak) !== "0";
 }
 
 export function setAutoSpeak(v: boolean): void {
-  write(KEYS.autoSpeak, v ? "1" : null);
+  write(KEYS.autoSpeak, v ? null : "0");
 }
 
 function read(key: string): string | null {

@@ -3,7 +3,7 @@
  * 页面组件只认识 Place 和 PlaceDetail，不关心数据从哪来。
  */
 
-export type PlaceSource = "wikipedia" | "osm" | "wikidata" | "amap";
+export type PlaceSource = "wikipedia" | "osm" | "wikidata" | "amap" | "unesco";
 
 export type PlaceCategory =
   | "attraction"
@@ -38,6 +38,8 @@ export interface Place {
   /** Wikidata 编号，用来跨数据源合并同一个地点 */
   wikidata?: string;
   wikipedia?: { lang: string; title: string };
+  /** UNESCO 世界遗产编号（是遗产或其组成部分时才有） */
+  unesco?: string;
 }
 
 /** 详情页需要的完整信息 */
@@ -59,12 +61,17 @@ export interface PlaceDetail {
     wikidata?: string;
     osm?: string;
     amap?: string;
+    unesco?: string;
   };
+  /** 是世界遗产（或其组成部分）时的编号和名称 */
+  unesco?: { whs: string; name: string; url: string };
+  /** 最近的 Wikivoyage 目的地条目摘要 */
+  travelGuide?: { source: "wikivoyage"; title: string; extract: string; url: string; dist: number };
 }
 
 /** 从 id 里拆出来源前缀和剩余部分 */
-export function parsePlaceId(id: string): { prefix: "wp" | "osm" | "wd" | "amap"; rest: string } | null {
-  const m = /^(wp|osm|wd|amap):(.+)$/.exec(id);
+export function parsePlaceId(id: string): { prefix: "wp" | "osm" | "wd" | "amap" | "unesco"; rest: string } | null {
+  const m = /^(wp|osm|wd|amap|unesco):(.+)$/.exec(id);
   if (!m) return null;
-  return { prefix: m[1] as "wp" | "osm" | "wd" | "amap", rest: m[2] };
+  return { prefix: m[1] as "wp" | "osm" | "wd" | "amap" | "unesco", rest: m[2] };
 }
