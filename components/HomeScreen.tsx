@@ -8,9 +8,10 @@ import { t } from "@/lib/i18n";
 import { formatCoords, formatDistance, haversine, isValidCoords } from "@/lib/geo";
 import { homeHref } from "@/lib/links";
 import type { City } from "@/lib/cities";
-import { readCoords, writeCoords } from "@/lib/prefs";
+import { isOnboarded, readCoords, writeCoords } from "@/lib/prefs";
 import { useLanguage } from "@/components/LanguageProvider";
 import { LocatePanel } from "@/components/LocatePanel";
+import { Onboarding } from "@/components/Onboarding";
 import { PlaceList } from "@/components/PlaceList";
 import { TabBar, TAB_BAR_HEIGHT } from "@/components/TabBar";
 import { BackIcon, LocateIcon, PinIcon, SearchIcon } from "@/components/Icons";
@@ -51,6 +52,8 @@ export function HomeScreen() {
   const [myLocation, setMyLocation] = useState<Coords | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [locating, setLocating] = useState(false);
+  /** null = 还没读本地标记；false = 要先走首次引导 */
+  const [onboarded, setOnboardedState] = useState<boolean | null>(null);
   const bootedRef = useRef(false);
 
   const [radius, setRadius] = useState(1000);
@@ -129,6 +132,8 @@ export function HomeScreen() {
   useEffect(() => {
     if (bootedRef.current) return;
     bootedRef.current = true;
+    const done = isOnboarded();
+    setOnboardedState(done);
     const savedMy = readCoords("myLocation");
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (savedMy) setMyLocation(savedMy);
@@ -142,7 +147,8 @@ export function HomeScreen() {
       refreshLocationIfGranted();
       return;
     }
-    requestLocation();
+    // 首次进入：先走「选择您的导游」，完成后再请求定位（见 Onboarding 的 onDone）
+    if (done) requestLocation();
   }, [center, refreshLocationIfGranted, requestLocation]);
 
   // 两段加载：先要 Wikipedia 的快速结果，再要完整结果；谁先到谁先显示，完整结果到了覆盖
@@ -239,7 +245,7 @@ export function HomeScreen() {
    * 触摸拖动用原生监听（passive: false），这样决定「这次是拖面板」之后能 preventDefault，
    * 不让浏览器把手势当成页面滚动。规则：
    *  - 在把手 / 标题区：总是拖面板
-   *  - 在列表区：列表已经滚到顶且往下拖 → 收面板；面板没到最高且往上拖 → 先拉面板；其余交给列表滚动
+   *  - 在列表区：列表已经滚到顶且往下拖 → 收面板；列表内容没有溢出、面板没到最高且往上拖 → 拉面板；其余交给列表滚动
    */
   useEffect(() => {
     const sheet = sheetRef.current;
@@ -267,7 +273,9 @@ export function HomeScreen() {
         const list = listRef.current;
         const atTop = !list || list.scrollTop <= 0;
         const atMax = startH >= Math.round(usableHeight() * 0.88) - 2;
-        if ((dy > 0 && atTop) || (dy < 0 && !atMax)) {
+        // 列表能滚就让它滚；只有列表本身没有溢出时，向上滑才拉面板
+        const listScrollable = Boolean(list && list.scrollHeight > list.clientHeight + 2);
+        if ((dy > 0 && atTop) || (dy < 0 && !atMax && !listScrollable)) {
           mode = "drag";
           setDragging(true);
         } else {
@@ -308,6 +316,19 @@ export function HomeScreen() {
     setSheetHeight(snaps[idx === 2 ? 1 : 2]);
   }
 
+  // 首次进入：选择导游（语言 + 受众），完成后进入定位授权
+  if (onboarded === false) {
+    return (
+      <Onboarding
+        lang={lang}
+        onDone={() => {
+          setOnboardedState(true);
+          if (!center) requestLocation();
+        }}
+      />
+    );
+  }
+
   // 还没有中心，或用户主动要换地方：显示选城市面板
   if (!center || showPicker) {
     if (!center && !showPicker && !locating) {
@@ -321,6 +342,8 @@ export function HomeScreen() {
         lang={lang}
         locating={locating}
         canUseGeolocation={canUseGeolocation}
+        onClose={center ? () => setShowPicker(false) : undefined}
+        near={center}
         onAllowLocation={() => requestLocation()}
         onPickCity={pickCity}
         onCoords={applyCenter}
@@ -406,7 +429,7 @@ export function HomeScreen() {
               type="button"
               onClick={toggleSheet}
               aria-label={t(lang, "sheetHandle")}
-              className="mx-auto flex h-8 w-full items-center justify-center md:hidden"
+              className="mx-auto flex h-10 w-full items-center justify-center md:hidden"
             >
               <span className="h-1 w-10 rounded-full bg-[#D8D2C6]" />
             </button>

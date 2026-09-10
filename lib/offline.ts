@@ -5,7 +5,7 @@
  * 只在浏览器端使用。key 带语言，因为资料和讲解都是分语言的。
  */
 import { useEffect, useState } from "react";
-import type { Lang } from "@/lib/i18n";
+import type { GuideLang, Lang } from "@/lib/i18n";
 import type { PlaceDetail } from "@/lib/places/types";
 import type { Favorite } from "@/lib/favorites";
 
@@ -17,7 +17,7 @@ export interface SavedPlace {
   key: string;
   id: string;
   lang: Lang;
-  guideLang: Lang;
+  guideLang: GuideLang;
   place: PlaceDetail;
   narration: string;
   image?: Blob;
@@ -87,7 +87,7 @@ async function readAll(res: Response): Promise<string> {
 /**
  * 下载一个地点：资料 + 讲解 + 头图。讲解或头图拿不到不算失败，资料拿不到才算。
  */
-export async function downloadPlace(fav: Favorite, guideLang: Lang): Promise<SavedPlace> {
+export async function downloadPlace(fav: Favorite, guideLang: GuideLang, style: "guide" | "kids" = "guide"): Promise<SavedPlace> {
   const placeRes = await fetch(`/api/place?lang=${fav.lang}&id=${encodeURIComponent(fav.id)}`);
   if (!placeRes.ok) throw new Error(`place HTTP ${placeRes.status}`);
   const place = (await placeRes.json()) as PlaceDetail;
@@ -96,7 +96,7 @@ export async function downloadPlace(fav: Favorite, guideLang: Lang): Promise<Sav
     fetch("/api/guide", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: fav.id, lang: guideLang }),
+      body: JSON.stringify({ id: fav.id, lang: guideLang, dataLang: fav.lang, style }),
     })
       .then(readAll)
       .catch(() => ""),

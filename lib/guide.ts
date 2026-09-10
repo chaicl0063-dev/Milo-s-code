@@ -6,7 +6,7 @@
  *   LLM_MODEL     例如 glm-4.7-flash
  */
 import type { PlaceDetail } from "@/lib/places/types";
-import type { Lang } from "@/lib/i18n";
+import type { GuideLang } from "@/lib/i18n";
 
 export const GUIDE_STYLES = ["guide", "history", "architecture", "stories", "kids"] as const;
 export type GuideStyle = (typeof GUIDE_STYLES)[number];
@@ -36,9 +36,15 @@ export function llmConfigured(): boolean {
   return Boolean(process.env.LLM_BASE_URL && process.env.LLM_API_KEY && process.env.LLM_MODEL);
 }
 
-const LANGUAGE_NAME: Record<Lang, string> = {
+const LANGUAGE_NAME: Record<GuideLang, string> = {
   en: "English",
   zh: "简体中文 (Simplified Chinese; convert any Traditional characters from the fact sheet, e.g. 艾菲爾鐵塔 → 埃菲尔铁塔)",
+  es: "Spanish (español)",
+  fr: "French (français)",
+  de: "German (Deutsch)",
+  ja: "Japanese (日本語, natural spoken register)",
+  ko: "Korean (한국어, polite spoken register)",
+  pt: "Portuguese (português)",
 };
 
 /**
@@ -58,7 +64,7 @@ const STYLE_BRIEF: Record<GuideStyle, string> = {
     "STYLE = KIDS. Audience: a curious 8-year-old. Tone: warm, playful, simple words, short sentences, vivid comparisons to everyday things, one fun fact, may ask the child a question. Forbidden: exact dates lists, technical jargon, long sentences.",
 };
 
-const STYLE_ASK: Record<GuideStyle, Record<Lang, string>> = {
+const STYLE_ASK: Record<GuideStyle, Partial<Record<GuideLang, string>> & { en: string }> = {
   guide: { en: "Tell me about this place.", zh: "请给我讲讲眼前这个地方。" },
   history: { en: "Tell me the history of this place.", zh: "请讲讲这个地方的历史。" },
   architecture: { en: "Tell me what I am looking at, as architecture.", zh: "请从建筑的角度讲讲我眼前看到的东西。" },
@@ -79,7 +85,7 @@ function factSheet(place: PlaceDetail): string {
   return lines.join("\n");
 }
 
-export function systemPrompt(place: PlaceDetail, lang: Lang, style: GuideStyle): string {
+export function systemPrompt(place: PlaceDetail, lang: GuideLang, style: GuideStyle): string {
   const thin = !place.extract;
   return [
     "You are a warm, knowledgeable local tour guide. The traveler is standing right in front of this place and listening to you.",
@@ -100,8 +106,9 @@ export function systemPrompt(place: PlaceDetail, lang: Lang, style: GuideStyle):
 }
 
 /** 首次讲解的用户消息，把风格再说一遍，小模型对用户消息里的要求更敏感 */
-export function openingUserMessage(lang: Lang, style: GuideStyle): string {
-  return STYLE_ASK[style][lang];
+export function openingUserMessage(lang: GuideLang, style: GuideStyle): string {
+  // 用户消息没有该语言版本时用英文，系统提示里已经规定了回答语言
+  return STYLE_ASK[style][lang] ?? STYLE_ASK[style].en;
 }
 
 /**

@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LANGS, t, type Lang } from "@/lib/i18n";
-import { clearAllLocalData, getGuideLangPref, setGuideLangPref, type GuideLangPref } from "@/lib/prefs";
+import { GUIDE_LANGS, GUIDE_LANG_LABEL, LANGS, t, type GuideLang, type Lang } from "@/lib/i18n";
+import { clearAllLocalData, getAudience, resolveGuideLang, setAudience, setGuideLangPref, type Audience } from "@/lib/prefs";
 import { useLanguage } from "@/components/LanguageProvider";
 import { Section, Segmented, SubpageShell } from "@/components/SubpageShell";
 
@@ -13,13 +13,15 @@ const LANG_LABEL: Record<Lang, string> = { en: "English", zh: "中文" };
 export function SettingsScreen() {
   const { lang, setLang } = useLanguage();
   const router = useRouter();
-  const [guidePref, setGuidePref] = useState<GuideLangPref>("auto");
+  const [guideLang, setGuideLangState] = useState<GuideLang>(lang);
+  const [audience, setAudienceState] = useState<Audience>("adult");
   const [install, setInstall] = useState<"unknown" | "installed" | "button" | "ios" | "android" | "desktop">("unknown");
   const [cleared, setCleared] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setGuidePref(getGuideLangPref());
+    setGuideLangState(resolveGuideLang(lang));
+    setAudienceState(getAudience());
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
     const ua = navigator.userAgent;
@@ -39,7 +41,7 @@ export function SettingsScreen() {
       window.removeEventListener("pwa:installable", onInstallable);
       window.removeEventListener("appinstalled", onInstalled);
     };
-  }, []);
+  }, [lang]);
 
   async function doInstall() {
     const prompt = window.__installPrompt;
@@ -70,11 +72,25 @@ export function SettingsScreen() {
 
       <Section title={t(lang, "guideLanguage")}>
         <Segmented
-          options={[{ value: "auto", label: t(lang, "followUi") }, ...LANGS.map((l) => ({ value: l, label: LANG_LABEL[l] }))]}
-          value={guidePref}
+          options={GUIDE_LANGS.map((l) => ({ value: l, label: GUIDE_LANG_LABEL[l] }))}
+          value={guideLang}
           onChange={(v) => {
-            setGuidePref(v as GuideLangPref);
-            setGuideLangPref(v as GuideLangPref);
+            setGuideLangState(v as GuideLang);
+            setGuideLangPref(v as GuideLang);
+          }}
+        />
+      </Section>
+
+      <Section title={t(lang, "audience")}>
+        <Segmented
+          options={[
+            { value: "adult", label: t(lang, "audienceAdult") },
+            { value: "kids", label: t(lang, "audienceKids") },
+          ]}
+          value={audience}
+          onChange={(v) => {
+            setAudienceState(v as Audience);
+            setAudience(v as Audience);
           }}
         />
       </Section>

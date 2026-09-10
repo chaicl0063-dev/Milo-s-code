@@ -1,9 +1,10 @@
 /**
  * 浏览器端的偏好设置，都存 localStorage。服务端渲染时拿不到，调用方要在 useEffect 里读。
  */
-import { isLang, type Lang } from "@/lib/i18n";
+import { GUIDE_LANGS, isGuideLang, type GuideLang, type Lang } from "@/lib/i18n";
 
-export type GuideLangPref = "auto" | Lang;
+export type GuideLangPref = "auto" | GuideLang;
+export type Audience = "adult" | "kids";
 
 const KEYS = {
   lang: "tourguide.lang",
@@ -11,6 +12,8 @@ const KEYS = {
   myLocation: "tourguide.myLocation",
   center: "tourguide.coords",
   installDismissed: "tourguide.installHintDismissed",
+  audience: "tourguide.audience",
+  onboarded: "tourguide.onboarded",
 } as const;
 
 function read(key: string): string | null {
@@ -32,17 +35,44 @@ function write(key: string, value: string | null): void {
 
 export function getGuideLangPref(): GuideLangPref {
   const v = read(KEYS.guideLang);
-  return isLang(v) ? v : "auto";
+  return isGuideLang(v) ? v : "auto";
+}
+
+/** 浏览器语言能对上讲解语言列表就用它，否则退回界面语言 */
+export function browserGuideLang(uiLang: Lang): GuideLang {
+  const code = (typeof navigator !== "undefined" ? navigator.language : "").toLowerCase().slice(0, 2);
+  return (GUIDE_LANGS as readonly string[]).includes(code) ? (code as GuideLang) : uiLang;
+}
+
+export function getAudience(): Audience {
+  return read(KEYS.audience) === "kids" ? "kids" : "adult";
+}
+
+export function setAudience(a: Audience): void {
+  write(KEYS.audience, a);
+}
+
+/** 受众对应的讲解风格 */
+export function audienceStyle(a: Audience): "guide" | "kids" {
+  return a === "kids" ? "kids" : "guide";
+}
+
+export function isOnboarded(): boolean {
+  return read(KEYS.onboarded) === "1";
+}
+
+export function setOnboarded(): void {
+  write(KEYS.onboarded, "1");
 }
 
 export function setGuideLangPref(v: GuideLangPref): void {
   write(KEYS.guideLang, v === "auto" ? null : v);
 }
 
-/** 讲解实际使用的语言：偏好里指定了就用它，否则跟界面 */
-export function resolveGuideLang(uiLang: Lang): Lang {
+/** 讲解实际使用的语言：偏好里指定了就用它，否则按浏览器语言，再退回界面语言 */
+export function resolveGuideLang(uiLang: Lang): GuideLang {
   const pref = getGuideLangPref();
-  return pref === "auto" ? uiLang : pref;
+  return pref === "auto" ? browserGuideLang(uiLang) : pref;
 }
 
 export function readCoords(key: "myLocation" | "center"): { lat: number; lon: number } | null {

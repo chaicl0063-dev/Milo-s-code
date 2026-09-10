@@ -11,6 +11,23 @@ export function isLang(value: string | null | undefined): value is Lang {
   return value === "en" || value === "zh";
 }
 
+/** 讲解语言：由模型生成，所以不限于界面语言。界面仍只有 en / zh。 */
+export const GUIDE_LANGS = ["en", "zh", "es", "fr", "de", "ja", "ko", "pt"] as const;
+export type GuideLang = (typeof GUIDE_LANGS)[number];
+export const GUIDE_LANG_LABEL: Record<GuideLang, string> = {
+  en: "English",
+  zh: "中文",
+  es: "Español",
+  fr: "Français",
+  de: "Deutsch",
+  ja: "日本語",
+  ko: "한국어",
+  pt: "Português",
+};
+export function isGuideLang(value: unknown): value is GuideLang {
+  return typeof value === "string" && (GUIDE_LANGS as readonly string[]).includes(value);
+}
+
 const en = {
   appName: "ReAround You",
   aroundYou: "Around you",
@@ -104,6 +121,17 @@ const en = {
   savedOn: "Saved",
   notSaved: "This place has not been downloaded.",
   downloadedGuide: "Downloaded narration",
+  searchPlace: "Search a place or city…",
+  byName: "Name",
+  byCoords: "Coordinates",
+  searching: "Searching…",
+  noResults: "Nothing found. Try another spelling.",
+  onboardingTitle: "Choose your guide",
+  onboardingBody: "Pick the language your guide speaks and who is listening. You can change both later in Settings.",
+  audience: "Audience",
+  audienceAdult: "Adult",
+  audienceKids: "Kids",
+  next: "Next",
 } as const;
 
 const zh: Record<keyof typeof en, string> = {
@@ -197,6 +225,17 @@ const zh: Record<keyof typeof en, string> = {
   savedOn: "下载于",
   notSaved: "这个地点还没有下载。",
   downloadedGuide: "已下载的讲解",
+  searchPlace: "搜索地名或城市…",
+  byName: "地名",
+  byCoords: "坐标",
+  searching: "搜索中…",
+  noResults: "没找到，换个说法试试。",
+  onboardingTitle: "选择您的导游",
+  onboardingBody: "选讲解的语言，以及听讲的人是谁。之后随时可以在设置里改。",
+  audience: "受众",
+  audienceAdult: "成人",
+  audienceKids: "儿童",
+  next: "下一步",
 };
 
 export const dict = { en, zh } as const;

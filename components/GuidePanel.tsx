@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { t, type Lang } from "@/lib/i18n";
-import { resolveGuideLang } from "@/lib/prefs";
+import { t, type GuideLang, type Lang } from "@/lib/i18n";
+import { audienceStyle, getAudience, resolveGuideLang } from "@/lib/prefs";
 import { SparkIcon } from "@/components/Icons";
 
 interface Props {
@@ -11,7 +11,7 @@ interface Props {
   uiLang: Lang;
   /** 离线阅读页传入已下载的讲解，面板直接显示它而不是「听导游讲讲」按钮 */
   initialNarration?: string;
-  initialGuideLang?: Lang;
+  initialGuideLang?: GuideLang;
   /** 没网时关掉追问 */
   allowFollowUp?: boolean;
 }
@@ -20,7 +20,8 @@ type Turn = { role: "assistant" | "user"; content: string };
 
 /** 详情页的「听导游讲讲」：一键讲解，流式显示，可以继续追问 */
 export function GuidePanel({ placeId, uiLang, initialNarration, initialGuideLang, allowFollowUp = true }: Props) {
-  const [guideLang, setGuideLang] = useState<Lang>(initialGuideLang ?? uiLang);
+  const [guideLang, setGuideLang] = useState<GuideLang>(initialGuideLang ?? uiLang);
+  const [style, setStyle] = useState<"guide" | "kids">("guide");
   const [turns, setTurns] = useState<Turn[]>(initialNarration ? [{ role: "assistant", content: initialNarration }] : []);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,8 +30,9 @@ export function GuidePanel({ placeId, uiLang, initialNarration, initialGuideLang
 
   // 讲解语言偏好存在 localStorage，只能挂载后读；离线页已经指定了语言就不动
   useEffect(() => {
-    if (initialGuideLang) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
+    setStyle(audienceStyle(getAudience()));
+    if (initialGuideLang) return;
     setGuideLang(resolveGuideLang(uiLang));
   }, [uiLang, initialGuideLang]);
 
@@ -48,7 +50,7 @@ export function GuidePanel({ placeId, uiLang, initialNarration, initialGuideLang
       const res = await fetch("/api/guide", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: placeId, lang: guideLang, messages: history.length ? history : undefined }),
+        body: JSON.stringify({ id: placeId, lang: guideLang, dataLang: uiLang, style, messages: history.length ? history : undefined }),
         signal: controller.signal,
       });
       if (res.status === 429) throw new Error("busy");
