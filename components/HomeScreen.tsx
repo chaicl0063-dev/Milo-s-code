@@ -212,49 +212,94 @@ export function HomeScreen() {
 
   /* ---------- 底部面板拖动：三档停靠（收起 / 半屏 / 接近全屏） ---------- */
   const sheetRef = useRef<HTMLElement>(null);
-  const dragRef = useRef<{ startY: number; startH: number } | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const [sheetHeight, setSheetHeight] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
+
+  const usableHeight = () => window.innerHeight - TAB_BAR_HEIGHT;
+  const snapPoints = () => {
+    const vh = usableHeight();
+    return [PEEK_HEIGHT, Math.round(vh * 0.46), Math.round(vh * 0.88)];
+  };
+  const currentSheetHeight = () => sheetRef.current?.getBoundingClientRect().height ?? 0;
+  const snapTo = (h: number) => {
+    const nearest = snapPoints().reduce((a, b) => (Math.abs(b - h) < Math.abs(a - h) ? b : a));
+    setSheetHeight(nearest);
+  };
 
   // 挂载后把默认高度换成像素值：百分比高度和像素之间的过渡在部分浏览器里不会动
   useEffect(() => {
     if (sheetHeight !== null || !center) return;
     if (window.matchMedia("(min-width: 768px)").matches) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSheetHeight(Math.round((window.innerHeight - TAB_BAR_HEIGHT) * 0.46));
+    setSheetHeight(Math.round(usableHeight() * 0.46));
   }, [center, sheetHeight]);
 
-  function usableHeight() {
-    return window.innerHeight - TAB_BAR_HEIGHT;
-  }
-  function snapPoints() {
-    const vh = usableHeight();
-    return [PEEK_HEIGHT, Math.round(vh * 0.46), Math.round(vh * 0.88)];
-  }
-  function currentSheetHeight() {
-    return sheetRef.current?.getBoundingClientRect().height ?? 0;
-  }
-  function onHandlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    if (window.matchMedia("(min-width: 768px)").matches) return; // 桌面是右栏，不拖
-    if ((e.target as HTMLElement).closest("select,button,a")) return;
-    dragRef.current = { startY: e.clientY, startH: currentSheetHeight() };
-    setDragging(true);
-    e.currentTarget.setPointerCapture(e.pointerId);
-  }
-  function onHandlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
-    if (!dragRef.current) return;
-    const max = Math.round(usableHeight() * 0.88);
-    const h = Math.min(Math.max(dragRef.current.startH - (e.clientY - dragRef.current.startY), PEEK_HEIGHT), max);
-    setSheetHeight(h);
-  }
-  function onHandlePointerUp() {
-    if (!dragRef.current) return;
-    const h = currentSheetHeight();
-    const nearest = snapPoints().reduce((a, b) => (Math.abs(b - h) < Math.abs(a - h) ? b : a));
-    setSheetHeight(nearest);
-    dragRef.current = null;
-    setDragging(false);
-  }
+  /**
+   * 触摸拖动用原生监听（passive: false），这样决定「这次是拖面板」之后能 preventDefault，
+   * 不让浏览器把手势当成页面滚动。规则：
+   *  - 在把手 / 标题区：总是拖面板
+   *  - 在列表区：列表已经滚到顶且往下拖 → 收面板；面板没到最高且往上拖 → 先拉面板；其余交给列表滚动
+   */
+  useEffect(() => {
+    const sheet = sheetRef.current;
+    if (!sheet || !center) return;
+    let startY = 0;
+    let startH = 0;
+    let mode: "undecided" | "drag" | "scroll" = "undecided";
+    let inList = false;
+
+    const onStart = (e: TouchEvent) => {
+      if (window.matchMedia("(min-width: 768px)").matches) return;
+      const target = e.target as HTMLElement;
+      if (target.closest("select,a")) return;
+      startY = e.touches[0].clientY;
+      startH = currentSheetHeight();
+      inList = Boolean(listRef.current && listRef.current.contains(target));
+      mode = inList ? "undecided" : "drag";
+      if (mode === "drag") setDragging(true);
+    };
+    const onMove = (e: TouchEvent) => {
+      if (mode === "scroll") return;
+      const dy = e.touches[0].clientY - startY; // 正 = 手指往下
+      if (mode === "undecided") {
+        if (Math.abs(dy) < 6) return;
+        const list = listRef.current;
+        const atTop = !list || list.scrollTop <= 0;
+        const atMax = startH >= Math.round(usableHeight() * 0.88) - 2;
+        if ((dy > 0 && atTop) || (dy < 0 && !atMax)) {
+          mode = "drag";
+          setDragging(true);
+        } else {
+          mode = "scroll";
+          return;
+        }
+      }
+      e.preventDefault();
+      const max = Math.round(usableHeight() * 0.88);
+      setSheetHeight(Math.min(Math.max(startH - dy, PEEK_HEIGHT), max));
+    };
+    const onEnd = () => {
+      if (mode === "drag") {
+        snapTo(currentSheetHeight());
+        setDragging(false);
+      }
+      mode = "undecided";
+    };
+
+    sheet.addEventListener("touchstart", onStart, { passive: true });
+    sheet.addEventListener("touchmove", onMove, { passive: false });
+    sheet.addEventListener("touchend", onEnd);
+    sheet.addEventListener("touchcancel", onEnd);
+    return () => {
+      sheet.removeEventListener("touchstart", onStart);
+      sheet.removeEventListener("touchmove", onMove);
+      sheet.removeEventListener("touchend", onEnd);
+      sheet.removeEventListener("touchcancel", onEnd);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [center]);
+
   /** 点一下把手：半屏和全屏之间切换 */
   function toggleSheet() {
     const snaps = snapPoints();
@@ -356,18 +401,12 @@ export function HomeScreen() {
           }`}
         >
           {/* 把手 + 标题行 = 拖动区 */}
-          <div
-            onPointerDown={onHandlePointerDown}
-            onPointerMove={onHandlePointerMove}
-            onPointerUp={onHandlePointerUp}
-            onPointerCancel={onHandlePointerUp}
-            className="touch-none select-none"
-          >
+          <div className="touch-none select-none">
             <button
               type="button"
               onClick={toggleSheet}
               aria-label={t(lang, "sheetHandle")}
-              className="mx-auto flex h-6 w-full items-center justify-center md:hidden"
+              className="mx-auto flex h-8 w-full items-center justify-center md:hidden"
             >
               <span className="h-1 w-10 rounded-full bg-[#D8D2C6]" />
             </button>
@@ -395,7 +434,7 @@ export function HomeScreen() {
             </header>
           </div>
 
-          <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
+          <div ref={listRef} className="mt-3 min-h-0 flex-1 overflow-y-auto [touch-action:pan-y]">
             {error ? (
               <div className="flex flex-col items-start gap-3 px-6 py-4 text-[14px] text-muted">
                 <span>{error}</span>
