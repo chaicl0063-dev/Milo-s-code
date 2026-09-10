@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { t, type GuideLang, type Lang } from "@/lib/i18n";
-import { audienceStyle, getAudience, getAutoSpeak, resolveGuideLang } from "@/lib/prefs";
+import { audienceStyle, getAudience, getAutoSpeak, getVoiceEngine, resolveGuideLang, type VoiceEnginePref } from "@/lib/prefs";
 import { splitSentences } from "@/lib/speech";
 import { useNarrator } from "@/lib/useNarrator";
 import { MicIcon, PauseIcon, PlayIcon, SparkIcon } from "@/components/Icons";
@@ -27,6 +27,7 @@ export function GuidePanel({ placeId, uiLang, initialNarration, initialGuideLang
   const [guideLang, setGuideLang] = useState<GuideLang>(initialGuideLang ?? uiLang);
   const [style, setStyle] = useState<"guide" | "kids">("guide");
   const [autoSpeak, setAutoSpeak] = useState(false);
+  const [voiceEngine, setVoiceEngine] = useState<VoiceEnginePref>("cloud");
   const [turns, setTurns] = useState<Turn[]>(initialNarration ? [{ role: "assistant", content: initialNarration }] : []);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +39,7 @@ export function GuidePanel({ placeId, uiLang, initialNarration, initialGuideLang
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setStyle(audienceStyle(getAudience()));
     setAutoSpeak(getAutoSpeak());
+    setVoiceEngine(getVoiceEngine());
     if (initialGuideLang) return;
     setGuideLang(resolveGuideLang(uiLang));
   }, [uiLang, initialGuideLang]);
@@ -47,7 +49,7 @@ export function GuidePanel({ placeId, uiLang, initialNarration, initialGuideLang
   const latestNarration = lastAssistantIdx >= 0 ? turns[lastAssistantIdx].content : "";
 
   // 朗读最新一条讲解
-  const narrator = useNarrator(latestNarration, guideLang, streaming);
+  const narrator = useNarrator(latestNarration, guideLang, streaming, voiceEngine);
   const autoStartedRef = useRef(false);
   useEffect(() => {
     if (!autoSpeak || !narrator.supported || autoStartedRef.current) return;

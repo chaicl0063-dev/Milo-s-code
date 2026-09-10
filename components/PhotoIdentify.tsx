@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Place } from "@/lib/places/types";
 import { t, type GuideLang, type Lang } from "@/lib/i18n";
 import { placeHref } from "@/lib/links";
@@ -88,7 +89,9 @@ export function PhotoIdentify({ lang, guideLang, candidates, onSearchName, class
         <CameraIcon />
       </button>
 
-      {open && (
+      {/* 用 portal 挂到 body 上，不然会被地图按钮容器的层级压在底部面板和 tab 栏下面 */}
+      {open &&
+        createPortal(
         <div className="fixed inset-0 z-[1100] flex items-end justify-center bg-ink/40 p-4" onClick={close}>
           <div
             className="flex w-full max-w-[480px] flex-col gap-4 rounded-[24px] bg-surface p-5 shadow-[0_-10px_30px_rgba(27,31,29,0.2)]"
@@ -161,8 +164,9 @@ export function PhotoIdentify({ lang, guideLang, candidates, onSearchName, class
             </div>
             <p className="text-[11px] text-faint">{t(lang, "photoPrivacy")}</p>
           </div>
-        </div>
-      )}
+        </div>,
+          document.body,
+        )}
     </>
   );
 }

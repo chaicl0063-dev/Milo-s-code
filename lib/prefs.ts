@@ -17,6 +17,17 @@ const KEYS = {
   autoSpeak: "tourguide.autoSpeak",
 } as const;
 
+export type VoiceEnginePref = "cloud" | "browser";
+
+/** 朗读音色：cloud = 神经网络语音（联网，默认），browser = 手机自带 */
+export function getVoiceEngine(): VoiceEnginePref {
+  return read("tourguide.voiceEngine") === "browser" ? "browser" : "cloud";
+}
+
+export function setVoiceEngine(v: VoiceEnginePref): void {
+  write("tourguide.voiceEngine", v === "cloud" ? null : v);
+}
+
 export function getAutoSpeak(): boolean {
   return read(KEYS.autoSpeak) === "1";
 }

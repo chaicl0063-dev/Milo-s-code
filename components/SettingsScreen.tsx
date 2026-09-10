@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GUIDE_LANGS, GUIDE_LANG_LABEL, LANGS, t, type GuideLang, type Lang } from "@/lib/i18n";
-import { clearAllLocalData, getAudience, getAutoSpeak, resolveGuideLang, setAudience, setAutoSpeak, setGuideLangPref, type Audience } from "@/lib/prefs";
+import { clearAllLocalData, getAudience, getAutoSpeak, getVoiceEngine, resolveGuideLang, setAudience, setAutoSpeak, setGuideLangPref, setVoiceEngine, type Audience, type VoiceEnginePref } from "@/lib/prefs";
 import { speechSupported } from "@/lib/speech";
 import { useLanguage } from "@/components/LanguageProvider";
 import { Section, Segmented, SubpageShell } from "@/components/SubpageShell";
@@ -17,6 +17,7 @@ export function SettingsScreen() {
   const [guideLang, setGuideLangState] = useState<GuideLang>(lang);
   const [audience, setAudienceState] = useState<Audience>("adult");
   const [autoSpeak, setAutoSpeakState] = useState(false);
+  const [voiceEngine, setVoiceEngineState] = useState<VoiceEnginePref>("cloud");
   const [canSpeak, setCanSpeak] = useState(false);
   const [install, setInstall] = useState<"unknown" | "installed" | "button" | "ios" | "android" | "desktop">("unknown");
   const [cleared, setCleared] = useState(false);
@@ -26,6 +27,7 @@ export function SettingsScreen() {
     setGuideLangState(resolveGuideLang(lang));
     setAudienceState(getAudience());
     setAutoSpeakState(getAutoSpeak());
+    setVoiceEngineState(getVoiceEngine());
     setCanSpeak(speechSupported());
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
@@ -98,6 +100,21 @@ export function SettingsScreen() {
             setAudience(v as Audience);
           }}
         />
+      </Section>
+
+      <Section title={t(lang, "voiceEngine")}>
+        <Segmented
+          options={[
+            { value: "cloud", label: t(lang, "voiceCloud") },
+            { value: "browser", label: t(lang, "voiceDevice") },
+          ]}
+          value={voiceEngine}
+          onChange={(v) => {
+            setVoiceEngineState(v as VoiceEnginePref);
+            setVoiceEngine(v as VoiceEnginePref);
+          }}
+        />
+        <p className="text-[13px] leading-5 text-muted">{t(lang, "voiceHint")}</p>
       </Section>
 
       {canSpeak && (

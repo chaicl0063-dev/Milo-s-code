@@ -90,8 +90,8 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
 
-  // 讲解是流式的，不缓存
-  if (url.pathname.startsWith("/api/guide")) return;
+  // 讲解是流式的，不缓存；朗读音频靠 HTTP 缓存头，不进 SW
+  if (url.pathname.startsWith("/api/guide") || url.pathname.startsWith("/api/tts")) return;
 
   if (url.origin === self.location.origin) {
     if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/")) {

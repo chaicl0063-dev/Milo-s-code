@@ -245,57 +245,38 @@ export function HomeScreen() {
   }, [center, sheetHeight]);
 
   /**
-   * 触摸拖动用原生监听（passive: false），这样决定「这次是拖面板」之后能 preventDefault，
-   * 不让浏览器把手势当成页面滚动。规则：
-   *  - 在把手 / 标题区：总是拖面板
-   *  - 在列表区：列表已经滚到顶且往下拖 → 收面板；列表内容没有溢出、面板没到最高且往上拖 → 拉面板；其余交给列表滚动
+   * 触摸拖动用原生监听（passive: false），这样能 preventDefault 不让浏览器把手势当成页面滚动。
+   * 规则很简单：只有把手和标题行能拖面板；列表区域永远是普通滚动，怎么滑都不会误触。
    */
   useEffect(() => {
     const sheet = sheetRef.current;
     if (!sheet || !center) return;
     let startY = 0;
     let startH = 0;
-    let mode: "undecided" | "drag" | "scroll" = "undecided";
-    let inList = false;
+    let dragging = false;
 
     const onStart = (e: TouchEvent) => {
       if (window.matchMedia("(min-width: 768px)").matches) return;
       const target = e.target as HTMLElement;
       if (target.closest("select,a")) return;
+      if (listRef.current && listRef.current.contains(target)) return; // 列表区不拖
       startY = e.touches[0].clientY;
       startH = currentSheetHeight();
-      inList = Boolean(listRef.current && listRef.current.contains(target));
-      mode = inList ? "undecided" : "drag";
-      if (mode === "drag") setDragging(true);
+      dragging = true;
+      setDragging(true);
     };
     const onMove = (e: TouchEvent) => {
-      if (mode === "scroll") return;
-      const dy = e.touches[0].clientY - startY; // 正 = 手指往下
-      if (mode === "undecided") {
-        if (Math.abs(dy) < 6) return;
-        const list = listRef.current;
-        const atTop = !list || list.scrollTop <= 0;
-        const atMax = startH >= Math.round(usableHeight() * 0.88) - 2;
-        // 列表能滚就让它滚；只有列表本身没有溢出时，向上滑才拉面板
-        const listScrollable = Boolean(list && list.scrollHeight > list.clientHeight + 2);
-        if ((dy > 0 && atTop) || (dy < 0 && !atMax && !listScrollable)) {
-          mode = "drag";
-          setDragging(true);
-        } else {
-          mode = "scroll";
-          return;
-        }
-      }
+      if (!dragging) return;
       e.preventDefault();
+      const dy = e.touches[0].clientY - startY; // 正 = 手指往下
       const max = Math.round(usableHeight() * 0.88);
       setSheetHeight(Math.min(Math.max(startH - dy, PEEK_HEIGHT), max));
     };
     const onEnd = () => {
-      if (mode === "drag") {
-        snapTo(currentSheetHeight());
-        setDragging(false);
-      }
-      mode = "undecided";
+      if (!dragging) return;
+      dragging = false;
+      snapTo(currentSheetHeight());
+      setDragging(false);
     };
 
     sheet.addEventListener("touchstart", onStart, { passive: true });
@@ -311,12 +292,12 @@ export function HomeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [center]);
 
-  /** 点一下把手：半屏和全屏之间切换 */
+  /** 点一下把手：收起 → 半屏 → 全屏 → 收起 循环（按记录的高度算，不依赖动画是否播完） */
   function toggleSheet() {
     const snaps = snapPoints();
-    const h = currentSheetHeight();
+    const h = sheetHeight ?? currentSheetHeight();
     const idx = snaps.reduce((best, s, i) => (Math.abs(s - h) < Math.abs(snaps[best] - h) ? i : best), 0);
-    setSheetHeight(snaps[idx === 2 ? 1 : 2]);
+    setSheetHeight(snaps[(idx + 1) % snaps.length]);
   }
 
   // 首次进入：选择导游（语言 + 受众），完成后进入定位授权
