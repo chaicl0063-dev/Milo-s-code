@@ -14,7 +14,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { PersonaAvatar } from "@/components/PersonaPicker";
 import { PhotoIdentify } from "@/components/PhotoIdentify";
 import { TabBar, TAB_BAR_HEIGHT } from "@/components/TabBar";
-import { BusIcon, HeadphonesIcon, MapIcon, NotebookIcon, RefreshIcon, RouteIcon, SparkIcon, TranslateIcon, WalkIcon } from "@/components/Icons";
+import { BusIcon, HeadphonesIcon, MapIcon, NotebookIcon, QuoteIcon, RefreshIcon, RouteIcon, SparkIcon, TranslateIcon, WalkIcon } from "@/components/Icons";
 
 type Coords = { lat: number; lon: number };
 
@@ -198,9 +198,10 @@ export function GuideScreen({ llmReady }: { llmReady: boolean }) {
     }
   }
 
-  function paid(feature: MessageKey) {
+  /** 付费占位：导游用一句话说明这个功能将来做什么，并告知尚未开放 */
+  function paid(feature: MessageKey, pitch: MessageKey) {
     push({ role: "user", text: t(lang, feature) });
-    push({ role: "assistant", kind: "text", text: t(lang, "paidFeatureHint") });
+    push({ role: "assistant", kind: "text", text: t(lang, pitch) });
   }
 
   /* ---------- 渲染 ---------- */
@@ -211,9 +212,10 @@ export function GuideScreen({ llmReady }: { llmReady: boolean }) {
 
   const cards = (openTranslate: () => void) => [
     { key: "plan", icon: <RouteIcon size={20} />, title: t(lang, "planToday"), hint: t(lang, "planTodayHint"), onClick: startPlan },
-    { key: "walk", icon: <WalkIcon size={20} />, title: t(lang, "themedWalk"), hint: t(lang, "themedWalkHint"), paid: true, onClick: () => paid("themedWalk") },
     { key: "translate", icon: <TranslateIcon size={20} />, title: t(lang, "photoTranslate"), hint: t(lang, "photoTranslateHint"), onClick: openTranslate },
-    { key: "journal", icon: <NotebookIcon size={20} />, title: t(lang, "travelJournal"), hint: t(lang, "travelJournalHint"), paid: true, onClick: () => paid("travelJournal") },
+    { key: "views", icon: <QuoteIcon size={20} />, title: t(lang, "travelerViews"), hint: t(lang, "travelerViewsHint"), paid: true, onClick: () => paid("travelerViews", "travelerViewsPitch") },
+    { key: "walk", icon: <WalkIcon size={20} />, title: t(lang, "themedWalk"), hint: t(lang, "themedWalkHint"), paid: true, onClick: () => paid("themedWalk", "themedWalkPitch") },
+    { key: "journal", icon: <NotebookIcon size={20} />, title: t(lang, "travelJournal"), hint: t(lang, "travelJournalHint"), paid: true, onClick: () => paid("travelJournal", "travelJournalPitch") },
   ];
 
   return (
