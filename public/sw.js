@@ -6,7 +6,7 @@
  *  - 地图瓦片和 Wikimedia 图片：缓存优先 + 后台更新，并限制条数防止撑爆
  * 改这个文件后把 VERSION 加一，旧缓存会被清掉。
  */
-const VERSION = "v2";
+const VERSION = "v3";
 const SHELL = `shell-${VERSION}`;
 const STATIC = `static-${VERSION}`;
 const TILES = `tiles-${VERSION}`;
@@ -19,7 +19,12 @@ const IMAGE_LIMIT = 200;
 const DATA_LIMIT = 100;
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(SHELL).then((cache) => cache.addAll(["/", "/manifest.webmanifest"]).catch(() => {})));
+  // 预缓存几个页面壳：首页、我的、收藏、离线阅读页，没网时也能打开
+  event.waitUntil(
+    caches
+      .open(SHELL)
+      .then((cache) => cache.addAll(["/", "/me", "/me/favorites", "/me/settings", "/me/about", "/saved", "/manifest.webmanifest"]).catch(() => {})),
+  );
   self.skipWaiting();
 });
 
@@ -68,8 +73,11 @@ async function networkFirst(request, cacheName, limit) {
   } catch {
     const hit = await cache.match(request);
     if (hit) return hit;
-    // 离线且没缓存过这个页面：退回首页壳
     if (request.mode === "navigate") {
+      // 同一路径不同参数（/saved?id=...）共用一份壳
+      const byPath = await cache.match(new URL(request.url).pathname);
+      if (byPath) return byPath;
+      // 离线且没缓存过这个页面：退回首页壳
       const shell = await caches.match("/");
       if (shell) return shell;
     }

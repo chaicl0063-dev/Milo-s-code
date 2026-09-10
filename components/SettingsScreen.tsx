@@ -1,0 +1,108 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { LANGS, t, type Lang } from "@/lib/i18n";
+import { clearAllLocalData, getGuideLangPref, setGuideLangPref, type GuideLangPref } from "@/lib/prefs";
+import { useLanguage } from "@/components/LanguageProvider";
+import { Section, Segmented, SubpageShell } from "@/components/SubpageShell";
+
+const LANG_LABEL: Record<Lang, string> = { en: "English", zh: "中文" };
+
+/** 设置：界面语言、讲解语言、安装到桌面、清除缓存 */
+export function SettingsScreen() {
+  const { lang, setLang } = useLanguage();
+  const router = useRouter();
+  const [guidePref, setGuidePref] = useState<GuideLangPref>("auto");
+  const [install, setInstall] = useState<"unknown" | "installed" | "button" | "ios" | "android" | "desktop">("unknown");
+  const [cleared, setCleared] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setGuidePref(getGuideLangPref());
+    const standalone =
+      window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    const ua = navigator.userAgent;
+    const decide = () => {
+      if (standalone) return "installed" as const;
+      if (window.__installPrompt) return "button" as const;
+      if (/iPhone|iPad|iPod/.test(ua)) return "ios" as const;
+      if (/Android/i.test(ua)) return "android" as const;
+      return "desktop" as const;
+    };
+    setInstall(decide());
+    const onInstallable = () => setInstall("button");
+    const onInstalled = () => setInstall("installed");
+    window.addEventListener("pwa:installable", onInstallable);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => {
+      window.removeEventListener("pwa:installable", onInstallable);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
+  }, []);
+
+  async function doInstall() {
+    const prompt = window.__installPrompt;
+    if (!prompt) return;
+    await prompt.prompt();
+    const { outcome } = await prompt.userChoice;
+    if (outcome === "accepted") setInstall("installed");
+    window.__installPrompt = undefined;
+  }
+
+  async function clearData() {
+    await clearAllLocalData();
+    setCleared(true);
+    window.setTimeout(() => {
+      router.push("/");
+      router.refresh();
+    }, 800);
+  }
+
+  const installTip =
+    install === "ios" ? t(lang, "iosInstallTip") : install === "android" ? t(lang, "androidInstallTip") : install === "desktop" ? t(lang, "desktopInstallTip") : "";
+
+  return (
+    <SubpageShell lang={lang} title={t(lang, "settings")}>
+      <Section title={t(lang, "uiLanguage")}>
+        <Segmented options={LANGS.map((l) => ({ value: l, label: LANG_LABEL[l] }))} value={lang} onChange={(v) => setLang(v as Lang)} />
+      </Section>
+
+      <Section title={t(lang, "guideLanguage")}>
+        <Segmented
+          options={[{ value: "auto", label: t(lang, "followUi") }, ...LANGS.map((l) => ({ value: l, label: LANG_LABEL[l] }))]}
+          value={guidePref}
+          onChange={(v) => {
+            setGuidePref(v as GuideLangPref);
+            setGuideLangPref(v as GuideLangPref);
+          }}
+        />
+      </Section>
+
+      <Section title={t(lang, "installTitle")}>
+        {install === "installed" && <p className="text-[14px] text-muted">{t(lang, "installedAlready")}</p>}
+        {install === "button" && (
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-[14px] leading-6 text-ink-soft">{t(lang, "installAppHint")}</p>
+            <button type="button" onClick={doInstall} className="shrink-0 rounded-full bg-ink px-4 py-2 text-[13px] font-bold text-bg">
+              {t(lang, "installApp")}
+            </button>
+          </div>
+        )}
+        {installTip && <p className="text-[14px] leading-6 text-ink-soft">{installTip}</p>}
+      </Section>
+
+      <Section title={t(lang, "clearCache")}>
+        <p className="text-[13px] leading-5 text-muted">{t(lang, "clearCacheHint")}</p>
+        <button
+          type="button"
+          onClick={clearData}
+          disabled={cleared}
+          className="self-start rounded-full border border-line px-4 py-2 text-[13px] font-bold text-accent disabled:opacity-60"
+        >
+          {cleared ? t(lang, "cacheCleared") : t(lang, "clearCache")}
+        </button>
+      </Section>
+    </SubpageShell>
+  );
+}

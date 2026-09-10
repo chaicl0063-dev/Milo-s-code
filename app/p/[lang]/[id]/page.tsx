@@ -9,6 +9,7 @@ import { llmConfigured } from "@/lib/guide";
 import { BackButton } from "@/components/BackButton";
 import { GuidePanel } from "@/components/GuidePanel";
 import { SourceLinks } from "@/components/SourceLinks";
+import { FavoriteStar } from "@/components/FavoriteStar";
 import { PinIcon } from "@/components/Icons";
 
 type Params = Promise<{ lang: string; id: string }>;
@@ -60,6 +61,25 @@ export default async function PlacePage({ params }: { params: Params }) {
           <div className="h-full w-full bg-gradient-to-b from-[#e7d6c4] to-[#c8b39a]" />
         )}
         <div className="absolute inset-x-0 bottom-0 h-[140px] bg-gradient-to-b from-transparent to-surface" />
+        {place.coordinates && (
+          <div className="absolute right-5 top-5">
+            <FavoriteStar
+              uiLang={lang}
+              size={22}
+              className="bg-surface/95 shadow-[0_4px_14px_rgba(27,31,29,0.12)]"
+              place={{
+                id: place.id,
+                lang,
+                title: place.title,
+                description: place.description || undefined,
+                thumbnail: place.image?.source,
+                lat: place.coordinates.lat,
+                lon: place.coordinates.lon,
+                category: place.category,
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* 正文；relative 让它压在头图的渐变层之上 */}

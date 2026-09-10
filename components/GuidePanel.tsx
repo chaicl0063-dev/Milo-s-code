@@ -9,24 +9,30 @@ interface Props {
   placeId: string;
   /** 界面语言；讲解语言默认跟它，用户在「我的」里另设过就用设的 */
   uiLang: Lang;
+  /** 离线阅读页传入已下载的讲解，面板直接显示它而不是「听导游讲讲」按钮 */
+  initialNarration?: string;
+  initialGuideLang?: Lang;
+  /** 没网时关掉追问 */
+  allowFollowUp?: boolean;
 }
 
 type Turn = { role: "assistant" | "user"; content: string };
 
 /** 详情页的「听导游讲讲」：一键讲解，流式显示，可以继续追问 */
-export function GuidePanel({ placeId, uiLang }: Props) {
-  const [guideLang, setGuideLang] = useState<Lang>(uiLang);
-  const [turns, setTurns] = useState<Turn[]>([]);
+export function GuidePanel({ placeId, uiLang, initialNarration, initialGuideLang, allowFollowUp = true }: Props) {
+  const [guideLang, setGuideLang] = useState<Lang>(initialGuideLang ?? uiLang);
+  const [turns, setTurns] = useState<Turn[]>(initialNarration ? [{ role: "assistant", content: initialNarration }] : []);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [question, setQuestion] = useState("");
   const abortRef = useRef<AbortController | null>(null);
 
-  // 讲解语言偏好存在 localStorage，只能挂载后读
+  // 讲解语言偏好存在 localStorage，只能挂载后读；离线页已经指定了语言就不动
   useEffect(() => {
+    if (initialGuideLang) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setGuideLang(resolveGuideLang(uiLang));
-  }, [uiLang]);
+  }, [uiLang, initialGuideLang]);
 
   const started = turns.length > 0;
 
@@ -95,7 +101,7 @@ export function GuidePanel({ placeId, uiLang }: Props) {
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.12em] text-accent">
               <SparkIcon size={14} />
-              {t(uiLang, "askGuide")}
+              {t(uiLang, initialNarration ? "downloadedGuide" : "askGuide")}
             </span>
             <span className="text-[11px] text-faint">{t(uiLang, "guideDisclaimer")}</span>
           </div>
@@ -118,7 +124,7 @@ export function GuidePanel({ placeId, uiLang }: Props) {
 
       {error && <p className="text-[13px] text-accent">{error}</p>}
 
-      {started && (
+      {started && allowFollowUp && (
         <form onSubmit={ask} className="flex gap-2">
           <input
             value={question}
