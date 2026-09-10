@@ -92,7 +92,7 @@ export function GuideScreen({ llmReady }: { llmReady: boolean }) {
   // 有新消息就滚到底
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
-  }, [messages]);
+  }, [messages, interests]);
 
   type NewMsg = Msg extends infer M ? (M extends Msg ? Omit<M, "id"> : never) : never;
   const push = (m: NewMsg) => setMessages((prev) => [...prev, { ...m, id: mk() } as Msg]);
@@ -206,6 +206,8 @@ export function GuideScreen({ llmReady }: { llmReady: boolean }) {
   /* ---------- 渲染 ---------- */
   const p = PERSONA[persona];
   const lastId = messages[messages.length - 1]?.id;
+  // 底部悬浮的东西（输入框，聊起来后还有一行快捷胶囊）会盖住最后几条消息，正文要留出同样高度
+  const overlayPx = TAB_BAR_HEIGHT + (fresh ? 84 : 140);
 
   const cards = (openTranslate: () => void) => [
     { key: "plan", icon: <RouteIcon size={20} />, title: t(lang, "planToday"), hint: t(lang, "planTodayHint"), onClick: startPlan },
@@ -216,7 +218,7 @@ export function GuideScreen({ llmReady }: { llmReady: boolean }) {
 
   return (
     <>
-      <main className="mx-auto flex min-h-dvh w-full max-w-[520px] flex-col px-4 pt-12" style={{ paddingBottom: `calc(${TAB_BAR_HEIGHT + 84}px + env(safe-area-inset-bottom))` }}>
+      <main className="mx-auto flex w-full max-w-[520px] flex-col px-4 pt-12" style={{ paddingBottom: `calc(${overlayPx}px + env(safe-area-inset-bottom))` }}>
         {/* 头部：导游头像、名字、所在区域 */}
         <div className="flex items-center gap-3 px-1">
           <PersonaAvatar id={persona} size={44} />
@@ -306,7 +308,7 @@ export function GuideScreen({ llmReady }: { llmReady: boolean }) {
               </div>
             );
           })}
-          <div ref={bottomRef} />
+          <div ref={bottomRef} style={{ scrollMarginBottom: `calc(${overlayPx}px + env(safe-area-inset-bottom))` }} />
         </div>
 
         {/* 快捷卡片：刚进来是大卡片，聊起来后收成一行小胶囊（在输入框上方） */}
