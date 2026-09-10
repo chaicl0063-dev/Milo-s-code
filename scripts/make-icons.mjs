@@ -14,11 +14,13 @@ function iconSvg({ padding = 0, rounded = true }) {
   return `
 <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
   <rect x="${padding}" y="${padding}" width="${inner}" height="${inner}" rx="${r}" fill="#1B1F1D"/>
-  <g transform="translate(${size / 2} ${size / 2 + 14}) scale(${(inner / 512) * 0.82})">
+  <g transform="translate(${size / 2} ${size / 2 + 22}) scale(${(inner / 512) * 0.72})">
+    <!-- 图钉：圆头 + 短尾 -->
     <path d="M -152 -30 A 152 152 0 1 1 152 -30 C 152 56 44 108 14 176 Q 0 196 -14 176 C -44 108 -152 56 -152 -30 Z" fill="#B85C38"/>
-    <path d="M -176 -30 A 176 176 0 0 1 176 -30" fill="none" stroke="#F4F1EA" stroke-width="30" stroke-linecap="round"/>
-    <rect x="-206" y="-82" width="58" height="108" rx="29" fill="#F4F1EA"/>
-    <rect x="148" y="-82" width="58" height="108" rx="29" fill="#F4F1EA"/>
+    <!-- 耳机：头带离图钉留出一圈空隙，耳罩挂在图钉两侧外面，不贴着 -->
+    <path d="M -216 -30 A 216 216 0 0 1 216 -30" fill="none" stroke="#F4F1EA" stroke-width="26" stroke-linecap="round"/>
+    <rect x="-246" y="-86" width="62" height="118" rx="31" fill="#F4F1EA"/>
+    <rect x="184" y="-86" width="62" height="118" rx="31" fill="#F4F1EA"/>
   </g>
 </svg>`;
 }
