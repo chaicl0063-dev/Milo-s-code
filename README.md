@@ -1,4 +1,4 @@
-# Around You · AI 导游 App（练手项目）
+# ReAround You · AI 导游 App（练手项目）
 
 线上地址：https://milo-s-code.vercel.app （推送到 main 分支后 Vercel 自动重新部署）
 

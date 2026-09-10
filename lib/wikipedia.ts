@@ -7,7 +7,7 @@
  */
 import type { Place } from "@/lib/places/types";
 
-export const USER_AGENT = "TourGuideApp/0.1 (personal learning project; https://github.com/chaicl0063-dev/Milo-s-code)";
+export const USER_AGENT = "ReAroundYou/0.3 (personal learning project; https://github.com/chaicl0063-dev/Milo-s-code)";
 
 /** 只允许形如 en / zh / pt-br 的语言代码，防止拼接出奇怪的域名 */
 export function isValidLang(lang: string): boolean {

@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const { lang, id } = await params;
   if (!isLang(lang)) return {};
   const place = await getPlaceDetail(lang, decodeURIComponent(id)).catch(() => null);
-  return place ? { title: `${place.title} · Around You`, description: place.description } : {};
+  return place ? { title: `${place.title} · ReAround You`, description: place.description } : {};
 }
 
 export default async function PlacePage({ params }: { params: Params }) {

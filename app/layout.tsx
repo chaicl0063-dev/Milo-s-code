@@ -19,10 +19,10 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Around You · AI Tour Guide",
+  title: "ReAround You · AI Tour Guide",
   description: "See what is around you and learn its story, anywhere in the world.",
-  applicationName: "Around You",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "Around You" },
+  applicationName: "ReAround You",
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "ReAround You" },
   formatDetection: { telephone: false },
 };
 
