@@ -8,10 +8,11 @@ import { t } from "@/lib/i18n";
 import { formatCoords, formatDistance, haversine, isValidCoords } from "@/lib/geo";
 import { homeHref } from "@/lib/links";
 import type { City } from "@/lib/cities";
-import { isOnboarded, readCoords, writeCoords } from "@/lib/prefs";
+import { isOnboarded, readCoords, resolveGuideLang, writeCoords } from "@/lib/prefs";
 import { useLanguage } from "@/components/LanguageProvider";
 import { LocatePanel } from "@/components/LocatePanel";
 import { Onboarding } from "@/components/Onboarding";
+import { PhotoIdentify } from "@/components/PhotoIdentify";
 import { PlaceList } from "@/components/PlaceList";
 import { TabBar, TAB_BAR_HEIGHT } from "@/components/TabBar";
 import { BackIcon, LocateIcon, PinIcon, SearchIcon } from "@/components/Icons";
@@ -51,6 +52,8 @@ export function HomeScreen() {
   const [center, setCenter] = useState<Coords | null>(() => coordsFromParams(searchParams));
   const [myLocation, setMyLocation] = useState<Coords | null>(null);
   const [showPicker, setShowPicker] = useState(false);
+  /** 拍照识别没匹配上周边地点时，带着识别出的名字打开选地面板 */
+  const [pickerQuery, setPickerQuery] = useState("");
   const [locating, setLocating] = useState(false);
   /** null = 还没读本地标记；false = 要先走首次引导 */
   const [onboarded, setOnboardedState] = useState<boolean | null>(null);
@@ -342,8 +345,16 @@ export function HomeScreen() {
         lang={lang}
         locating={locating}
         canUseGeolocation={canUseGeolocation}
-        onClose={center ? () => setShowPicker(false) : undefined}
+        onClose={
+          center
+            ? () => {
+                setShowPicker(false);
+                setPickerQuery("");
+              }
+            : undefined
+        }
         near={center}
+        initialQuery={pickerQuery}
         onAllowLocation={() => requestLocation()}
         onPickCity={pickCity}
         onCoords={applyCenter}
@@ -405,14 +416,25 @@ export function HomeScreen() {
             </button>
           )}
 
-          <button
-            type="button"
-            onClick={goToMyLocation}
-            title={t(lang, "myLocation")}
-            className="absolute bottom-5 right-5 z-[1000] flex h-12 w-12 items-center justify-center rounded-full bg-surface text-ink shadow-[0_6px_16px_rgba(27,31,29,0.14)]"
-          >
-            <LocateIcon />
-          </button>
+          <div className="absolute bottom-5 right-5 z-[1000] flex flex-col gap-3">
+            <PhotoIdentify
+              lang={lang}
+              guideLang={resolveGuideLang(lang)}
+              candidates={places}
+              onSearchName={(name) => {
+                setPickerQuery(name);
+                setShowPicker(true);
+              }}
+            />
+            <button
+              type="button"
+              onClick={goToMyLocation}
+              title={t(lang, "myLocation")}
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-surface text-ink shadow-[0_6px_16px_rgba(27,31,29,0.14)]"
+            >
+              <LocateIcon />
+            </button>
+          </div>
         </section>
 
         {/* 底部面板（手机可拖）/ 桌面右栏 */}

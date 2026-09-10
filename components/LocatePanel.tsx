@@ -17,15 +17,17 @@ interface Props {
   onClose?: () => void;
   /** 当前浏览中心，用来让搜索结果更贴近（也决定要不要查高德） */
   near?: { lat: number; lon: number } | null;
+  /** 预填的搜索词（拍照识别后带过来） */
+  initialQuery?: string;
   onAllowLocation: () => void;
   onPickCity: (city: City) => void;
   onCoords: (coords: { lat: number; lon: number }) => void;
 }
 
 /** 选地面板：搜索地名或输入坐标、允许定位、热门城市 */
-export function LocatePanel({ lang, locating, canUseGeolocation, onClose, near, onAllowLocation, onPickCity, onCoords }: Props) {
+export function LocatePanel({ lang, locating, canUseGeolocation, onClose, near, initialQuery = "", onAllowLocation, onPickCity, onCoords }: Props) {
   const [mode, setMode] = useState<"name" | "coords">("name");
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [coordsError, setCoordsError] = useState<string | null>(null);

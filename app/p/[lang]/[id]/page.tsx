@@ -6,6 +6,7 @@ import { categoryLabel, isLang, t } from "@/lib/i18n";
 import { formatCoords } from "@/lib/geo";
 import { homeHref } from "@/lib/links";
 import { llmConfigured } from "@/lib/guide";
+import { asrConfigured } from "@/lib/asr";
 import { BackButton } from "@/components/BackButton";
 import { GuidePanel } from "@/components/GuidePanel";
 import { SourceLinks } from "@/components/SourceLinks";
@@ -95,7 +96,7 @@ export default async function PlacePage({ params }: { params: Params }) {
           )}
         </div>
 
-        {llmConfigured() && <GuidePanel placeId={place.id} uiLang={lang} />}
+        {llmConfigured() && <GuidePanel placeId={place.id} uiLang={lang} asrEnabled={asrConfigured()} />}
 
         {place.extract ? (
           <p className="text-[15px] leading-6 text-ink-soft">{place.extract}</p>

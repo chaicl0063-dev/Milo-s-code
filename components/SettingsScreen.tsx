@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GUIDE_LANGS, GUIDE_LANG_LABEL, LANGS, t, type GuideLang, type Lang } from "@/lib/i18n";
-import { clearAllLocalData, getAudience, resolveGuideLang, setAudience, setGuideLangPref, type Audience } from "@/lib/prefs";
+import { clearAllLocalData, getAudience, getAutoSpeak, resolveGuideLang, setAudience, setAutoSpeak, setGuideLangPref, type Audience } from "@/lib/prefs";
+import { speechSupported } from "@/lib/speech";
 import { useLanguage } from "@/components/LanguageProvider";
 import { Section, Segmented, SubpageShell } from "@/components/SubpageShell";
 
@@ -15,6 +16,8 @@ export function SettingsScreen() {
   const router = useRouter();
   const [guideLang, setGuideLangState] = useState<GuideLang>(lang);
   const [audience, setAudienceState] = useState<Audience>("adult");
+  const [autoSpeak, setAutoSpeakState] = useState(false);
+  const [canSpeak, setCanSpeak] = useState(false);
   const [install, setInstall] = useState<"unknown" | "installed" | "button" | "ios" | "android" | "desktop">("unknown");
   const [cleared, setCleared] = useState(false);
 
@@ -22,6 +25,8 @@ export function SettingsScreen() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setGuideLangState(resolveGuideLang(lang));
     setAudienceState(getAudience());
+    setAutoSpeakState(getAutoSpeak());
+    setCanSpeak(speechSupported());
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
     const ua = navigator.userAgent;
@@ -94,6 +99,26 @@ export function SettingsScreen() {
           }}
         />
       </Section>
+
+      {canSpeak && (
+        <Section title={t(lang, "autoSpeak")}>
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-[13px] leading-5 text-muted">{t(lang, "autoSpeakHint")}</p>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={autoSpeak}
+              onClick={() => {
+                setAutoSpeakState(!autoSpeak);
+                setAutoSpeak(!autoSpeak);
+              }}
+              className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${autoSpeak ? "bg-accent" : "bg-line"}`}
+            >
+              <span className={`absolute top-1 h-5 w-5 rounded-full bg-surface shadow transition-[left] ${autoSpeak ? "left-6" : "left-1"}`} />
+            </button>
+          </div>
+        </Section>
+      )}
 
       <Section title={t(lang, "installTitle")}>
         {install === "installed" && <p className="text-[14px] text-muted">{t(lang, "installedAlready")}</p>}

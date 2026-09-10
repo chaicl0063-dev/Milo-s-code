@@ -14,7 +14,16 @@ const KEYS = {
   installDismissed: "tourguide.installHintDismissed",
   audience: "tourguide.audience",
   onboarded: "tourguide.onboarded",
+  autoSpeak: "tourguide.autoSpeak",
 } as const;
+
+export function getAutoSpeak(): boolean {
+  return read(KEYS.autoSpeak) === "1";
+}
+
+export function setAutoSpeak(v: boolean): void {
+  write(KEYS.autoSpeak, v ? "1" : null);
+}
 
 function read(key: string): string | null {
   try {
