@@ -253,6 +253,7 @@ const en = {
   feedback: "Feedback",
   contactBody: "Got an idea, a wrong fact, or a place we missed? A feedback form will live here soon.",
   sendFeedback: "Send feedback",
+  sourcesLabel: "Sources",
 } as const;
 
 const zh: Record<keyof typeof en, string> = {
@@ -478,6 +479,7 @@ const zh: Record<keyof typeof en, string> = {
   feedback: "反馈",
   contactBody: "有想法、发现资料不对、或者漏了某个地方？这里以后会放反馈表单。",
   sendFeedback: "发送反馈",
+  sourcesLabel: "来源",
 };
 
 export const dict = { en, zh } as const;

@@ -7,7 +7,6 @@ import { formatCoords } from "@/lib/geo";
 import { homeHref, talkHref } from "@/lib/links";
 import { llmConfigured } from "@/lib/guide";
 import { BackButton } from "@/components/BackButton";
-import { SourceLinks } from "@/components/SourceLinks";
 import { FavoriteStar } from "@/components/FavoriteStar";
 import { ShareButton } from "@/components/ShareButton";
 import { DetailFacts, type Fact } from "@/components/DetailFacts";
@@ -106,7 +105,7 @@ export default async function PlacePage({ params, searchParams }: { params: Para
                 <span>{formatCoords(place.coordinates.lat, place.coordinates.lon)}</span>
               </Link>
             )}
-            <DetailFacts facts={facts} lang={lang} />
+            <DetailFacts facts={facts} lang={lang} links={place.links} />
           </div>
           {intro && <p className="pt-1 text-[14px] leading-6 text-ink-soft">{intro}</p>}
           {listing && place.travelGuide && (
@@ -126,7 +125,6 @@ export default async function PlacePage({ params, searchParams }: { params: Para
 
         <DetailSources place={place} lang={lang} />
 
-        <SourceLinks links={place.links} lang={lang} />
       </article>
     </main>
   );

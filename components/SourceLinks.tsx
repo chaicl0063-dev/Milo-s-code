@@ -2,7 +2,7 @@ import type { PlaceDetail } from "@/lib/places/types";
 import { t, type Lang } from "@/lib/i18n";
 
 /** 详情页底部：一排小圆钮，跳到各数据源。字母标识用内联 SVG 画，不依赖外部图片。 */
-export function SourceLinks({ links, lang }: { links: PlaceDetail["links"]; lang: Lang }) {
+export function SourceLinks({ links, lang, size = "md" }: { links: PlaceDetail["links"]; lang: Lang; size?: "sm" | "md" }) {
   const items: Array<{ href: string; label: string; glyph: React.ReactNode }> = [];
   if (links.wikipedia) items.push({ href: links.wikipedia, label: t(lang, "readOnWikipedia"), glyph: <WikipediaGlyph /> });
   if (links.osm) items.push({ href: links.osm, label: t(lang, "viewOnOsm"), glyph: <OsmGlyph /> });
@@ -11,7 +11,7 @@ export function SourceLinks({ links, lang }: { links: PlaceDetail["links"]; lang
   if (items.length === 0) return null;
 
   return (
-    <ul className="flex items-center gap-3">
+    <ul className={`flex items-center ${size === "sm" ? "gap-2" : "gap-3"}`}>
       {items.map((item) => (
         <li key={item.href}>
           <a
@@ -20,7 +20,7 @@ export function SourceLinks({ links, lang }: { links: PlaceDetail["links"]; lang
             rel="noopener noreferrer"
             title={item.label}
             aria-label={item.label}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-2 text-ink transition-colors hover:bg-line"
+            className={`flex items-center justify-center rounded-full bg-surface-2 text-ink transition-colors hover:bg-line ${size === "sm" ? "h-8 w-8 [&_svg]:h-4 [&_svg]:w-4" : "h-10 w-10"}`}
           >
             {item.glyph}
           </a>
