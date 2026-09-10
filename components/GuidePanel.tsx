@@ -31,6 +31,25 @@ interface Props {
 
 type Turn = { role: "assistant" | "user"; content: string };
 
+/** 某个地点的对话存 sessionStorage：从详情页来回、切 tab 都还在，关掉应用就清 */
+const talkKey = (placeId: string, lang: string) => `tourguide.talk:${lang}:${placeId}`;
+function loadTurns(placeId: string, lang: string): Turn[] {
+  try {
+    const raw = window.sessionStorage.getItem(talkKey(placeId, lang));
+    const turns = raw ? (JSON.parse(raw) as Turn[]) : [];
+    return Array.isArray(turns) ? turns.filter((x) => x && typeof x.content === "string" && x.content) : [];
+  } catch {
+    return [];
+  }
+}
+function saveTurns(placeId: string, lang: string, turns: Turn[]): void {
+  try {
+    window.sessionStorage.setItem(talkKey(placeId, lang), JSON.stringify(turns));
+  } catch {
+    /* 隐私模式 */
+  }
+}
+
 /** page 布局下固定在底部的提问栏高度，外层页面按它留白 */
 export const TALK_INPUT_HEIGHT = 72;
 
@@ -62,8 +81,19 @@ export function GuidePanel({ placeId, uiLang, initialNarration, initialGuideLang
     setVoiceEngine(getVoiceEngine());
     setPersonaState(getPersona());
     if (!initialGuideLang) setGuideLang(resolveGuideLang(uiLang));
+    // 离线页有自己的讲解；其他情况恢复这次会话里聊过的
+    if (!initialNarration) {
+      const saved = loadTurns(placeId, uiLang);
+      if (saved.length) setTurns(saved);
+    }
     setPrefsReady(true);
-  }, [uiLang, initialGuideLang]);
+  }, [uiLang, initialGuideLang, initialNarration, placeId]);
+
+  // 生成完了就存一份
+  useEffect(() => {
+    if (!prefsReady || streaming || initialNarration || turns.length === 0) return;
+    saveTurns(placeId, uiLang, turns);
+  }, [turns, streaming, prefsReady, initialNarration, placeId, uiLang]);
 
   const started = turns.length > 0;
   const lastAssistantIdx = turns.map((x) => x.role).lastIndexOf("assistant");

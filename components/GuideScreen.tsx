@@ -14,7 +14,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { PersonaAvatar } from "@/components/PersonaPicker";
 import { PhotoIdentify } from "@/components/PhotoIdentify";
 import { TabBar, TAB_BAR_HEIGHT } from "@/components/TabBar";
-import { BusIcon, HeadphonesIcon, MapIcon, NotebookIcon, QuoteIcon, RefreshIcon, RouteIcon, SparkIcon, TranslateIcon, WalkIcon } from "@/components/Icons";
+import { BusIcon, CloseIcon, HeadphonesIcon, MapIcon, NotebookIcon, QuoteIcon, RefreshIcon, RouteIcon, SparkIcon, TranslateIcon, WalkIcon } from "@/components/Icons";
 
 type Coords = { lat: number; lon: number };
 
@@ -48,6 +48,36 @@ export function formatMinutes(lang: Lang, minutes: number): string {
 let nextId = 1;
 const mk = () => nextId++;
 
+/** 对话存本机，切 tab、刷新都还在；一天没动就重新开始 */
+const CHAT_KEY = "tourguide.guideChat";
+const CHAT_TTL = 24 * 60 * 60 * 1000;
+interface SavedChat {
+  lang: Lang;
+  savedAt: number;
+  messages: Msg[];
+  budget: Budget | null;
+  interests: Interest[];
+}
+function loadChat(lang: Lang): SavedChat | null {
+  try {
+    const raw = window.localStorage.getItem(CHAT_KEY);
+    if (!raw) return null;
+    const c = JSON.parse(raw) as SavedChat;
+    if (c.lang !== lang || Date.now() - c.savedAt > CHAT_TTL || !Array.isArray(c.messages) || c.messages.length < 2) return null;
+    return c;
+  } catch {
+    return null;
+  }
+}
+function saveChat(c: SavedChat | null): void {
+  try {
+    if (c) window.localStorage.setItem(CHAT_KEY, JSON.stringify(c));
+    else window.localStorage.removeItem(CHAT_KEY);
+  } catch {
+    /* 隐私模式 */
+  }
+}
+
 /**
  * 「导游」tab：AI 中心。一个聊天界面，快捷卡片（规划今天、拍照翻译、两个付费占位）加输入框。
  * 规划流程全靠按钮，不用打字；结果是几张停靠点卡片，可以一键送到地图上。
@@ -75,9 +105,33 @@ export function GuideScreen({ llmReady }: { llmReady: boolean }) {
     setGuideLang(resolveGuideLang(lang));
     const c = readCoords("center") ?? readCoords("myLocation");
     setCenter(c);
-    setMessages([{ id: mk(), role: "assistant", kind: "text", text: t(lang, c ? "guideHello" : "guideNoLocation") }]);
+    const saved = loadChat(lang);
+    if (saved) {
+      nextId = Math.max(nextId, ...saved.messages.map((m) => m.id + 1));
+      setMessages(saved.messages);
+      setBudget(saved.budget);
+      setInterests(saved.interests);
+    } else {
+      setMessages([{ id: mk(), role: "assistant", kind: "text", text: t(lang, c ? "guideHello" : "guideNoLocation") }]);
+    }
     setReady(true);
   }, [lang]);
+
+  // 每次消息变化就存一份（正在生成中的、正在排路线的不存）
+  useEffect(() => {
+    if (!ready) return;
+    const done = messages.filter((m) => !(m.role === "assistant" && (m.kind === "planning" || (m.kind === "text" && m.streaming))));
+    if (done.length < 2) return;
+    saveChat({ lang, savedAt: Date.now(), messages: done, budget, interests });
+  }, [messages, budget, interests, lang, ready]);
+
+  function resetChat() {
+    abortRef.current?.abort();
+    saveChat(null);
+    setBudget(null);
+    setInterests([]);
+    setMessages([{ id: mk(), role: "assistant", kind: "text", text: t(lang, center ? "guideHello" : "guideNoLocation") }]);
+  }
 
   useEffect(() => {
     if (!center) return;
@@ -231,6 +285,18 @@ export function GuideScreen({ llmReady }: { llmReady: boolean }) {
               {areaName ? ` · ${areaName}` : ""}
             </p>
           </div>
+          {!fresh && (
+            <button
+              type="button"
+              onClick={resetChat}
+              aria-label={t(lang, "newChat")}
+              title={t(lang, "newChat")}
+              className="ml-auto flex h-9 items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-[12px] font-semibold text-muted"
+            >
+              <CloseIcon size={14} />
+              {t(lang, "newChat")}
+            </button>
+          )}
         </div>
 
         {!llmReady && <p className="mt-6 rounded-[16px] bg-surface-2 px-4 py-3 text-[14px] text-muted">{t(lang, "guideError")}</p>}
