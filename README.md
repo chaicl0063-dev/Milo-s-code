@@ -100,6 +100,10 @@ scripts/dev.mjs                开发启动器，负责把 .env.local 里的代�
 - **拍照翻译**：相机弹层多了「这是什么 / 翻译文字」切换，`/api/identify` 加 `mode=translate`，读出原文并翻成讲解语言。
 - **主题漫步、旅行日记**：只有入口，标「付费功能」，点了导游会说明尚未开放。
 
+## 账号与联系我们
+
+「我的」顶部是「登录 / 注册」（`/me/login`）：Apple、Google 两张卡片只是入口（要开发者账号和第三方登录配置，先标「即将开放」），「通过邮箱继续」是真的：`POST /api/signup` 把邮箱存进 Upstash Redis（Vercel Marketplace 一键创建，免费档；环境变量 `KV_REST_API_URL` / `KV_REST_API_TOKEN` 自动注入；键 `signup:<email>` 是哈希，`signups` 是集合）。没配 KV 时接口返回 `stored:false`，本机仍记住「已登记」。不收密码，真正的登录态以后接托管身份服务（Supabase Auth 等）。「联系我们」（`/me/contact`）只是入口。
+
 ## 语音与拍照
 
 - **朗读**：默认「自然音色」，即 `/api/tts` 用 `msedge-tts` 调微软 Edge「大声朗读」背后的神经网络语音（每种语言一男一女，随导游人物切换：Mia 用晓晓、Jenny 等，Milo 用云希、Guy 等；免费无 Key，但非官方签约接口，失效时前端自动退回手机自带语音）；设置里可切「手机自带」（`speechSynthesis`，离线可用）。`lib/useNarrator.ts` 按句切开逐句读、边读边预取下一句、当前句高亮；设置里有「自动朗读」开关。音频响应带一天的缓存头。

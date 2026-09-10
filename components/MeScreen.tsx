@@ -3,19 +3,28 @@
 import Link from "next/link";
 import { t } from "@/lib/i18n";
 import { useFavorites } from "@/lib/favorites";
+import { useAccount } from "@/lib/account";
 import { useLanguage } from "@/components/LanguageProvider";
 import { TabBar, TAB_BAR_HEIGHT } from "@/components/TabBar";
-import { ChevronRightIcon, GearIcon, InfoIcon, StarIcon } from "@/components/Icons";
+import { ChevronRightIcon, GearIcon, InfoIcon, MailIcon, StarIcon, UserIcon } from "@/components/Icons";
 
 /** 「我的」汇总页：收藏、设置、关于 三个入口 */
 export function MeScreen() {
   const { lang } = useLanguage();
   const { favorites } = useFavorites();
+  const [account] = useAccount();
 
   const entries = [
+    {
+      href: "/me/login",
+      label: account ? account.email : t(lang, "loginEntry"),
+      sub: account ? t(lang, "signedInAs") : t(lang, "loginEntryHint"),
+      icon: <UserIcon size={22} />,
+    },
     { href: "/me/favorites", label: t(lang, "favorites"), sub: t(lang, "favoritesCount", { n: favorites.length }), icon: <StarIcon size={22} /> },
     { href: "/me/settings", label: t(lang, "settings"), sub: `${t(lang, "uiLanguage")} · ${t(lang, "guideLanguage")} · ${t(lang, "installTitle")}`, icon: <GearIcon size={22} /> },
     { href: "/me/about", label: t(lang, "aboutTitle"), sub: t(lang, "dataSourcesTitle"), icon: <InfoIcon size={22} /> },
+    { href: "/me/contact", label: t(lang, "contactUs"), sub: t(lang, "contactHint"), icon: <MailIcon size={22} /> },
   ];
 
   return (
