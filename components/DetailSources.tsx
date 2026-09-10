@@ -3,16 +3,16 @@
 import { useState } from "react";
 import type { PlaceDetail } from "@/lib/places/types";
 import { t, type Lang } from "@/lib/i18n";
-import { ChevronRightIcon, ExternalIcon, SparkIcon } from "@/components/Icons";
+import { ChevronRightIcon, ExternalIcon } from "@/components/Icons";
 
 /**
- * 「更多来源」：Wikivoyage 旅行指南（可展开）、UNESCO 世界遗产（链接）、
- * 旅行者论坛观点（TripAdvisor 等没有开放接口，做成由 AI 检索的付费预览入口，暂不可用）。
+ * 「更多来源」：Wikivoyage 旅行指南（可展开）、UNESCO 世界遗产（链接）。两样都没有就不显示。
  */
 export function DetailSources({ place, lang }: { place: PlaceDetail; lang: Lang }) {
   const [guideOpen, setGuideOpen] = useState(false);
   const guide = place.travelGuide;
   const heritage = place.unesco;
+  if (!guide && !heritage) return null;
 
   return (
     <section className="flex flex-col gap-2">
@@ -53,16 +53,6 @@ export function DetailSources({ place, lang }: { place: PlaceDetail; lang: Lang 
           </li>
         )}
 
-        <li className="flex items-center gap-3 px-4 py-3 opacity-70">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-accent">
-            <SparkIcon size={16} />
-          </span>
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="text-[14px] font-semibold text-ink">{t(lang, "travelerForum")}</span>
-            <span className="text-[12px] leading-4 text-muted">{t(lang, "travelerForumHint")}</span>
-          </span>
-          <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[11px] font-semibold text-faint">{t(lang, "comingSoonPaid")}</span>
-        </li>
       </ul>
     </section>
   );

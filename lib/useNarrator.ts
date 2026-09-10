@@ -12,8 +12,36 @@ import type { GuideLang } from "@/lib/i18n";
 import { GUIDE_LANG_BCP47, pickVoice, speechSupported, splitSentences } from "@/lib/speech";
 import type { VoiceGender } from "@/lib/personas";
 
-export type NarratorState = "idle" | "playing" | "paused" | "done";
+/** blocked = 浏览器不允许没有用户手势就出声（手机上常见），等用户点一下再继续 */
+export type NarratorState = "idle" | "playing" | "paused" | "done" | "blocked";
 export type VoiceEngine = "cloud" | "browser";
+
+/** 0.05 秒的静音 WAV（data URL），只用来在手势里解锁音频元素 */
+const SILENT_WAV = (() => {
+  const samples = 2205;
+  const buf = new ArrayBuffer(44 + samples * 2);
+  const v = new DataView(buf);
+  const str = (o: number, s: string) => {
+    for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i));
+  };
+  str(0, "RIFF");
+  v.setUint32(4, 36 + samples * 2, true);
+  str(8, "WAVE");
+  str(12, "fmt ");
+  v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true);
+  v.setUint16(22, 1, true);
+  v.setUint32(24, 44100, true);
+  v.setUint32(28, 44100 * 2, true);
+  v.setUint16(32, 2, true);
+  v.setUint16(34, 16, true);
+  str(36, "data");
+  v.setUint32(40, samples * 2, true);
+  let bin = "";
+  const bytes = new Uint8Array(buf);
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return typeof btoa === "function" ? `data:audio/wav;base64,${btoa(bin)}` : "";
+})();
 
 export function useNarrator(text: string, lang: GuideLang, streaming: boolean, engine: VoiceEngine = "cloud", voice: VoiceGender = "female") {
   const [state, setState] = useState<NarratorState>("idle");
@@ -116,7 +144,15 @@ export function useNarrator(text: string, lang: GuideLang, streaming: boolean, e
         a.onended = finish;
         a.onerror = finish;
         a.src = url;
-        a.play().catch(() => finish());
+        a.play().catch((err: unknown) => {
+          // 没有用户手势不许自动播放：停在这一句，等用户点「播放」再从这句继续
+          if (err instanceof Error && err.name === "NotAllowedError") {
+            busyRef.current = false;
+            setBoth("blocked");
+            return;
+          }
+          finish();
+        });
       });
       return;
     }
@@ -161,8 +197,29 @@ export function useNarrator(text: string, lang: GuideLang, streaming: boolean, e
     busyRef.current = false;
   }, [browserOk]);
 
+  /** 在用户手势里先「解锁」音频元素：手机浏览器只允许手势里开始的播放，之后同一个元素就可以由代码控制 */
+  const unlock = useCallback(() => {
+    if (typeof Audio === "undefined") return;
+    const a = getAudio();
+    if (stateRef.current === "playing" || busyRef.current) return;
+    if (!a.src) a.src = SILENT_WAV;
+    a.play()
+      .then(() => {
+        if (a.src === SILENT_WAV) {
+          a.pause();
+          a.removeAttribute("src");
+        }
+      })
+      .catch(() => {});
+  }, [getAudio]);
+
   const play = useCallback(() => {
     if (!supported) return;
+    if (stateRef.current === "blocked") {
+      setBoth("playing");
+      window.setTimeout(() => speakNextRef.current(), 0);
+      return;
+    }
     if (stateRef.current === "paused") {
       if (engineRef.current === "cloud" && !cloudFailedRef.current && audioRef.current?.src) {
         audioRef.current.play().catch(() => {});
@@ -220,5 +277,5 @@ export function useNarrator(text: string, lang: GuideLang, streaming: boolean, e
     };
   }, []);
 
-  return { supported, state, currentIndex, play, pause, stop };
+  return { supported, state, currentIndex, play, pause, stop, unlock };
 }

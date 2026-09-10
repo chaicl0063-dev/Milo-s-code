@@ -66,7 +66,7 @@ export interface PlaceDetail {
   /** 是世界遗产（或其组成部分）时的编号和名称 */
   unesco?: { whs: string; name: string; url: string };
   /** 最近的 Wikivoyage 目的地条目摘要 */
-  travelGuide?: { source: "wikivoyage"; title: string; extract: string; url: string; dist: number };
+  travelGuide?: { source: "wikivoyage"; title: string; extract: string; url: string; dist: number; listing?: { name: string; content: string } };
 }
 
 /** 从 id 里拆出来源前缀和剩余部分 */

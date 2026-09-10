@@ -1,20 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getPlaceDetail } from "@/lib/places/detail";
 import { categoryLabel, isLang, t } from "@/lib/i18n";
 import { formatCoords } from "@/lib/geo";
-import { homeHref } from "@/lib/links";
+import { homeHref, talkHref } from "@/lib/links";
 import { llmConfigured } from "@/lib/guide";
-import { asrConfigured } from "@/lib/asr";
 import { BackButton } from "@/components/BackButton";
-import { GuidePanel } from "@/components/GuidePanel";
 import { SourceLinks } from "@/components/SourceLinks";
 import { FavoriteStar } from "@/components/FavoriteStar";
 import { ShareButton } from "@/components/ShareButton";
 import { DetailFacts, type Fact } from "@/components/DetailFacts";
 import { DetailSources } from "@/components/DetailSources";
-import { PinIcon } from "@/components/Icons";
+import { PinIcon, SparkIcon } from "@/components/Icons";
 
 type Params = Promise<{ lang: string; id: string }>;
 type Search = Promise<{ guide?: string }>;
@@ -30,12 +28,14 @@ export default async function PlacePage({ params, searchParams }: { params: Para
   const { lang, id } = await params;
   const { guide } = await searchParams;
   if (!isLang(lang)) notFound();
+  // 旧链接 ?guide=1 直接进对话页
+  if (guide === "1") redirect(talkHref(lang, decodeURIComponent(id)));
 
   const place = await getPlaceDetail(lang, decodeURIComponent(id));
 
   if (!place) {
     return (
-      <main className="mx-auto flex min-h-dvh w-full max-w-[520px] flex-col gap-4 px-6 pt-14">
+      <main className="mx-auto flex w-full max-w-[520px] flex-col gap-4 px-6 pt-14">
         <BackButton label={t(lang, "back")} />
         <h1 className="mt-6 font-serif text-[34px] leading-10">{t(lang, "notFoundTitle")}</h1>
         <p className="text-[15px] leading-6 text-muted">{t(lang, "notFoundBody")}</p>
@@ -51,9 +51,13 @@ export default async function PlacePage({ params, searchParams }: { params: Para
   if (place.openingHours) facts.push({ label: t(lang, "openingHours"), value: place.openingHours });
   if (place.phone) facts.push({ label: t(lang, "phone"), value: place.phone, href: `tel:${place.phone}` });
   if (place.website) facts.push({ label: t(lang, "website"), value: place.website.replace(/^https?:\/\//, ""), href: place.website });
+  // 介绍：Wikivoyage 里专门写这个地点的那段（旅行者写给旅行者）优先；百科摘要退到「更多信息」里
+  const listing = place.travelGuide?.listing;
+  const intro = listing?.content || place.extract;
+  if (listing && place.extract) facts.push({ label: t(lang, "wikiSummary"), value: place.extract });
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-[520px] flex-col bg-surface">
+    <main className="mx-auto flex w-full max-w-[520px] flex-col bg-surface">
       {/* 顶部三个图标：返回 · 收藏 · 分享。sticky 且高度为 0，滚到讲解那里也一直停在顶部 */}
       <div className="pointer-events-none sticky top-5 z-20 flex h-0 items-start justify-between px-5">
         <BackButton label={t(lang, "back")} className="pointer-events-auto" />
@@ -104,10 +108,21 @@ export default async function PlacePage({ params, searchParams }: { params: Para
             )}
             <DetailFacts facts={facts} lang={lang} />
           </div>
-          {place.extract && <p className="pt-1 text-[14px] leading-6 text-ink-soft">{place.extract}</p>}
+          {intro && <p className="pt-1 text-[14px] leading-6 text-ink-soft">{intro}</p>}
+          {listing && place.travelGuide && (
+            <a href={place.travelGuide.url} target="_blank" rel="noopener noreferrer" className="text-[11px] text-faint">
+              {t(lang, "fromWikivoyage")}
+            </a>
+          )}
         </div>
 
-        {llmConfigured() && <GuidePanel placeId={place.id} uiLang={lang} asrEnabled={asrConfigured()} autoStart={guide === "1"} />}
+        {/* AI 互动放在独立页面，详情页只留一个入口，保持干净 */}
+        {llmConfigured() && (
+          <Link href={talkHref(lang, place.id)} className="flex h-14 items-center justify-center gap-2.5 rounded-[18px] bg-ink text-[16px] font-bold text-bg">
+            <SparkIcon size={20} />
+            <span>{t(lang, "askGuide")}</span>
+          </Link>
+        )}
 
         <DetailSources place={place} lang={lang} />
 

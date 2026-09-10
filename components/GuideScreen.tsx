@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { t, type GuideLang, type Lang, type MessageKey } from "@/lib/i18n";
-import { homeHref, placeHref } from "@/lib/links";
+import { homeHref, talkHref } from "@/lib/links";
 import { formatDistance } from "@/lib/geo";
 import { DEFAULT_PERSONA, PERSONA, type PersonaId } from "@/lib/personas";
 import { getPersona, readCoords, resolveGuideLang } from "@/lib/prefs";
@@ -449,7 +449,7 @@ export function StopCard({ stop, index, lang, compact = false }: { stop: RouteSt
         </p>
         {!compact && stop.why && <p className="mt-0.5 line-clamp-2 text-[12px] leading-4 text-ink-soft">{stop.why}</p>}
       </div>
-      <Link href={`${placeHref(lang, stop.id)}?guide=1`} aria-label={t(lang, "askGuide")} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-bg">
+      <Link href={talkHref(lang, stop.id)} aria-label={t(lang, "askGuide")} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-bg">
         <HeadphonesIcon size={18} />
       </Link>
     </div>

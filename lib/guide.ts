@@ -84,6 +84,7 @@ function factSheet(place: PlaceDetail): string {
   if (place.extract) lines.push(`Encyclopedia summary: ${place.extract}`);
   else lines.push("Encyclopedia summary: (none available)");
   if (place.unesco) lines.push(`UNESCO World Heritage: yes (${place.unesco.name})`);
+  if (place.travelGuide?.listing) lines.push(`Travel guide entry for this exact place (Wikivoyage, written by travelers; rely on it): ${place.travelGuide.listing.content.slice(0, 900)}`);
   if (place.travelGuide) lines.push(`Travel guide for the surrounding area (Wikivoyage, "${place.travelGuide.title}"): ${place.travelGuide.extract.slice(0, 600)}`);
   return lines.join("\n");
 }

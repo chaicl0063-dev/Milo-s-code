@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { Place } from "@/lib/places/types";
 import { categoryLabel, t, type Lang } from "@/lib/i18n";
 import { formatDistance } from "@/lib/geo";
-import { placeHref } from "@/lib/links";
+import { placeHref, talkHref } from "@/lib/links";
 import { favoriteFromPlace } from "@/lib/favorites";
 import { FavoriteStar } from "@/components/FavoriteStar";
 import { CloseIcon, PinIcon, SparkIcon } from "@/components/Icons";
@@ -42,7 +42,7 @@ export function PlaceCard({ place, lang, onClose }: { place: Place; lang: Lang; 
           <span className="shrink-0 pt-0.5 text-[13px] font-bold text-accent">{formatDistance(place.dist)}</span>
         </div>
         <div className="flex gap-2">
-          <Link href={`${placeHref(lang, place.id)}?guide=1`} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-ink text-[14px] font-bold text-bg">
+          <Link href={talkHref(lang, place.id)} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-ink text-[14px] font-bold text-bg">
             <SparkIcon size={16} />
             {t(lang, "askGuide")}
           </Link>

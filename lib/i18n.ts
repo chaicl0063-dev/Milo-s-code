@@ -224,6 +224,10 @@ const en = {
   translateFailed: "Couldn't read any text in the photo. Try getting closer.",
   original: "Original",
   translation: "Translation",
+  tapToListen: "Tap to start playing",
+  fromWikivoyage: "From the Wikivoyage travel guide",
+  wikiSummary: "Encyclopedia",
+  talkWith: "Talking with {name}",
 } as const;
 
 const zh: Record<keyof typeof en, string> = {
@@ -420,6 +424,10 @@ const zh: Record<keyof typeof en, string> = {
   translateFailed: "没读出照片里的文字，靠近一点再拍。",
   original: "原文",
   translation: "译文",
+  tapToListen: "轻点开始播放",
+  fromWikivoyage: "来自 Wikivoyage 旅行指南",
+  wikiSummary: "百科",
+  talkWith: "正在和 {name} 聊",
 };
 
 export const dict = { en, zh } as const;

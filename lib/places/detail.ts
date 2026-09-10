@@ -44,7 +44,7 @@ async function enrich(lang: string, detail: PlaceDetail): Promise<PlaceDetail> {
     detail.links.unesco = unescoUrl(site);
   }
   if (detail.coordinates && !detail.travelGuide) {
-    const guide = await wikivoyageGuide(detail.coordinates.lat, detail.coordinates.lon, lang).catch(() => null);
+    const guide = await wikivoyageGuide(detail.coordinates.lat, detail.coordinates.lon, lang, { wikidata: qid, title: detail.title }).catch(() => null);
     if (guide) detail.travelGuide = guide;
   }
   return detail;
