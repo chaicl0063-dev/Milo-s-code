@@ -37,7 +37,7 @@ export function llmConfigured(): boolean {
   return Boolean(process.env.LLM_BASE_URL && process.env.LLM_API_KEY && process.env.LLM_MODEL);
 }
 
-const LANGUAGE_NAME: Record<GuideLang, string> = {
+export const LANGUAGE_NAME: Record<GuideLang, string> = {
   en: "English",
   zh: "简体中文 (Simplified Chinese; convert any Traditional characters from the fact sheet, e.g. 艾菲爾鐵塔 → 埃菲尔铁塔)",
   es: "Spanish (español)",
@@ -126,8 +126,14 @@ function modelCandidates(baseUrl: string): string[] {
   return fallback && fallback !== primary ? [primary, fallback] : [primary];
 }
 
-async function requestCompletion(baseUrl: string, model: string, messages: ChatMessage[], signal?: AbortSignal): Promise<Response> {
-  const body: Record<string, unknown> = { model, messages, stream: true, temperature: 0.5, max_tokens: 700 };
+interface CompletionOpts {
+  stream?: boolean;
+  temperature?: number;
+  maxTokens?: number;
+}
+
+async function requestCompletion(baseUrl: string, model: string, messages: ChatMessage[], signal?: AbortSignal, opts: CompletionOpts = {}): Promise<Response> {
+  const body: Record<string, unknown> = { model, messages, stream: opts.stream ?? true, temperature: opts.temperature ?? 0.5, max_tokens: opts.maxTokens ?? 700 };
   // 智谱的 Flash 模型默认开思考模式，讲解场景不需要，关掉更快也更省额度
   if (baseUrl.includes("bigmodel.cn")) body.thinking = { type: "disabled" };
   const res = await fetch(`${baseUrl}/chat/completions`, {
@@ -148,14 +154,13 @@ async function requestCompletion(baseUrl: string, model: string, messages: ChatM
 /**
  * 调用 LLM，返回只含正文增量的文本流（已经把 SSE 拆开、过滤掉 thinking 内容）。
  */
-export async function streamChat(messages: ChatMessage[], signal?: AbortSignal): Promise<ReadableStream<Uint8Array>> {
+/** 主模型限流就换备用模型再试一次 */
+async function requestWithFallback(messages: ChatMessage[], signal: AbortSignal | undefined, opts: CompletionOpts): Promise<Response> {
   const baseUrl = process.env.LLM_BASE_URL!.replace(/\/+$/, "");
   const candidates = modelCandidates(baseUrl);
-  let upstream: Response | null = null;
   for (let i = 0; i < candidates.length; i++) {
     try {
-      upstream = await requestCompletion(baseUrl, candidates[i], messages, signal);
-      break;
+      return await requestCompletion(baseUrl, candidates[i], messages, signal, opts);
     } catch (err) {
       const isLast = i === candidates.length - 1;
       if (err instanceof LlmError && err.status === 429 && !isLast) {
@@ -165,7 +170,21 @@ export async function streamChat(messages: ChatMessage[], signal?: AbortSignal):
       throw err;
     }
   }
-  if (!upstream?.body) throw new LlmError(502, "LLM returned no body");
+  throw new LlmError(502, "no model available");
+}
+
+/** 一次性拿完整回答（规划、识别这类要解析 JSON 的场景用） */
+export async function completeChat(messages: ChatMessage[], opts: { temperature?: number; maxTokens?: number; signal?: AbortSignal } = {}): Promise<string> {
+  const res = await requestWithFallback(messages, opts.signal ?? AbortSignal.timeout(50_000), { stream: false, temperature: opts.temperature, maxTokens: opts.maxTokens });
+  const data = await res.json();
+  const content: unknown = data?.choices?.[0]?.message?.content;
+  if (typeof content !== "string") throw new LlmError(502, "LLM returned no content");
+  return content;
+}
+
+export async function streamChat(messages: ChatMessage[], signal?: AbortSignal): Promise<ReadableStream<Uint8Array>> {
+  const upstream = await requestWithFallback(messages, signal, { stream: true });
+  if (!upstream.body) throw new LlmError(502, "LLM returned no body");
 
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();

@@ -4,8 +4,9 @@ import { llmConfigured } from "@/lib/guide";
 
 /**
  * POST /api/identify
- * body: { image: "data:image/jpeg;base64,...", lang, candidates?: [{ id, title }] }
- * 让多模态模型认照片里的地点；如果周边列表里有它，直接返回那条的 id。
+ * body: { image: "data:image/jpeg;base64,...", lang, mode?: "identify" | "translate", candidates?: [{ id, title }] }
+ * identify：让多模态模型认照片里的地点；如果周边列表里有它，直接返回那条的 id。
+ * translate：读出照片里的文字（路牌、菜单、展签）并翻译成讲解语言。
  * 模型：LLM_VISION_MODEL，用智谱时默认 glm-4v-flash（免费）。
  */
 interface Candidate {
@@ -20,7 +21,7 @@ function normalize(s: string): string {
 export async function POST(req: NextRequest) {
   if (!llmConfigured()) return NextResponse.json({ error: "llm_not_configured" }, { status: 503 });
 
-  let body: { image?: string; lang?: string; candidates?: Candidate[] };
+  let body: { image?: string; lang?: string; mode?: string; candidates?: Candidate[] };
   try {
     body = await req.json();
   } catch {
@@ -28,6 +29,7 @@ export async function POST(req: NextRequest) {
   }
   const { image } = body;
   const lang = isGuideLang(body.lang) ? body.lang : "en";
+  const mode = body.mode === "translate" ? "translate" : "identify";
   if (!image || typeof image !== "string" || !image.startsWith("data:image/")) return NextResponse.json({ error: "missing image" }, { status: 400 });
   if (image.length > 2_500_000) return NextResponse.json({ error: "image too large" }, { status: 413 });
   const candidates = (Array.isArray(body.candidates) ? body.candidates : [])
@@ -40,7 +42,13 @@ export async function POST(req: NextRequest) {
   // 智谱接受纯 Base64，OpenAI 风格接受 data URL
   const imageUrl = isZhipu ? image.replace(/^data:image\/\w+;base64,/, "") : image;
 
-  const prompt = [
+  const translatePrompt = [
+    "You read the text in a traveler's photo (a sign, menu, notice, museum label, ticket) for a tour-guide app.",
+    `Reply with ONLY a JSON object, no markdown: {"original": all the text you can read, in its original language, line breaks preserved, "translation": a faithful translation into ${GUIDE_LANG_LABEL[lang]} (if the text is already in that language, restate it clearly), "note": at most one short sentence in ${GUIDE_LANG_LABEL[lang]} of helpful context (e.g. what the sign means for a visitor), or empty string}.`,
+    "If there is no readable text, set original and translation to empty strings.",
+  ].join("\n");
+
+  const prompt = mode === "translate" ? translatePrompt : [
     "You identify the landmark, building, monument, artwork or place shown in a traveler's photo for a tour-guide app.",
     `Answer in ${GUIDE_LANG_LABEL[lang]}.`,
     candidates.length
@@ -59,7 +67,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model,
         temperature: 0.2,
-        max_tokens: 300,
+        max_tokens: mode === "translate" ? 700 : 300,
         messages: [
           {
             role: "user",
@@ -80,6 +88,19 @@ export async function POST(req: NextRequest) {
     const data = await res.json();
     const raw: string = data?.choices?.[0]?.message?.content ?? "";
     const jsonText = raw.match(/\{[\s\S]*\}/)?.[0] ?? "{}";
+    if (mode === "translate") {
+      let tr: { original?: string; translation?: string; note?: string } = {};
+      try {
+        tr = JSON.parse(jsonText);
+      } catch {
+        tr = { original: "", translation: raw.slice(0, 600), note: "" };
+      }
+      return NextResponse.json({
+        original: typeof tr.original === "string" ? tr.original.trim() : "",
+        translation: typeof tr.translation === "string" ? tr.translation.trim() : "",
+        note: typeof tr.note === "string" ? tr.note.trim() : "",
+      });
+    }
     let parsed: { name?: string | null; kind?: string; confidence?: number; brief?: string; match?: string | null } = {};
     try {
       parsed = JSON.parse(jsonText);

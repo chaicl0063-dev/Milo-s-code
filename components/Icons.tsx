@@ -222,3 +222,76 @@ export function LocationOffIcon({ size = 56, className }: IconProps) {
     </svg>
   );
 }
+
+export function ChatIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M21 12a8 8 0 0 1-8 8H8l-4 3v-6.5A8 8 0 1 1 21 12z" />
+    </svg>
+  );
+}
+
+export function RouteIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <circle cx="6" cy="19" r="2" />
+      <circle cx="18" cy="5" r="2" />
+      <path d="M12 19h4.5a3.5 3.5 0 0 0 0-7h-9a3.5 3.5 0 0 1 0-7H16" />
+    </svg>
+  );
+}
+
+export function WalkIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <circle cx="13" cy="4" r="1.5" />
+      <path d="M7 21l3-7 3 3v4M10 14l1-5 4 2 3 3M11 9l-4 3" />
+    </svg>
+  );
+}
+
+export function BusIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <rect x="4" y="3" width="16" height="15" rx="3" />
+      <path d="M4 11h16M8 18v2M16 18v2M8 14h.01M16 14h.01" />
+    </svg>
+  );
+}
+
+export function NotebookIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <rect x="5" y="3" width="15" height="18" rx="2" />
+      <path d="M9 3v18M13 8h3M13 12h3" />
+    </svg>
+  );
+}
+
+export function HeadphonesIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M4 14v-2a8 8 0 0 1 16 0v2" />
+      <rect x="3" y="14" width="4" height="6" rx="2" />
+      <rect x="17" y="14" width="4" height="6" rx="2" />
+    </svg>
+  );
+}
+
+export function RefreshIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M20 12a8 8 0 1 1-2.3-5.7" />
+      <path d="M20 4v5h-5" />
+    </svg>
+  );
+}
+
+export function TranslateIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M3 5h9M7.5 3v2M10 5c-.7 3.5-3 6.2-6 8M5 8c1 2.5 3 4.5 5 5.5" />
+      <path d="M13 21l4-10 4 10M14.5 17h5" />
+    </svg>
+  );
+}

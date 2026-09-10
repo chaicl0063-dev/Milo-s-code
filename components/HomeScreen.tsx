@@ -10,6 +10,11 @@ import { homeHref } from "@/lib/links";
 import type { City } from "@/lib/cities";
 import { isOnboarded, readCoords, resolveGuideLang, writeCoords } from "@/lib/prefs";
 import { useFavorites } from "@/lib/favorites";
+import { useRoute } from "@/lib/routeStore";
+import { StopCard, formatMinutes } from "@/components/GuideScreen";
+import { PersonaAvatar } from "@/components/PersonaPicker";
+import { DEFAULT_PERSONA, type PersonaId } from "@/lib/personas";
+import { getPersona } from "@/lib/prefs";
 import { useLanguage } from "@/components/LanguageProvider";
 import { LocatePanel } from "@/components/LocatePanel";
 import { Onboarding } from "@/components/Onboarding";
@@ -19,7 +24,7 @@ import { PlaceCard } from "@/components/PlaceCard";
 import { HomeHeader, type HomeFilter, type HomeView } from "@/components/HomeHeader";
 import { Splash } from "@/components/Splash";
 import { TabBar, TAB_BAR_HEIGHT } from "@/components/TabBar";
-import { LocateIcon, SearchIcon } from "@/components/Icons";
+import { ChevronRightIcon, CloseIcon, LocateIcon, SearchIcon } from "@/components/Icons";
 
 // Leaflet 依赖 window，只能在浏览器端渲染，所以关闭服务端渲染
 const PlacesMap = dynamic(() => import("@/components/PlacesMap"), {
@@ -50,6 +55,11 @@ export function HomeScreen() {
   const searchParams = useSearchParams();
   const focusId = searchParams.get("focus");
   const { favorites } = useFavorites();
+  // 今日路线：从「导游」页送过来，存在本地；?route=1 表示刚送过来，要展开
+  const [route, setRoute] = useRoute();
+  const [routeOpen, setRouteOpen] = useState(() => searchParams.get("route") === "1");
+  const [routeIndex, setRouteIndex] = useState(0);
+  const [persona, setPersonaState] = useState<PersonaId>(DEFAULT_PERSONA);
 
   // 「浏览中心」和「我的位置」是两回事：搜索围着前者，蓝点画在后者
   const [center, setCenter] = useState<Coords | null>(() => coordsFromParams(searchParams));
@@ -156,6 +166,7 @@ export function HomeScreen() {
     bootedRef.current = true;
     const done = isOnboarded();
     setOnboardedState(done);
+    setPersonaState(getPersona());
     const savedMy = readCoords("myLocation");
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (savedMy) setMyLocation(savedMy);
@@ -282,6 +293,7 @@ export function HomeScreen() {
   }
 
   const radiusLabel = formatDistance(radius);
+  const activeRoute = routeOpen && route && route.stops.length > 0 ? route : null;
   const header = (
     <HomeHeader
       lang={lang}
@@ -345,9 +357,38 @@ export function HomeScreen() {
           selectedId={selectedId}
           onSelect={setSelectedId}
           onMoved={onMapMoved}
+          route={activeRoute ? { stops: activeRoute.stops, current: routeIndex, onPick: (i) => { setRouteIndex(i); setSelectedId(null); } } : null}
         />
 
         {header}
+
+        {/* 今日路线栏：站数、总时长、下一站；叉掉就收起（路线还在，导游页可再送过来） */}
+        {activeRoute && (
+          <div className="absolute inset-x-4 top-[128px] z-[1000] flex items-center gap-3 rounded-[16px] bg-surface/95 px-3 py-2.5 shadow-[0_6px_16px_rgba(27,31,29,0.14)] backdrop-blur">
+            <PersonaAvatar id={persona} size={30} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13px] font-bold text-ink">
+                {t(lang, "todayRoute")} · {t(lang, "routeSummary", { n: activeRoute.stops.length, h: formatMinutes(lang, activeRoute.totalMinutes) })}
+              </p>
+              <p className="truncate text-[12px] text-muted">
+                {routeIndex + 1 < activeRoute.stops.length ? t(lang, "nextStop", { name: activeRoute.stops[routeIndex + 1].title }) : t(lang, "routeDone")}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setRouteOpen(false);
+                setRoute(null);
+                router.replace(homeHref(center.lat, center.lon));
+              }}
+              aria-label={t(lang, "endRoute")}
+              title={t(lang, "endRoute")}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-muted"
+            >
+              <CloseIcon size={14} />
+            </button>
+          </div>
+        )}
 
         {pendingCenter && (
           <button
@@ -360,8 +401,25 @@ export function HomeScreen() {
           </button>
         )}
 
-        {/* 底部：有选中就是卡片，否则是状态行 + 右侧按钮 */}
-        {selectedPlace ? (
+        {/* 底部：路线模式是当前站卡片；否则有选中就是地点卡片，再否则是状态行 + 右侧按钮 */}
+        {activeRoute && !selectedPlace ? (
+          <div className="absolute inset-x-4 bottom-4 z-[1000] flex items-stretch gap-2">
+            <div className="min-w-0 flex-1 shadow-[0_10px_30px_rgba(27,31,29,0.22)]">
+              <StopCard stop={activeRoute.stops[routeIndex]} index={routeIndex + 1} lang={lang} compact />
+            </div>
+            {routeIndex + 1 < activeRoute.stops.length && (
+              <button
+                type="button"
+                onClick={() => setRouteIndex((i) => i + 1)}
+                aria-label={t(lang, "nextStopBtn")}
+                title={t(lang, "nextStopBtn")}
+                className="flex w-12 shrink-0 items-center justify-center rounded-[16px] bg-surface text-ink shadow-[0_10px_30px_rgba(27,31,29,0.22)]"
+              >
+                <ChevronRightIcon size={20} />
+              </button>
+            )}
+          </div>
+        ) : selectedPlace ? (
           <div className="absolute inset-x-4 bottom-4 z-[1000]">
             <PlaceCard place={selectedPlace} lang={lang} onClose={() => setSelectedId(null)} />
           </div>

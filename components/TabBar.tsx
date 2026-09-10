@@ -3,16 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { t, type Lang } from "@/lib/i18n";
-import { PinIcon, UserIcon } from "@/components/Icons";
+import { ChatIcon, PinIcon, UserIcon } from "@/components/Icons";
 
 /** 底部 tab 栏的高度（不含手机底部安全区），首页布局要为它留出空间 */
 export const TAB_BAR_HEIGHT = 56;
 
-/** 两个一级页面：身边（首页）、我的（设置与说明） */
+/** 三个一级页面：身边（地图）、导游（AI 中心）、我的（设置与说明） */
 export function TabBar({ lang }: { lang: Lang }) {
   const path = usePathname();
   const tabs = [
     { href: "/", label: t(lang, "tabAround"), icon: <PinIcon size={22} />, active: path === "/" },
+    { href: "/guide", label: t(lang, "tabGuide"), icon: <ChatIcon size={22} />, active: path.startsWith("/guide") },
     { href: "/me", label: t(lang, "tabMe"), icon: <UserIcon size={22} />, active: path.startsWith("/me") },
   ];
   return (
