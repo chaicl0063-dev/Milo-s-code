@@ -77,7 +77,7 @@ Original editorial travel photograph-style image, landscape 4:3. An intimate eye
 Original editorial travel photograph-style mood image, landscape 4:3. A modest open neighborhood square with warm historic facades, textured paving, a few distant pedestrians and an inviting side street. Eye-level natural perspective, warm gentle afternoon daylight, muted cream and terracotta colors, subtle film grain. Keep the central paving area visually uncluttered, with architectural interest around the upper edges. No text, readable signs, logos, watermark, numbers, lines, maps, route graphics or UI. Fictional square for brand atmosphere only, not a representation of a real route or stop.
 ```
 
-## IMG-06 · 傍晚场景屏 · 8:3
+##  IMG-06 · 傍晚场景屏 · 8:3
 
 ```text
 Original editorial travel photograph-style mood image, wide panoramic 8:3. A human-scale neighborhood lane at dusk, viewed at eye level. Warm light from a doorway or window on the right, a small pedestrian silhouette in the right half, textured plaster and gentle blue-gray evening ambience. Keep the left 60 percent naturally darker and low in visual detail for a separate text overlay. Realistic quiet warmth with signs of life, not ominous, deserted or neon-lit. Subtle grain, restrained warm and charcoal palette. No text, readable signs, logos, watermark, UI or identifiable real landmark. Fictional brand mood scene.

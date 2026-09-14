@@ -19,8 +19,10 @@ export interface Persona {
   tagline: Record<Lang, string>;
   /** 给模型看的性格说明（英文，模型自己会用讲解语言说） */
   brief: string;
-  /** 头像底色 */
+  /** 头像底色（没有图片时用首字母 + 底色） */
   color: string;
+  /** 头像图片（用户生成的角色肖像，public/images 下），可选 */
+  image?: string;
 }
 
 export const PERSONA: Record<PersonaId, Persona> = {
@@ -32,6 +34,7 @@ export const PERSONA: Record<PersonaId, Persona> = {
     brief:
       "Your name is Mia. Personality: warm, calm, observant; you like pointing out small details a visitor would otherwise miss, and you speak in an unhurried, gentle rhythm.",
     color: "#B85C38",
+    image: "/images/mia-300.jpg",
   },
   milo: {
     id: "milo",
@@ -41,6 +44,7 @@ export const PERSONA: Record<PersonaId, Persona> = {
     brief:
       "Your name is Milo. Personality: lively, upbeat, a natural storyteller; you get to the interesting part quickly, use vivid but accurate comparisons, and keep a light sense of humor without becoming silly.",
     color: "#2F5D62",
+    image: "/images/milo-300.jpg",
   },
 };
 

@@ -7,6 +7,20 @@ import { CheckIcon } from "@/components/Icons";
 /** 导游头像：名字首字母 + 人物专属底色 */
 export function PersonaAvatar({ id, size = 28, className = "" }: { id: PersonaId; size?: number; className?: string }) {
   const p = PERSONA[id];
+  if (p.image) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={p.image}
+        alt=""
+        aria-hidden
+        width={size}
+        height={size}
+        className={`shrink-0 rounded-full object-cover ${className}`}
+        style={{ width: size, height: size, background: p.color }}
+      />
+    );
+  }
   return (
     <span
       aria-hidden

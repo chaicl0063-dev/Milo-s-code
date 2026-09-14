@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PHOTOS, type SitePhoto } from "@/lib/site/photos";
 import { PERSONA, type PersonaId } from "@/lib/personas";
 
@@ -12,6 +12,8 @@ const T = {
   bg: "#FBF6EE",
   ink: "#1F1D1A",
   accent: "#D9633A",
+  /** 深一档的陶土：小链接、选中态、小字（设计提案 6.1） */
+  deep: "#A84427",
   gold: "#C9891C",
   teal: "#2F5D62",
   muted: "#6B645A",
@@ -56,72 +58,30 @@ const SITUATIONS: Situation[] = [
   },
 ];
 
-/** 打字机：一段文字逐字出现，配合头像旁的小声波 */
-function useTypewriter(text: string, speed = 16) {
-  const [shown, setShown] = useState("");
+/** 逐句显示：一段导游的话按句子出现（不是逐字），开了「减少动态效果」就一次全出 */
+function useSentenceReveal(text: string) {
+  const sentences = useMemo(() => text.match(/[^.!?]+[.!?]+["')]?\s*|[^.!?]+$/g)?.map((x) => x.trim()).filter(Boolean) ?? [text], [text]);
+  const [count, setCount] = useState(1);
   useEffect(() => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setShown("");
-    let i = 0;
+    setCount(reduce ? sentences.length : 1);
+    if (reduce) return;
+    let i = 1;
     const id = window.setInterval(() => {
       i++;
-      setShown(text.slice(0, i));
-      if (i >= text.length) window.clearInterval(id);
-    }, speed);
+      setCount(i);
+      if (i >= sentences.length) window.clearInterval(id);
+    }, 550);
     return () => window.clearInterval(id);
-  }, [text, speed]);
-  return { shown, done: shown.length >= text.length };
-}
-
-/** 数字进入视口时从 0 跳到目标值 */
-function Counter({ value, suffix = "", label }: { value: number; suffix?: string; label: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [n, setN] = useState(0);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (!entries[0].isIntersecting) return;
-        io.disconnect();
-        const start = performance.now();
-        const dur = 900;
-        const tick = (now: number) => {
-          const p = Math.min(1, (now - start) / dur);
-          setN(Math.round(value * (1 - Math.pow(1 - p, 3))));
-          if (p < 1) requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
-      },
-      { threshold: 0.4 },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [value]);
-  return (
-    <div ref={ref}>
-      <div className="font-serif text-[34px] leading-none md:text-[40px]" style={{ color: T.gold }}>
-        {n}
-        {suffix}
-      </div>
-      <div className="mt-1 text-[12px] font-semibold uppercase tracking-[0.12em]" style={{ color: T.muted }}>
-        {label}
-      </div>
-    </div>
-  );
+  }, [sentences]);
+  return { shown: sentences.slice(0, count).join(" "), done: count >= sentences.length };
 }
 
 function Avatar({ id, size = 28 }: { id: PersonaId; size?: number }) {
   const p = PERSONA[id];
-  return (
-    <span
-      aria-hidden
-      className="inline-flex shrink-0 items-center justify-center rounded-full font-serif font-bold"
-      style={{ width: size, height: size, background: id === "mia" ? T.accent : T.teal, color: T.bg, fontSize: Math.round(size * 0.5) }}
-    >
-      {p.name[0]}
-    </span>
-  );
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={p.image ?? `/images/${id}-96.jpg`} alt="" aria-hidden width={size} height={size} className="shrink-0 rounded-full object-cover" style={{ width: size, height: size, background: id === "mia" ? T.accent : T.teal }} />;
 }
 
 function Wave({ active }: { active: boolean }) {
@@ -153,7 +113,7 @@ function Photo({ photo, className = "", style }: { photo: SitePhoto; className?:
 
 export function SiteLanding({ appUrl }: { appUrl: string }) {
   const [sit, setSit] = useState<Situation>(SITUATIONS[0]);
-  const { shown, done } = useTypewriter(sit.guide);
+  const { shown, done } = useSentenceReveal(sit.guide);
   const [email, setEmail] = useState("");
   const [notify, setNotify] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [speaking, setSpeaking] = useState<PersonaId | null>(null);
@@ -204,86 +164,95 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
       `}</style>
 
       {/* 顶栏 */}
-      <header className="absolute inset-x-0 top-0 z-20">
+      <header className="relative z-20">
         <div className="mx-auto flex max-w-[1200px] items-center justify-between px-5 py-5 md:px-8">
-          <a href="#top" className="flex items-center gap-2.5 text-[15px] font-bold text-white">
-            <span className="relative inline-block h-5 w-5 rounded-full bg-white">
+          <a href="#top" className="flex items-center gap-2.5 text-[15px] font-bold" style={{ color: T.ink }}>
+            <span className="relative inline-block h-5 w-5 rounded-full" style={{ background: T.ink }}>
               <span className="absolute left-[5px] top-[5px] h-[10px] w-[10px] rounded-full" style={{ background: T.accent }} />
             </span>
             ReAround You
           </a>
-          <nav className="hidden items-center gap-7 text-[13px] font-semibold text-white/85 md:flex">
+          <nav className="hidden items-center gap-7 text-[13px] font-semibold md:flex" style={{ color: T.muted }}>
             <a href="#how">How it works</a>
             <a href="#guides">Guides</a>
             <a href="#plus">Plus</a>
-            <a href={appUrl} className="rounded-full bg-white/95 px-4 py-2 text-[13px] font-bold" style={{ color: T.ink }}>
+            <a href={appUrl} className="rounded-full px-4 py-2 text-[13px] font-bold" style={{ background: T.ink, color: T.bg }}>
               Open the app
             </a>
           </nav>
-          <a href={appUrl} className="rounded-full bg-white/95 px-4 py-2 text-[13px] font-bold md:hidden" style={{ color: T.ink }}>
+          <a href={appUrl} className="rounded-full px-4 py-2 text-[13px] font-bold md:hidden" style={{ background: T.ink, color: T.bg }}>
             Open
           </a>
         </div>
       </header>
 
-      {/* 首屏：满幅照片 + 左下文字 + 情境按钮 + 右侧手机演示 */}
-      <section id="top" className="relative min-h-[100svh] overflow-hidden">
-        {/* 首屏图：手机用人物居中的竖版裁切，桌面用横图；人物在右上，左下留给文字 */}
-        <picture className="absolute inset-0">
-          {PHOTOS.hero.portraitSrc && <source media="(max-width: 767px)" srcSet={PHOTOS.hero.portraitSrc} />}
-          <img src={PHOTOS.hero.src} srcSet={PHOTOS.hero.srcSet} sizes="100vw" alt={PHOTOS.hero.alt} fetchPriority="high" className="h-full w-full object-cover object-[0%_35%] md:object-[60%_35%]" />
-        </picture>
-        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(31,29,26,0.45) 0%, rgba(31,29,26,0.25) 40%, rgba(31,29,26,0.8) 100%)" }} />
-        <div className="relative mx-auto flex min-h-[100svh] max-w-[1200px] flex-col justify-end gap-8 px-5 pb-10 pt-28 md:flex-row md:items-end md:justify-between md:px-8 md:pb-16">
-          <div className="max-w-[620px] text-white rr-up">
-            <p className="text-[12px] font-bold uppercase tracking-[0.16em]" style={{ color: "#F2C98A" }}>
+      {/* 首屏（设计提案 v1 方案 A）：左边文案和动作，右边照片 + 演示面板；照片只做视觉，不再承载全部信息 */}
+      <section id="top" className="mx-auto max-w-[1200px] px-5 pb-14 pt-8 md:px-8 md:pb-24 md:pt-14">
+        <div className="grid items-center gap-10 md:grid-cols-[52fr_48fr] md:gap-14">
+          <div className="rr-up">
+            <p className="text-[12px] font-bold uppercase tracking-[0.16em]" style={{ color: T.gold }}>
               Your AI local guide
             </p>
-            <h1 className="mt-3 font-serif text-[44px] leading-[0.98] md:text-[76px]">
+            <h1 className="mt-3 font-serif text-[46px] leading-[0.98] md:text-[74px]" style={{ color: T.ink }}>
               You&rsquo;re already here.
               <br />
               Now let&rsquo;s look around.
             </h1>
-            <p className="mt-5 max-w-[460px] text-[16px] leading-7 text-white/85 md:text-[18px]">
-              A local friend in your pocket who knows every street. Tell them what you feel like, and start walking.
+            <p className="mt-5 max-w-[480px] text-[17px] leading-7 md:text-[18px]" style={{ color: T.muted }}>
+              A local guide in your pocket. Find out what you&rsquo;re looking at, ask a question, and keep exploring.
             </p>
-
-            <p className="mt-7 text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: "#F2C98A" }}>
-              Right now I want to…
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2.5">
-              {SITUATIONS.map((s) => {
-                const on = s.key === sit.key;
-                return (
-                  <button
-                    key={s.key}
-                    type="button"
-                    onClick={() => setSit(s)}
-                    aria-pressed={on}
-                    className="h-10 rounded-full px-4 text-[13px] font-semibold backdrop-blur transition-colors"
-                    style={on ? { background: T.accent, color: "#fff" } : { background: "rgba(255,255,255,0.9)", color: T.ink }}
-                  >
-                    {s.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="mt-8 flex flex-wrap items-center gap-4">
+            <div className="mt-8 flex flex-wrap items-center gap-3">
               <a href={appUrl} className={btnPrimary} style={{ background: T.accent }}>
-                Open in browser
+                Try your local guide
               </a>
-              <a href="#download" className="text-[14px] font-semibold text-white/85 underline-offset-4 hover:underline">
-                Get it on Android
+              <a href="#demo" className={btnGhost} style={{ borderColor: T.line, color: T.ink, background: "#fff" }}>
+                Try an example
               </a>
             </div>
+            <p className="mt-4 text-[13px]" style={{ color: T.muted }}>
+              Free in your browser, no account needed. Android app on its way.
+            </p>
           </div>
 
-          {/* 手机演示 */}
-          <div className="mx-auto w-[280px] shrink-0 md:mx-0 md:w-[300px] rr-up" style={{ animationDelay: "0.15s" }}>
-            <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">Scripted demo · the app answers about your real surroundings</p>
-            <div className="overflow-hidden rounded-[34px] border-[6px] shadow-[0_30px_80px_rgba(0,0,0,0.45)]" style={{ borderColor: T.ink, background: T.bg }}>
-              <div className="flex flex-col gap-3 px-4 pb-5 pt-9" style={{ minHeight: 400 }}>
+          {/* 照片 + 演示面板 */}
+          <div id="demo" className="rr-up" style={{ animationDelay: "0.1s" }}>
+            <div className="overflow-hidden rounded-[20px]" style={{ aspectRatio: "4 / 5", maxHeight: 640 }}>
+              <picture>
+                {PHOTOS.hero.portraitSrc && <source media="(max-width: 767px)" srcSet={PHOTOS.hero.portraitSrc} />}
+                <img
+                  src={PHOTOS.hero.portraitSrc ?? PHOTOS.hero.src}
+                  alt={PHOTOS.hero.alt}
+                  fetchPriority="high"
+                  className="h-full w-full object-cover object-[50%_20%]"
+                />
+              </picture>
+            </div>
+            <div className="relative -mt-28 mx-3 rounded-[20px] border bg-white/95 p-4 shadow-[0_20px_50px_rgba(31,29,26,0.18)] backdrop-blur md:-mt-32 md:mx-5 md:p-5" style={{ borderColor: T.line }}>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: T.muted }}>
+                Scripted demo · the app answers about your real surroundings
+              </p>
+              <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: T.gold }}>
+                Right now I want to…
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Choose a situation">
+                {SITUATIONS.map((s) => {
+                  const on = s.key === sit.key;
+                  return (
+                    <button
+                      key={s.key}
+                      type="button"
+                      onClick={() => setSit(s)}
+                      aria-pressed={on}
+                      className="h-9 rounded-full px-3.5 text-[12.5px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+                      style={on ? { background: T.accent, color: "#fff" } : { background: T.paper, color: T.ink }}
+                    >
+                      {on ? "✓ " : ""}
+                      {s.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-4 flex flex-col gap-2.5">
                 <div className="flex items-center gap-2">
                   <Avatar id={sit.persona} size={26} />
                   <span className="font-serif text-[18px]">{PERSONA[sit.persona].name}</span>
@@ -296,32 +265,23 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
                 </div>
                 <div className="flex items-end gap-2">
                   <Avatar id={sit.persona} size={24} />
-                  <div className="min-h-[44px] max-w-[88%] rounded-[16px] rounded-bl-[6px] px-3.5 py-2.5 text-[13px] leading-5" style={{ background: T.paper, color: "#2E2A25" }}>
+                  <div className="min-h-[44px] max-w-[90%] rounded-[16px] rounded-bl-[6px] px-3.5 py-2.5 text-[13.5px] leading-5" style={{ background: T.paper, color: "#2E2A25" }}>
                     {shown}
                     <Wave active={!done} />
                   </div>
                 </div>
-                <div className="mt-auto flex flex-col gap-2">
-                  {done && (
-                    <a href={appUrl} className="text-[12px] font-bold" style={{ color: T.accent }}>
-                      Try it on your own street →
-                    </a>
-                  )}
-                  <div className="flex h-10 items-center rounded-full border px-4 text-[12px]" style={{ borderColor: T.line, color: T.muted, background: "#fff" }}>
-                    Ask {PERSONA[sit.persona].name} anything…
-                  </div>
-                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[12px]">
+                <span style={{ color: T.muted }}>Ask {PERSONA[sit.persona].name} anything in the app</span>
+                {done && (
+                  <a href={appUrl} className="font-bold" style={{ color: T.deep }}>
+                    Try it on your own street →
+                  </a>
+                )}
               </div>
             </div>
           </div>
         </div>
-      </section>
-
-      {/* 数字 */}
-      <section className="mx-auto grid max-w-[1200px] grid-cols-3 gap-6 px-5 py-12 md:px-8 md:py-16">
-        <Counter value={190} suffix="+" label="countries" />
-        <Counter value={8} label="guide languages" />
-        <Counter value={3} suffix=" s" label="to start talking" />
       </section>
 
       {/* 怎么用：三步 */}
@@ -352,7 +312,7 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
       {/* 不用做攻略：左照片加路线，右对话 */}
       <section className="mx-auto max-w-[1200px] px-5 py-16 md:px-8 md:py-24">
         <div className="grid items-center gap-10 md:grid-cols-[1.15fr_1fr]">
-          <div className="relative aspect-[4/3] overflow-hidden rounded-[28px]">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-[20px]">
             <Photo photo={PHOTOS.square} />
             <svg viewBox="0 0 400 300" className="absolute inset-0 h-full w-full" aria-hidden>
               <path d="M70 250 L140 190 L215 175 L300 105" stroke="#fff" strokeWidth="6" strokeDasharray="10 8" fill="none" opacity="0.9" />
@@ -392,7 +352,7 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
                   by the river around sunset.
                 </div>
               </div>
-              <a href={appUrl} className="ml-10 mt-1 text-[15px] font-bold" style={{ color: T.accent }}>
+              <a href={appUrl} className="ml-10 mt-1 text-[15px] font-bold" style={{ color: T.deep }}>
                 Plan my day →
               </a>
             </div>
@@ -412,7 +372,7 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
             { photo: PHOTOS.walk, k: "Walk", q: "An hour to spare? I'll string together three stops you can reach on foot.", span: "md:col-span-5", ratio: "aspect-[4/3]" },
             { photo: PHOTOS.listen, k: "Listen", q: "That plain-looking tower? A hundred years ago it was a laboratory.", span: "md:col-span-5", ratio: "aspect-[4/3]" },
           ].map((c) => (
-            <figure key={c.k} className={`relative overflow-hidden rounded-[28px] ${c.span} ${c.ratio}`} style={{ minHeight: 260 }}>
+            <figure key={c.k} className={`relative overflow-hidden rounded-[20px] ${c.span} ${c.ratio}`} style={{ minHeight: 260 }}>
               <Photo photo={c.photo} className="absolute inset-0 transition-transform duration-700 hover:scale-[1.03]" />
               <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(31,29,26,0) 40%, rgba(31,29,26,0.8) 100%)" }} />
               <figcaption className="absolute inset-x-0 bottom-0 p-6 text-white">
@@ -435,10 +395,9 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
             const p = PERSONA[id];
             const color = id === "mia" ? T.accent : T.teal;
             return (
-              <div key={id} className="flex flex-col gap-6 rounded-[28px] p-7 md:flex-row md:items-center md:p-9" style={{ background: T.paper }}>
-                <div className="flex h-[150px] w-[150px] shrink-0 items-center justify-center rounded-[28px] font-serif text-[84px] text-white" style={{ background: color }}>
-                  {p.name[0]}
-                </div>
+              <div key={id} className="flex flex-col gap-6 rounded-[20px] p-7 md:flex-row md:items-center md:p-9" style={{ background: T.paper }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`/images/${id}-600.jpg`} alt={`${p.name}, an AI guide character`} width={150} height={150} className="h-[150px] w-[150px] shrink-0 rounded-[20px] object-cover" style={{ background: color }} />
                 <div className="min-w-0">
                   <h3 className="font-serif text-[40px] leading-none">{p.name}</h3>
                   <p className="mt-3 text-[16px] leading-7" style={{ color: T.muted }}>
@@ -485,7 +444,7 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
         </p>
         <h2 className="mt-3 font-serif text-[36px] leading-[1.02] md:text-[56px]">Listening and short walks are free. Plus keeps your longer days.</h2>
         <div className="mt-10 grid max-w-[900px] gap-6 md:grid-cols-2">
-          <div className="rounded-[28px] border p-8" style={{ borderColor: T.line, background: "#fff" }}>
+          <div className="rounded-[20px] border p-8" style={{ borderColor: T.line, background: "#fff" }}>
             <div className="font-serif text-[32px]">Free</div>
             <div className="text-[14px]" style={{ color: T.muted }}>
               No account needed
@@ -502,7 +461,7 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
               Open in browser
             </a>
           </div>
-          <div className="relative rounded-[28px] border-2 p-8" style={{ borderColor: T.ink, background: "#fff" }}>
+          <div className="relative rounded-[20px] border-2 p-8" style={{ borderColor: T.ink, background: "#fff" }}>
             <span className="absolute -top-3 left-8 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.1em] text-white" style={{ background: T.accent }}>
               Coming soon
             </span>
@@ -550,7 +509,7 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
 
       {/* 下载 */}
       <section id="download" className="mx-auto max-w-[1200px] px-5 pb-20 md:px-8">
-        <div className="flex flex-col gap-6 rounded-[28px] p-8 md:flex-row md:items-center md:justify-between md:p-12" style={{ background: T.ink, color: T.bg }}>
+        <div className="flex flex-col gap-6 rounded-[20px] p-8 md:flex-row md:items-center md:justify-between md:p-12" style={{ background: T.ink, color: T.bg }}>
           <div>
             <h2 className="font-serif text-[34px] leading-[1.02] md:text-[44px]">Works in your browser today.</h2>
             <p className="mt-3 max-w-[520px] text-[15px] leading-6 text-white/75">
@@ -559,7 +518,7 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
           </div>
           <div className="flex flex-wrap gap-3">
             <a href={appUrl} className={btnPrimary} style={{ background: T.accent }}>
-              Open in browser
+              Try your local guide
             </a>
             <span className={btnGhost} style={{ borderColor: "rgba(255,255,255,0.3)", color: "rgba(255,255,255,0.7)" }}>
               Android · coming soon
@@ -579,18 +538,7 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
               Place data from OpenStreetMap, Wikipedia, Wikivoyage, Wikidata and the UNESCO World Heritage List. Stories are AI-generated from those sources; check anything that matters.
             </p>
             <p className="mt-3 leading-5">
-              Photos:{" "}
-              {(Object.values(PHOTOS) as SitePhoto[])
-                .filter((p) => !p.generated)
-                .map((p, i, arr) => (
-                  <span key={p.page}>
-                    <a href={p.page} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
-                      {p.author}
-                    </a>{" "}
-                    ({p.license}){i < arr.length - 1 ? ", " : "."}
-                  </span>
-                ))}{" "}
-              The opening street scene is an AI-generated brand image of a fictional place.
+              Street scenes and the two guide portraits on this page are AI-generated brand images of fictional places and characters, not photographs of real locations or people.
             </p>
           </div>
           <div className="flex flex-col gap-2">
