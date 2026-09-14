@@ -26,7 +26,7 @@ const SITUATIONS: Situation[] = [
     key: "wander",
     label: "Just wander for an hour",
     user: "I've got an hour. Just wander?",
-    guide: "Then let's not look at a map. Turn left at the blue tiles and keep the river on your right. I'll tell you what you're passing as we go.",
+    guide: "Then let's not look at a map. Head for the house with the blue tiles and keep the river beside you. I'll tell you what you're passing as we go.",
     city: "Lisbon · Alfama",
     persona: "mia",
   },
@@ -161,7 +161,7 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
 
   /** 试听：直接调应用的 TTS，读一句人物介绍 */
   async function hear(id: PersonaId) {
-    const line = id === "mia" ? "Hi, I'm Mia. Let's take the quiet street, there's a doorway I want to show you." : "Hey, I'm Milo. Skip the queue, the good part is around the corner.";
+    const line = id === "mia" ? "Hi, I'm Mia. See the carved date above that doorway? Let me tell you why it matters." : "Hey, I'm Milo. See the carved date above that doorway? There's a good story behind it.";
     audioRef.current?.pause();
     setSpeaking(id);
     try {
@@ -376,6 +376,7 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
               No planning needed
             </p>
             <h2 className="mt-3 font-serif text-[36px] leading-[1.02] md:text-[52px]">Tell it where you are and how long you have.</h2>
+            <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.12em]" style={{ color: T.muted }}>Sample conversation</p>
             <div className="mt-8 flex flex-col gap-3">
               <div className="self-end max-w-[85%] rounded-[18px] rounded-br-[6px] px-4 py-2.5 text-[15px] leading-6 text-white" style={{ background: T.ink }}>
                 I&rsquo;m by the cathedral, two hours to spare.
@@ -383,8 +384,8 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
               <div className="flex items-end gap-2">
                 <Avatar id="mia" size={30} />
                 <div className="max-w-[90%] rounded-[18px] rounded-bl-[6px] px-4 py-3 text-[15px] leading-6" style={{ background: T.paper, color: "#2E2A25" }}>
-                  Let&rsquo;s skip the queue then. Six minutes north there&rsquo;s a tiled courtyard almost nobody finds. From there I&rsquo;ll take you through three quiet streets and drop you
-                  back by the river at sunset.
+                  Then let&rsquo;s start small. Six minutes north there&rsquo;s a tiled courtyard from the 1700s. From there I&rsquo;ll take you through three side streets and drop you back
+                  by the river around sunset.
                 </div>
               </div>
               <a href={appUrl} className="ml-10 mt-1 text-[15px] font-bold" style={{ color: T.accent }}>
@@ -467,7 +468,7 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
             With you the whole way
           </p>
           <h2 className="mt-3 max-w-[640px] font-serif text-[36px] leading-[1.02] md:text-[56px]">
-            &ldquo;Take the steps on your left. Halfway up, look back. That&rsquo;s the view they put on the postcards, minus the crowd.&rdquo;
+            &ldquo;Facing the church, take the steps on the right. Halfway up, turn around. That&rsquo;s the view they put on the postcards.&rdquo;
           </h2>
           <p className="mt-6 text-[15px] text-white/80">Milo, somewhere in Naples · example line</p>
         </div>
@@ -478,15 +479,15 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
         <p className="text-[12px] font-bold uppercase tracking-[0.16em]" style={{ color: T.gold }}>
           Free and Plus
         </p>
-        <h2 className="mt-3 font-serif text-[36px] leading-[1.02] md:text-[56px]">Listening is free. Plus plans your day.</h2>
+        <h2 className="mt-3 font-serif text-[36px] leading-[1.02] md:text-[56px]">Listening and short walks are free. Plus keeps your longer days.</h2>
         <div className="mt-10 grid max-w-[900px] gap-6 md:grid-cols-2">
           <div className="rounded-[28px] border p-8" style={{ borderColor: T.line, background: "#fff" }}>
             <div className="font-serif text-[32px]">Free</div>
             <div className="text-[14px]" style={{ color: T.muted }}>
-              Forever
+              No account needed
             </div>
             <ul className="mt-6 flex flex-col gap-2.5 text-[15px] leading-6">
-              {["Places around you, anywhere", "A guided story for any place", "Ask your guide anything", "An hour's walking route (free while in beta)", "Translate signs and menus", "Favorites and offline reading"].map((x) => (
+              {["Places around you, anywhere", "A guided story for any place", "Ask your guide anything", "One-hour walking routes", "Half-day and full-day routes (basic version, during beta)", "Translate signs and menus", "Favorites and offline reading"].map((x) => (
                 <li key={x} className="flex gap-3">
                   <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: T.accent }} />
                   {x}
@@ -507,7 +508,7 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
             </div>
             <ul className="mt-6 flex flex-col gap-2.5 text-[15px] leading-6">
               <li className="font-bold">Everything in Free, plus</li>
-              {["Half-day and full-day routes you can save and adjust", "Traveler views: what visitors really thought", "Themed walks", "Travel journal"].map((x) => (
+              {["Save, adjust and pick up your routes across days", "Traveler views: what visitors really thought", "Themed walks", "Travel journal"].map((x) => (
                 <li key={x} className="flex gap-3">
                   <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: T.accent }} />
                   {x}

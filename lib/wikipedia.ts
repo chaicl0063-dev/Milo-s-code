@@ -6,6 +6,7 @@
  * Wikipedia 要求所有请求带能识别应用的 User-Agent，否则可能被限流。
  */
 import type { Place } from "@/lib/places/types";
+import { isVisitable } from "@/lib/places/visitable";
 
 export const USER_AGENT = "ReAroundYou/0.3 (personal learning project; https://github.com/chaicl0063-dev/Milo-s-code)";
 
@@ -44,6 +45,10 @@ interface GeoHit {
   lat: number;
   lon: number;
   dist: number;
+  /** 词条 {{coord}} 里的 type（landmark、city、event…），可能为空 */
+  type?: string | null;
+  /** 词条 {{coord}} 里的 dim（米），可能为空 */
+  dim?: number | null;
 }
 
 /** 第一步：按坐标找周边词条（只有标题和坐标，没有图片） */
@@ -54,6 +59,7 @@ async function geosearch(lat: number, lon: number, lang: string, radiusMeters: n
     gscoord: `${lat}|${lon}`,
     gsradius: String(radiusMeters),
     gslimit: String(limit),
+    gsprop: "type|dim",
     format: "json",
     formatversion: "2",
   });
@@ -104,9 +110,12 @@ async function pageExtras(
 export async function wikipediaNearby(lat: number, lon: number, lang: string, radiusMeters: number, limit = 40): Promise<Place[]> {
   const hits = await geosearch(lat, lon, lang, radiusMeters, limit);
   const extras = await pageExtras(lang, hits.map((h) => h.pageid));
-  return hits.map((h) => {
+  const places: Place[] = [];
+  for (const h of hits) {
     const extra = extras.get(h.pageid) ?? {};
-    return {
+    // 国家、战役、机构、行政区这类带坐标的词条不是「能去看的地方」，从周边列表和路线候选里去掉（详情页仍可打开）
+    if (!isVisitable({ source: "wikipedia", title: h.title, description: extra.description, coordType: h.type ?? undefined, coordDim: typeof h.dim === "number" ? h.dim : undefined })) continue;
+    places.push({
       id: `wp:${h.title.replace(/ /g, "_")}`,
       source: "wikipedia",
       title: h.title,
@@ -117,8 +126,9 @@ export async function wikipediaNearby(lat: number, lon: number, lang: string, ra
       thumbnail: extra.thumbnail,
       wikidata: extra.wikidata,
       wikipedia: { lang, title: h.title },
-    };
-  });
+    });
+  }
+  return places;
 }
 
 /**
