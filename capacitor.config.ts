@@ -1,25 +1,30 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 /**
- * 安卓壳（Capacitor）。第一阶段是「远程加载」：安装包里只有一个占位页（app-shell/），
- * 真正的界面从 server.url 加载，网页一更新，装了 APK 的手机下次打开就是新版。
- * 官网做完、界面稳定后再改成内置前端（把 Next.js 前端静态导出到 webDir，去掉 server.url）。
+ * 安卓壳（Capacitor）。Beta 阶段是「远程加载」：安装包里只有一个占位页（app-shell/），
+ * 真正的界面从 server.url 加载，网页一更新，装了 APK 的手机下次打开就是新版（需要联网）。
+ * 界面稳定后再改成内置前端（把前端静态导出到 webDir，去掉 server.url）。
  *
- * appId 暂用占位，正式发布前按官网域名倒过来改（发布后不能再改）。
+ * 加载地址由环境变量 CAP_SERVER_URL 决定（例如 https://app.bubblefrog.fun），打包时设置：
+ *   CAP_SERVER_URL=https://app.bubblefrog.fun pnpm exec cap sync android
+ * 没设就用 Beta 测试地址。地址会写进安装包，换地址必须重新打包并让用户升级。
+ *
+ * appId 一旦对外分发就不能再改（改了等于另一个应用，无法覆盖升级）。
  */
+const serverUrl = process.env.CAP_SERVER_URL?.replace(/\/$/, "") || "https://milo-s-code.vercel.app";
+const serverHost = new URL(serverUrl).host;
+
 const config: CapacitorConfig = {
   appId: "com.rearound.app",
   appName: "ReAround You",
   webDir: "app-shell",
   server: {
-    // 换了正式域名后改这里（例如 https://app.rearound.xxx）
-    url: "https://milo-s-code.vercel.app",
-    // 允许壳里的 WebView 打开这些域名（其余外链交给系统浏览器）
-    allowNavigation: ["milo-s-code.vercel.app", "*.vercel.app"],
+    url: serverUrl,
+    // 只允许壳内 WebView 停留在应用自己的域名；其它外链交给系统浏览器
+    allowNavigation: [serverHost],
     androidScheme: "https",
   },
   android: {
-    // 允许 http 的图片/瓦片（OSM 瓦片是 https，这里只是保险）
     allowMixedContent: false,
     backgroundColor: "#F4F1EA",
   },

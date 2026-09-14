@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimitResponse } from "@/lib/ratelimit";
 import { isGuideLang, isLang } from "@/lib/i18n";
 import { LANGUAGE_NAME, LlmError, llmConfigured, streamChat, type ChatMessage } from "@/lib/guide";
 import { DEFAULT_PERSONA, PERSONA, isPersona } from "@/lib/personas";
@@ -12,6 +13,8 @@ import { searchNearby } from "@/lib/places/nearby";
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
+  const limited = await rateLimitResponse(req, "ask");
+  if (limited) return limited;
   if (!llmConfigured()) return NextResponse.json({ error: "llm_not_configured" }, { status: 503 });
   let body: { lat?: number; lon?: number; lang?: string; dataLang?: string; persona?: string; areaName?: string; messages?: ChatMessage[] };
   try {

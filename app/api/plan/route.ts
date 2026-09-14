@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimitResponse } from "@/lib/ratelimit";
 import { isGuideLang, isLang } from "@/lib/i18n";
 import { llmConfigured } from "@/lib/guide";
 import { DEFAULT_PERSONA, isPersona } from "@/lib/personas";
@@ -14,6 +15,8 @@ import { isBudget, isInterest, type Interest } from "@/lib/route";
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
+  const limited = await rateLimitResponse(req, "plan");
+  if (limited) return limited;
   if (!llmConfigured()) return NextResponse.json({ error: "llm_not_configured" }, { status: 503 });
   let body: { lat?: number; lon?: number; budget?: string; interests?: unknown; lang?: string; dataLang?: string; persona?: string; areaName?: string };
   try {

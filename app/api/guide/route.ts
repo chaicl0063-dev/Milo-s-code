@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimitResponse } from "@/lib/ratelimit";
 import { getPlaceDetail } from "@/lib/places/detail";
 import { isGuideLang, isLang } from "@/lib/i18n";
 import { DEFAULT_PERSONA, isPersona } from "@/lib/personas";
@@ -18,6 +19,8 @@ const narrationCache = new Map<string, string>();
 const MAX_CACHE = 500;
 
 export async function POST(req: NextRequest) {
+  const limited = await rateLimitResponse(req, "guide");
+  if (limited) return limited;
   if (!llmConfigured()) {
     return NextResponse.json({ error: "llm_not_configured" }, { status: 503 });
   }

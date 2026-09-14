@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimitResponse } from "@/lib/ratelimit";
 import { isLang } from "@/lib/i18n";
 
 /**
@@ -26,6 +27,8 @@ async function kv(...command: (string | number)[]): Promise<unknown> {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = await rateLimitResponse(req, "signup");
+  if (limited) return limited;
   let body: { email?: string; lang?: string; persona?: string };
   try {
     body = await req.json();

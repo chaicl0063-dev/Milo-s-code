@@ -5,6 +5,7 @@ import { PHOTOS, type SitePhoto } from "@/lib/site/photos";
 import { PlaceDemo } from "@/components/site/PlaceDemo";
 import { GuideCompare } from "@/components/site/GuideCompare";
 import { useScriptedSpeech } from "@/components/site/useScriptedSpeech";
+import { BRAND, feedbackMailto } from "@/lib/site/brand";
 
 /* ------------------------------------------------------------------ */
 /* 官网：暖阳配色（暖白 / 墨 / 陶土橙 / 芥末黄），照片打底，情境按钮直接演一段对话。 */
@@ -30,7 +31,7 @@ function Photo({ photo, className = "", style }: { photo: SitePhoto; className?:
 
 /* ------------------------------------------------------------------ */
 
-export function SiteLanding({ appUrl }: { appUrl: string }) {
+export function SiteLanding({ appUrl, apkUrl, apkVersion }: { appUrl: string; apkUrl?: string; apkVersion?: string }) {
   const speech = useScriptedSpeech(appUrl);
   const [email, setEmail] = useState("");
   const [notify, setNotify] = useState<"idle" | "sending" | "done" | "error">("idle");
@@ -71,6 +72,9 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
               <span className="absolute left-[5px] top-[5px] h-[10px] w-[10px] rounded-full" style={{ background: T.accent }} />
             </span>
             ReAround You
+            <span className="rounded-full border px-2 py-0.5 text-[11px] font-bold" style={{ borderColor: T.line, color: T.muted }}>
+              {BRAND.stage}
+            </span>
           </a>
           <nav className="hidden items-center gap-7 text-[13px] font-semibold md:flex" style={{ color: T.muted }}>
             <a href="#how">How it works</a>
@@ -110,7 +114,7 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
               </a>
             </div>
             <p className="mt-4 text-[13px]" style={{ color: T.muted }}>
-              Free in your browser, no account needed. Android app on its way.
+              Free beta in your browser, no account needed. Android beta app for direct download below.
             </p>
           </div>
 
@@ -338,16 +342,27 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
           <div>
             <h2 className="font-serif text-[34px] leading-[1.02] md:text-[44px]">Works in your browser today.</h2>
             <p className="mt-3 max-w-[520px] text-[15px] leading-6 text-white/75">
-              No install needed. Add it to your home screen for the app feel. The Android app is on its way.
+              No install needed. Add it to your home screen for the app feel. The Android beta is a direct download: it needs an internet connection and loads the same app, so it updates with the website.
             </p>
+            {apkUrl && (
+              <p className="mt-2 text-[13px] text-white/60">
+                Android {apkVersion ? `version ${apkVersion}` : "beta"} · APK file, allow installs from your browser when asked · Android 7.0 or newer
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap gap-3">
             <a href={appUrl} className={btnPrimary} style={{ background: T.accent }}>
               Try your local guide
             </a>
-            <span className={btnGhost} style={{ borderColor: "rgba(255,255,255,0.3)", color: "rgba(255,255,255,0.7)" }}>
-              Android · coming soon
-            </span>
+            {apkUrl ? (
+              <a href={apkUrl} className={btnGhost} style={{ borderColor: "rgba(255,255,255,0.4)", color: "#fff" }} download>
+                Download Android beta
+              </a>
+            ) : (
+              <span className={btnGhost} style={{ borderColor: "rgba(255,255,255,0.3)", color: "rgba(255,255,255,0.7)" }}>
+                Android beta · coming soon
+              </span>
+            )}
           </div>
         </div>
       </section>
@@ -375,16 +390,21 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
             </p>
           </div>
           <div className="flex flex-col gap-2">
-            <a href="#" className="font-semibold" style={{ color: T.ink }}>
+            <a href={BRAND.privacyPath} className="font-semibold" style={{ color: T.ink }}>
               Privacy
             </a>
-            <a href="#" className="font-semibold" style={{ color: T.ink }}>
+            <a href={BRAND.termsPath} className="font-semibold" style={{ color: T.ink }}>
               Terms
             </a>
-            <a href="mailto:hello@example.com" className="font-semibold" style={{ color: T.ink }}>
-              hello@example.com
+            <a href={feedbackMailto("website")} className="font-semibold" style={{ color: T.ink }}>
+              Send feedback
             </a>
-            <span>© {new Date().getFullYear()} ReAround You · Company name to follow</span>
+            <a href={`mailto:${BRAND.email}`} className="font-semibold" style={{ color: T.ink }}>
+              {BRAND.email}
+            </a>
+            <span>
+              © {new Date().getFullYear()} {BRAND.operator} · {BRAND.name} {BRAND.stage}
+            </span>
           </div>
         </div>
       </footer>

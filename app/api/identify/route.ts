@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimitResponse } from "@/lib/ratelimit";
 import { GUIDE_LANG_LABEL, isGuideLang } from "@/lib/i18n";
 import { llmConfigured } from "@/lib/guide";
 
@@ -19,6 +20,8 @@ function normalize(s: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = await rateLimitResponse(req, "identify");
+  if (limited) return limited;
   if (!llmConfigured()) return NextResponse.json({ error: "llm_not_configured" }, { status: 503 });
 
   let body: { image?: string; lang?: string; mode?: string; candidates?: Candidate[] };

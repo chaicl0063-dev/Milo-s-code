@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimitResponse } from "@/lib/ratelimit";
 import { asrConfigured } from "@/lib/asr";
 
 /**
@@ -6,6 +7,8 @@ import { asrConfigured } from "@/lib/asr";
  * 把录音转发给 OpenAI 兼容的语音识别接口，返回 { text }。
  */
 export async function POST(req: NextRequest) {
+  const limited = await rateLimitResponse(req, "transcribe");
+  if (limited) return limited;
   if (!asrConfigured()) return NextResponse.json({ error: "asr_not_configured" }, { status: 503 });
 
   let form: FormData;

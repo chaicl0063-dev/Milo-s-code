@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimitResponse } from "@/lib/ratelimit";
 import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
 import { isGuideLang, type GuideLang } from "@/lib/i18n";
 import type { VoiceGender } from "@/lib/personas";
@@ -37,6 +38,8 @@ const VOICE: Record<VoiceGender, Record<GuideLang, string>> = {
 };
 
 export async function GET(req: NextRequest) {
+  const limited = await rateLimitResponse(req, "tts");
+  if (limited) return limited;
   const sp = req.nextUrl.searchParams;
   const text = (sp.get("text") ?? "").trim().slice(0, 400);
   const lang = isGuideLang(sp.get("lang")) ? (sp.get("lang") as GuideLang) : "en";
