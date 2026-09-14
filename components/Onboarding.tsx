@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { GUIDE_LANGS, GUIDE_LANG_LABEL, t, type GuideLang, type Lang } from "@/lib/i18n";
-import { browserGuideLang, setGuideLangPref, setOnboarded, setPersona } from "@/lib/prefs";
+import { browserGuideLang, getPersona, setGuideLangPref, setOnboarded, setPersona } from "@/lib/prefs";
 import { DEFAULT_PERSONA, type PersonaId } from "@/lib/personas";
 import { PersonaPicker } from "@/components/PersonaPicker";
 import { LanguageToggle } from "@/components/LanguageToggle";
@@ -23,6 +23,7 @@ export function Onboarding({ lang, onDone }: Props) {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setGuideLang(browserGuideLang(lang));
+    setPersonaState(getPersona());
   }, [lang]);
 
   function finish() {

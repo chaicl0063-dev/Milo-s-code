@@ -14,7 +14,8 @@ import { useRoute } from "@/lib/routeStore";
 import { StopCard, formatMinutes } from "@/components/GuideScreen";
 import { PersonaAvatar } from "@/components/PersonaPicker";
 import { DEFAULT_PERSONA, type PersonaId } from "@/lib/personas";
-import { getPersona } from "@/lib/prefs";
+import { getPersona, setPersona } from "@/lib/prefs";
+import { isPersona } from "@/lib/personas";
 import { useLanguage } from "@/components/LanguageProvider";
 import { LocatePanel } from "@/components/LocatePanel";
 import { Onboarding } from "@/components/Onboarding";
@@ -166,6 +167,9 @@ export function HomeScreen() {
     bootedRef.current = true;
     const done = isOnboarded();
     setOnboardedState(done);
+    // 官网「Start with Mia / Milo」带来的选择：只有链接明确带了 persona 才覆盖本机偏好
+    const fromSite = searchParams.get("persona");
+    if (isPersona(fromSite)) setPersona(fromSite);
     setPersonaState(getPersona());
     const savedMy = readCoords("myLocation");
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -182,7 +186,7 @@ export function HomeScreen() {
     }
     // 首次进入：先走「选择您的导游」，完成后再请求定位（见 Onboarding 的 onDone）
     if (done) requestLocation();
-  }, [center, refreshLocationIfGranted, requestLocation]);
+  }, [center, refreshLocationIfGranted, requestLocation, searchParams]);
 
   // 两段加载：先要 Wikipedia 的快速结果，再要完整结果；谁先到谁先显示，完整结果到了覆盖
   useEffect(() => {

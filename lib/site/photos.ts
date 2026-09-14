@@ -1,7 +1,7 @@
 /**
  * 官网用的图片。2026-09-14 起全部换成用户手动生成的 AI 品牌氛围图（虚构街景与角色），
  * 原图在 assets/generated/，网页版在 public/images/，清单见 docs/IMAGE-MANIFEST.md。
- * 它们不是真实地点的照片，页脚统一注明；真实地点的图片只出现在应用内（Wikipedia / Wikidata 来源）。
+ * 它们不是真实地点的照片，页脚统一注明。例外：首屏演示用的圣雅克塔是真实照片（Commons，需署名）。
  */
 export interface SitePhoto {
   /** 本站 public 下的文件 */
@@ -32,6 +32,16 @@ const generated = (src: string, alt: string, title: string, extra: Partial<SiteP
 });
 
 export const PHOTOS = {
+  /** 演示用的真实地点照片（Wikimedia Commons，CC BY-SA 4.0，Fabien Barrau） */
+  demoPlace: {
+    src: "/images/tour-saint-jacques-720.jpg",
+    srcSet: "/images/tour-saint-jacques-720.jpg 720w, /images/tour-saint-jacques-1280.jpg 1280w",
+    alt: "Tour Saint-Jacques in Paris at dusk, the Eiffel Tower in the distance",
+    title: "Tour Saint-Jacques au crépuscule",
+    author: "Fabien Barrau",
+    license: "CC BY-SA 4.0",
+    page: "https://commons.wikimedia.org/wiki/File:Tour_Saint-Jacques_au_cr%C3%A9puscule.jpg",
+  } as SitePhoto,
   /** IMG-01：首屏。桌面横图 + 手机竖版（用户另生成的 4:5 版本） */
   hero: generated("/images/hero-1672.jpg", "A traveler pausing to look up at an architectural detail on a sunlit street.", "Brand mood image (fictional street)", {
     srcSet: "/images/hero-1200.jpg 1200w, /images/hero-1672.jpg 1672w",

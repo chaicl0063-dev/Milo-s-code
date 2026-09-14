@@ -235,7 +235,7 @@ Claude 负责组件接入与响应式配置；Codex 看桌面和手机实际页�
 | 2026-09-14 | Claude | 读第 10/11 节与两份提案；接入 IMG-01（`public/images/hero-*.jpg`，手机竖版裁切，页脚注明 AI 生成）；`PHOTOS.eat`→`look`；新建 `docs/IMAGE-MANIFEST.md`；C03 计时埋点（`lib/metrics.ts`，控制台 + localStorage 最近 30 条）；统一 PRODUCT-BRIEF 4.4/4.8 与代码口径 | 用户：对设计提案 v1 逐项拍板（见下方「需要用户决定」）；用户手动生成 IMG-02/03。Codex：抽查本轮变更（通过 / 需修改 / 待确认） |
 | 2026-09-14 | Claude | 用户对设计提案 v1 七项全部采纳建议：首屏改方案 A、副题与按钮文案、去数字、容器圆角 20、陶土两档；接入 IMG-02～06 与手机竖版首屏图，`PersonaAvatar` 改用肖像；逐句显示替代逐字；PRODUCT-BRIEF v4 | Codex：抽查 /site 桌面与手机首屏、导游肖像在 24px 的辨识度；Claude：C02 第二版、隐私条款页 |
 | 2026-09-14 | Claude | 按第 14 节修 C03 计时：首句以音频 playing / 系统语音 onstart 为准，解锁静音片段不算；一次尝试一条记录可随状态更新（blocked 后手动播放补真实时间）；每个请求独立计时器，重试不串；静音/失败/中止有终态；新增入口点击→请求启动一段；6 条测试 | Codex：抽查 useNarrator 事件点与 metrics 终态逻辑。Claude：I01 / I02 |### Claude 交接 · 2026-09-14（第一轮）
-
+| 2026-09-14 | Claude | I01 与 I02 上线：真实地点（圣雅克塔）演示面板，看见→讲解→追问→进应用；双导游同题对比试听（互斥、时长、停止、重播、Start with X 带 ?persona= 进应用）；四情境演示移除 | Codex：按 W01/W02 验收点抽查（脚本事实、音频状态、切换停旧音频、无音频可读）。Claude：I03 或 C02 第二版，看 Codex 排序 |
 - **本轮任务编号**：R01、R02、R03、R04、C02（第一版）、C05（预算部分）、C08（复核）。C03 未动。
 - **已核实的实际功能/开放状态**：与 PRODUCT-BRIEF 4.7 一致；本轮未新增开放能力。半天/一天路线仍是「基础版，所有人可用，未来 Plus」。
 - **与文档不符的事实及依据**：
@@ -433,3 +433,21 @@ Codex：接着按实际页面槽位做首屏与导游形象样张、素材清单
 - 系统语音路径（browser 引擎）的 onstart 事件在部分浏览器触发时机偏早，属已知平台差异，记录里可通过 `cache`/`outcome` 之外的引擎字段区分——本轮未加引擎字段，若需要下轮补。
 
 **下一步**：I01（同一地点：看见→讲解→追问）与 I02（同地点同事实的双导游试听）。
+
+## 16. Claude 交接 · 2026-09-14（第五轮：I01 / I02）
+
+**改动**
+- `lib/site/demo.ts`：演示地点巴黎圣雅克塔（真实照片：Commons `Tour Saint-Jacques au crépuscule.jpg`，Fabien Barrau，CC BY-SA 4.0，页脚署名）。I01 脚本三句讲解 + 两句追问回答；I02 两位导游各三句，同一组事实。事实依据列在文件头注释，全部是公开稳定记载，未含虚构亲历。
+- `components/site/useScriptedSpeech.ts`：官网朗读器。逐句向 `/api/tts` 取音频、先预载再顺序播，因此能报总时长并逐句高亮；全站同一时间只播一段（再点或切换即停旧段）；只在点击后出声；取不到音频进 error，文字照常可读，提供重试。
+- `components/site/PlaceDemo.tsx`（I01）：真实照片缩略图 + 图钉 + 地点名（点 real photo 到来源页）；三步：Hear its story → 讲解 + 追问按钮 → 追问回答；每段有 Preparing / Playing · Ns / Paused / Played 状态与 Pause / Resume / Stop / Replay；出口 Open this place in the app（应用内该地点真实详情页）与 Try it on your own street。
+- `components/site/GuideCompare.tsx`（I02）：两卡并排，肖像 + 风格说明（描述表达方式，不写居住年限）；Hear / Pause / Resume / Stop / Replay，`aria-live` 状态文字含时长；选中卡片有描边 + 「✓ selected」文字；Start with Mia / Milo → `${app}/?persona=mia|milo`。
+- 应用：`HomeScreen` 启动时若 URL 带 `persona=` 且合法则写入偏好（只在明确带参数时覆盖）；`Onboarding` 默认导游读本机偏好，所以官网选择会预选。
+- 首屏四情境按钮演示与逐句打字机移除；路线演示区的头像改用肖像图。
+
+**验证**
+- `tsc`、`eslint`、`pnpm test` 18/18、`next build` 通过。
+- 本地 1280 宽：见交接末尾「实测」。桌面浏览器面板里的 JS 合成点击不算用户手势，音频可能被拦截进 error 态，此时文字完整且有 Retry；真机点击路径未验收。
+
+**未做**
+- I03（一小时下一站联动）未动；C02 第二版未动。
+- 试听时长以实际合成结果为准（每次 ~12–18 秒），未写死数字。

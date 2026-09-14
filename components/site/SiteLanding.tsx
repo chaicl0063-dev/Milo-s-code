@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useState } from "react";
 import { PHOTOS, type SitePhoto } from "@/lib/site/photos";
-import { PERSONA, type PersonaId } from "@/lib/personas";
+import { PlaceDemo } from "@/components/site/PlaceDemo";
+import { GuideCompare } from "@/components/site/GuideCompare";
+import { useScriptedSpeech } from "@/components/site/useScriptedSpeech";
 
 /* ------------------------------------------------------------------ */
 /* 官网：暖阳配色（暖白 / 墨 / 陶土橙 / 芥末黄），照片打底，情境按钮直接演一段对话。 */
@@ -21,89 +23,6 @@ const T = {
   paper: "#F3ECDF",
 } as const;
 
-type Situation = { key: string; label: string; user: string; guide: string; city: string; persona: PersonaId };
-
-const SITUATIONS: Situation[] = [
-  {
-    key: "wander",
-    label: "Just wander for an hour",
-    user: "I've got an hour. Just wander?",
-    guide: "Then let's not look at a map. Head for the house with the blue tiles and keep the river beside you. I'll tell you what you're passing as we go.",
-    city: "Lisbon · Alfama",
-    persona: "mia",
-  },
-  {
-    key: "what",
-    label: "What's that building?",
-    user: "What's that yellow building with the arches?",
-    guide: "That's the old customs house, from 1802. Ships paid their dues here before unloading. The arches on the ground floor were open then, so carts could drive straight through.",
-    city: "Porto · Ribeira",
-    persona: "milo",
-  },
-  {
-    key: "story",
-    label: "Hear the story behind this street",
-    user: "What's the story of this street?",
-    guide: "This was the edge of the old Moorish quarter. See the doorway with the carved knot above it? That's older than the country you're standing in.",
-    city: "Seville · Santa Cruz",
-    persona: "mia",
-  },
-  {
-    key: "rest",
-    label: "Somewhere to sit for a bit",
-    user: "I need to sit down for ten minutes.",
-    guide: "There's a small square about 150 metres towards the church, with benches under the trees. If you'd rather have a coffee, the cafés along the north side face the afternoon sun.",
-    city: "Naples · Centro Storico",
-    persona: "milo",
-  },
-];
-
-/** 逐句显示：一段导游的话按句子出现（不是逐字），开了「减少动态效果」就一次全出 */
-function useSentenceReveal(text: string) {
-  const sentences = useMemo(() => text.match(/[^.!?]+[.!?]+["')]?\s*|[^.!?]+$/g)?.map((x) => x.trim()).filter(Boolean) ?? [text], [text]);
-  const [count, setCount] = useState(1);
-  useEffect(() => {
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCount(reduce ? sentences.length : 1);
-    if (reduce) return;
-    let i = 1;
-    const id = window.setInterval(() => {
-      i++;
-      setCount(i);
-      if (i >= sentences.length) window.clearInterval(id);
-    }, 550);
-    return () => window.clearInterval(id);
-  }, [sentences]);
-  return { shown: sentences.slice(0, count).join(" "), done: count >= sentences.length };
-}
-
-function Avatar({ id, size = 28 }: { id: PersonaId; size?: number }) {
-  const p = PERSONA[id];
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={p.image ?? `/images/${id}-96.jpg`} alt="" aria-hidden width={size} height={size} className="shrink-0 rounded-full object-cover" style={{ width: size, height: size, background: id === "mia" ? T.accent : T.teal }} />;
-}
-
-function Wave({ active }: { active: boolean }) {
-  return (
-    <span className="ml-1 inline-flex items-end gap-[2px] align-baseline" aria-hidden>
-      {[5, 9, 4, 8, 5].map((h, i) => (
-        <i
-          key={i}
-          className="inline-block w-[2px] rounded-sm"
-          style={{
-            height: h,
-            background: T.accent,
-            transformOrigin: "bottom",
-            animation: active ? `rr-wave 0.8s ${i * 0.1}s ease-in-out infinite alternate` : "none",
-            opacity: active ? 1 : 0.35,
-          }}
-        />
-      ))}
-    </span>
-  );
-}
-
 function Photo({ photo, className = "", style }: { photo: SitePhoto; className?: string; style?: React.CSSProperties }) {
   // eslint-disable-next-line @next/next/no-img-element
   return <img src={photo.src} alt={photo.alt} loading="lazy" className={`h-full w-full object-cover ${className}`} style={style} />;
@@ -112,28 +31,9 @@ function Photo({ photo, className = "", style }: { photo: SitePhoto; className?:
 /* ------------------------------------------------------------------ */
 
 export function SiteLanding({ appUrl }: { appUrl: string }) {
-  const [sit, setSit] = useState<Situation>(SITUATIONS[0]);
-  const { shown, done } = useSentenceReveal(sit.guide);
+  const speech = useScriptedSpeech(appUrl);
   const [email, setEmail] = useState("");
   const [notify, setNotify] = useState<"idle" | "sending" | "done" | "error">("idle");
-  const [speaking, setSpeaking] = useState<PersonaId | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  /** 试听：直接调应用的 TTS，读一句人物介绍 */
-  async function hear(id: PersonaId) {
-    const line = id === "mia" ? "Hi, I'm Mia. See the carved date above that doorway? Let me tell you why it matters." : "Hey, I'm Milo. See the carved date above that doorway? There's a good story behind it.";
-    audioRef.current?.pause();
-    setSpeaking(id);
-    try {
-      const a = new Audio(`${appUrl.replace(/\/$/, "")}/api/tts?lang=en&voice=${PERSONA[id].gender}&text=${encodeURIComponent(line)}`);
-      audioRef.current = a;
-      a.onended = () => setSpeaking(null);
-      a.onerror = () => setSpeaking(null);
-      await a.play();
-    } catch {
-      setSpeaking(null);
-    }
-  }
 
   async function submitEmail(e: React.FormEvent) {
     e.preventDefault();
@@ -227,59 +127,7 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
                 />
               </picture>
             </div>
-            <div className="relative -mt-28 mx-3 rounded-[20px] border bg-white/95 p-4 shadow-[0_20px_50px_rgba(31,29,26,0.18)] backdrop-blur md:-mt-32 md:mx-5 md:p-5" style={{ borderColor: T.line }}>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: T.muted }}>
-                Scripted demo · the app answers about your real surroundings
-              </p>
-              <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: T.gold }}>
-                Right now I want to…
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Choose a situation">
-                {SITUATIONS.map((s) => {
-                  const on = s.key === sit.key;
-                  return (
-                    <button
-                      key={s.key}
-                      type="button"
-                      onClick={() => setSit(s)}
-                      aria-pressed={on}
-                      className="h-9 rounded-full px-3.5 text-[12.5px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
-                      style={on ? { background: T.accent, color: "#fff" } : { background: T.paper, color: T.ink }}
-                    >
-                      {on ? "✓ " : ""}
-                      {s.label}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="mt-4 flex flex-col gap-2.5">
-                <div className="flex items-center gap-2">
-                  <Avatar id={sit.persona} size={26} />
-                  <span className="font-serif text-[18px]">{PERSONA[sit.persona].name}</span>
-                  <span className="text-[11px]" style={{ color: T.muted }}>
-                    · {sit.city}
-                  </span>
-                </div>
-                <div className="self-end max-w-[85%] rounded-[16px] rounded-br-[6px] px-3.5 py-2 text-[13px] leading-5 text-white" style={{ background: T.ink }}>
-                  {sit.user}
-                </div>
-                <div className="flex items-end gap-2">
-                  <Avatar id={sit.persona} size={24} />
-                  <div className="min-h-[44px] max-w-[90%] rounded-[16px] rounded-bl-[6px] px-3.5 py-2.5 text-[13.5px] leading-5" style={{ background: T.paper, color: "#2E2A25" }}>
-                    {shown}
-                    <Wave active={!done} />
-                  </div>
-                </div>
-              </div>
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[12px]">
-                <span style={{ color: T.muted }}>Ask {PERSONA[sit.persona].name} anything in the app</span>
-                {done && (
-                  <a href={appUrl} className="font-bold" style={{ color: T.deep }}>
-                    Try it on your own street →
-                  </a>
-                )}
-              </div>
-            </div>
+            <PlaceDemo photo={PHOTOS.demoPlace} appUrl={appUrl} speech={speech} />
           </div>
         </div>
       </section>
@@ -346,7 +194,8 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
                 I&rsquo;m by the cathedral, two hours to spare.
               </div>
               <div className="flex items-end gap-2">
-                <Avatar id="mia" size={30} />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/images/mia-96.jpg" alt="" aria-hidden width={30} height={30} className="h-[30px] w-[30px] shrink-0 rounded-full object-cover" />
                 <div className="max-w-[90%] rounded-[18px] rounded-bl-[6px] px-4 py-3 text-[15px] leading-6" style={{ background: T.paper, color: "#2E2A25" }}>
                   Then let&rsquo;s start small. Six minutes north there&rsquo;s a tiled courtyard from the 1700s. From there I&rsquo;ll take you through three side streets and drop you back
                   by the river around sunset.
@@ -390,32 +239,8 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
           Your guides
         </p>
         <h2 className="mt-3 font-serif text-[36px] leading-[1.02] md:text-[56px]">Two voices. Pick the one you&rsquo;d walk with.</h2>
-        <div className="mt-10 grid gap-6 md:grid-cols-2">
-          {(["mia", "milo"] as PersonaId[]).map((id) => {
-            const p = PERSONA[id];
-            const color = id === "mia" ? T.accent : T.teal;
-            return (
-              <div key={id} className="flex flex-col gap-6 rounded-[20px] p-7 md:flex-row md:items-center md:p-9" style={{ background: T.paper }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/images/${id}-600.jpg`} alt={`${p.name}, an AI guide character`} width={150} height={150} className="h-[150px] w-[150px] shrink-0 rounded-[20px] object-cover" style={{ background: color }} />
-                <div className="min-w-0">
-                  <h3 className="font-serif text-[40px] leading-none">{p.name}</h3>
-                  <p className="mt-3 text-[16px] leading-7" style={{ color: T.muted }}>
-                    {p.tagline.en}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => void hear(id)}
-                    className={`${btnGhost} mt-5 gap-2`}
-                    style={{ borderColor: T.line, color: T.ink, background: "#fff" }}
-                  >
-                    <span className="inline-block h-0 w-0 border-y-[6px] border-l-[9px] border-y-transparent" style={{ borderLeftColor: color }} />
-                    {speaking === id ? "Speaking…" : `Hear ${p.name}`}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+        <div className="mt-10">
+          <GuideCompare appUrl={appUrl} speech={speech} />
         </div>
         <p className="mt-6 text-[14px]" style={{ color: T.muted }}>
           Both speak English, 中文, Español, Français, Deutsch, 日本語, 한국어 and Português.
@@ -538,7 +363,15 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
               Place data from OpenStreetMap, Wikipedia, Wikivoyage, Wikidata and the UNESCO World Heritage List. Stories are AI-generated from those sources; check anything that matters.
             </p>
             <p className="mt-3 leading-5">
-              Street scenes and the two guide portraits on this page are AI-generated brand images of fictional places and characters, not photographs of real locations or people.
+              Photo of Tour Saint-Jacques:{" "}
+              {(Object.values(PHOTOS) as SitePhoto[])
+                .filter((p) => !p.generated && p.page)
+                .map((p) => (
+                  <a key={p.page} href={p.page} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+                    {p.author} ({p.license})
+                  </a>
+                ))}
+              . Other street scenes and the two guide portraits are AI-generated brand images of fictional places and characters.
             </p>
           </div>
           <div className="flex flex-col gap-2">

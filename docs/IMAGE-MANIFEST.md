@@ -11,6 +11,7 @@
 | IMG-04b | Walk `PHOTOS.walk` | `IMG-04b.png` 1448×1086 | `walk.jpg` 1200 宽 193 KB | 人物在中右 | A traveler walking away down a narrow lane… | 已接入 |
 | IMG-04c | Listen `PHOTOS.listen` | `IMG-04c.png` 1448×1086 | `listen.jpg` 1200 宽 159 KB | 立面与钟楼在上三分之二 | A carved church facade and bell tower… | 已接入 |
 | IMG-05 | 路线区 `PHOTOS.square` | `IMG-05.png` 1448×1086 | `square.jpg` 1200 宽 224 KB | 中部铺地留空，上叠顺序示意虚线与编号（已注明是示意） | A small sunlit square with warm facades… | 已接入 |
+| REAL-01 | 首屏演示面板里的真实地点照片 `PHOTOS.demoPlace`（I01） | Wikimedia Commons `File:Tour Saint-Jacques au crépuscule.jpg`，Fabien Barrau，CC BY-SA 4.0 | `tour-saint-jacques-1280.jpg` 223 KB、`-720.jpg` 49 KB | 面板内 80×56 缩略图；页脚署名 | Tour Saint-Jacques in Paris at dusk… | 已接入（真实照片，非生成） |
 | IMG-06 | 傍晚场景屏 `PHOTOS.alley` | `IMG-06.png` 2048×768 | `dusk.jpg` 1920 宽 151 KB | 左 60% 暗，文字在左 | A lane at dusk with light from a doorway… | 已接入 |
 
 接入流程：用户把生成的原图按编号放进 `assets/generated/` → Claude 用 sharp 出网页版本（JPEG 80 到 85，需要时裁切）→ 更新 `lib/site/photos.ts` 与本表 → 桌面 1280 宽和手机 390 宽各看一次文字遮挡。
