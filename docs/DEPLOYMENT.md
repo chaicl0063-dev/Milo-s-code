@@ -93,6 +93,8 @@ keyPassword=…
 
 要求：JDK 21（Capacitor 8 的 Gradle 需要）；`android/local.properties` 里 `sdk.dir` 用正斜杠。
 
+仓库里的 `android/gradle.properties` 不带任何代理设置；构建机需要代理时写在用户级 `~/.gradle/gradle.properties`，不要提交进仓库。
+
 ### 版本与签名规则
 
 - `applicationId` 固定 `com.rearound.app`，**对外发过就不能改**，改了等于另一个应用，用户无法覆盖安装。

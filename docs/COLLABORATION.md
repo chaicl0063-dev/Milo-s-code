@@ -623,7 +623,7 @@ Claude 下一次只交一页：Web 候选地址与提交号、APK 文件/版本/
 
 ### 交付物
 
-- 源码包：`D:/AI_Projects/ReAroundYou-releases/rearound-src-<日期>-<提交号>.zip`（`git archive`，不含 `.env.local`、`node_modules`、`android/keystore.properties`）。
+- 源码包：`D:/AI_Projects/ReAroundYou-releases/` 下最新的 `rearound-src-<日期>-<提交号>.zip`（`git archive`，约 27 MB，其中 20 MB 是 `assets/generated/` 的原图；不含 `.env.local`、`node_modules`、`android/keystore.properties`）。打包前核对发现 `android/gradle.properties` 带着本机代理设置，已移到本机用户级配置，仓库文件不再含代理，否则运维那边 Gradle 会连不上。
 - 签名密钥 `D:/AI_Projects/tourguide-keys/`（含说明）由用户单独移交运维，不在源码包里。
 - 已有 `ReAroundYou-1.0-remote.apk`（versionCode 1，加载 Beta 测试地址）仅供对照。
 
