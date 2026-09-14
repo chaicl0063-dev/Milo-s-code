@@ -228,8 +228,12 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
 
       {/* 首屏：满幅照片 + 左下文字 + 情境按钮 + 右侧手机演示 */}
       <section id="top" className="relative min-h-[100svh] overflow-hidden">
-        <Photo photo={PHOTOS.hero} className="absolute inset-0" style={{ objectPosition: "50% 45%" }} />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(31,29,26,0.35) 0%, rgba(31,29,26,0.05) 35%, rgba(31,29,26,0.75) 100%)" }} />
+        {/* 首屏图：手机用人物居中的竖版裁切，桌面用横图；人物在右上，左下留给文字 */}
+        <picture className="absolute inset-0">
+          {PHOTOS.hero.portraitSrc && <source media="(max-width: 767px)" srcSet={PHOTOS.hero.portraitSrc} />}
+          <img src={PHOTOS.hero.src} srcSet={PHOTOS.hero.srcSet} sizes="100vw" alt={PHOTOS.hero.alt} fetchPriority="high" className="h-full w-full object-cover object-[0%_35%] md:object-[60%_35%]" />
+        </picture>
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(31,29,26,0.45) 0%, rgba(31,29,26,0.25) 40%, rgba(31,29,26,0.8) 100%)" }} />
         <div className="relative mx-auto flex min-h-[100svh] max-w-[1200px] flex-col justify-end gap-8 px-5 pb-10 pt-28 md:flex-row md:items-end md:justify-between md:px-8 md:pb-16">
           <div className="max-w-[620px] text-white rr-up">
             <p className="text-[12px] font-bold uppercase tracking-[0.16em]" style={{ color: "#F2C98A" }}>
@@ -404,7 +408,7 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
         <h2 className="mt-3 max-w-[760px] font-serif text-[36px] leading-[1.02] md:text-[56px]">Look, walk, listen. It keeps up with whatever you feel like doing.</h2>
         <div className="mt-10 grid gap-6 md:grid-cols-12">
           {[
-            { photo: PHOTOS.eat, k: "Look", q: "Point the camera at anything on this street. I'll tell you what it is and what it was.", span: "md:col-span-7 md:row-span-2", ratio: "aspect-[4/3] md:aspect-auto md:h-full" },
+            { photo: PHOTOS.look, k: "Look", q: "Point the camera at anything on this street. I'll tell you what it is and what it was.", span: "md:col-span-7 md:row-span-2", ratio: "aspect-[4/3] md:aspect-auto md:h-full" },
             { photo: PHOTOS.walk, k: "Walk", q: "An hour to spare? I'll string together three stops you can reach on foot.", span: "md:col-span-5", ratio: "aspect-[4/3]" },
             { photo: PHOTOS.listen, k: "Listen", q: "That plain-looking tower? A hundred years ago it was a laboratory.", span: "md:col-span-5", ratio: "aspect-[4/3]" },
           ].map((c) => (
@@ -576,14 +580,17 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
             </p>
             <p className="mt-3 leading-5">
               Photos:{" "}
-              {Object.values(PHOTOS).map((p, i, arr) => (
-                <span key={p.page}>
-                  <a href={p.page} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
-                    {p.author}
-                  </a>{" "}
-                  ({p.license}){i < arr.length - 1 ? ", " : "."}
-                </span>
-              ))}
+              {(Object.values(PHOTOS) as SitePhoto[])
+                .filter((p) => !p.generated)
+                .map((p, i, arr) => (
+                  <span key={p.page}>
+                    <a href={p.page} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+                      {p.author}
+                    </a>{" "}
+                    ({p.license}){i < arr.length - 1 ? ", " : "."}
+                  </span>
+                ))}{" "}
+              The opening street scene is an AI-generated brand image of a fictional place.
             </p>
           </div>
           <div className="flex flex-col gap-2">

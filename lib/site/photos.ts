@@ -3,25 +3,36 @@
  * 文件已下载到 public/site/（Commons 的缩略图服务有限流，不能直接外链）。页脚的 Photo credits 由这张表生成。
  */
 export interface SitePhoto {
-  /** 本站 public/site 下的文件 */
+  /** 本站 public 下的文件 */
   src: string;
   alt: string;
   title: string;
   author: string;
   license: string;
+  /** 来源页；AI 生成的品牌氛围图没有来源页，为空 */
   page: string;
+  /** 手机竖屏用的另一张裁切（可选） */
+  portraitSrc?: string;
+  /** 更小的版本，给 srcSet（可选） */
+  srcSet?: string;
+  /** true = AI 生成的虚构场景，不是真实地点照片 */
+  generated?: boolean;
 }
 
 const page = (file: string) => `https://commons.wikimedia.org/wiki/File:${file}`;
 
 export const PHOTOS = {
   hero: {
-    src: "/site/hero.jpg",
-    alt: "People resting on green chairs by the pond in the Tuileries at dusk",
-    title: "Grand bassin octogonal, Jardin des Tuileries",
-    author: "Moonik",
-    license: "CC BY-SA 3.0",
-    page: page("Grand_bassin_octogonal_Jardin_des_Tuileries_003.jpg"),
+    // IMG-01：AI 生成的品牌氛围图（虚构街景），见 docs/IMAGE-MANIFEST.md
+    src: "/images/hero-1672.jpg",
+    srcSet: "/images/hero-1200.jpg 1200w, /images/hero-1672.jpg 1672w",
+    portraitSrc: "/images/hero-portrait.jpg",
+    alt: "A traveler pausing to look up at an architectural detail on a sunlit street.",
+    title: "Brand mood image (fictional street)",
+    author: "ReAround You",
+    license: "AI-generated brand image",
+    page: "",
+    generated: true,
   },
   square: {
     src: "/site/square.jpg",
@@ -31,7 +42,7 @@ export const PHOTOS = {
     license: "CC BY-SA 4.0",
     page: page("Praca_de_Almeida_Garrett_in_Porto.jpg"),
   },
-  eat: {
+  look: {
     src: "/site/eat.jpg",
     alt: "A street lined with café terraces and people walking",
     title: "Sint Janstraat, Breda",

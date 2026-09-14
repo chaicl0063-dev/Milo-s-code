@@ -6,6 +6,7 @@ import { audienceStyle, getAudience, getAutoSpeak, getPersona, getVoiceEngine, r
 import { DEFAULT_PERSONA, PERSONA, type PersonaId } from "@/lib/personas";
 import { splitSentences } from "@/lib/speech";
 import { useNarrator } from "@/lib/useNarrator";
+import { NarrationTimer } from "@/lib/metrics";
 import { MicIcon, PlayIcon, SparkIcon, SpeakerIcon, SpeakerOffIcon } from "@/components/Icons";
 import { PersonaAvatar } from "@/components/PersonaPicker";
 
@@ -72,6 +73,8 @@ export function GuidePanel({ placeId, uiLang, initialNarration, initialGuideLang
   const [question, setQuestion] = useState("");
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  /** 核心指标计时：从开始讲解到第一段文字 / 第一句音频（见 lib/metrics.ts） */
+  const timerRef = useRef<NarrationTimer | null>(null);
 
   // 偏好都在 localStorage，只能挂载后读；离线页已经指定了语言就不动
   useEffect(() => {
@@ -131,6 +134,8 @@ export function GuidePanel({ placeId, uiLang, initialNarration, initialGuideLang
     setStreaming(true);
     setError(null);
     setTurns([...history, { role: "assistant", content: "" }]);
+    // 只给首次讲解计时（追问不算核心指标）
+    timerRef.current = history.length === 0 ? new NarrationTimer(placeId) : null;
     try {
       const res = await fetch("/api/guide", {
         method: "POST",
@@ -140,6 +145,7 @@ export function GuidePanel({ placeId, uiLang, initialNarration, initialGuideLang
       });
       if (res.status === 429) throw new Error("busy");
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
+      timerRef.current?.setCache(res.headers.get("X-Guide-Cache"));
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let text = "";
@@ -147,10 +153,12 @@ export function GuidePanel({ placeId, uiLang, initialNarration, initialGuideLang
         const { value, done } = await reader.read();
         if (done) break;
         text += decoder.decode(value, { stream: true });
+        if (text.trim()) timerRef.current?.markText();
         setTurns([...history, { role: "assistant", content: text }]);
       }
       if (!text.trim()) throw new Error("empty");
     } catch (err) {
+      timerRef.current?.flush(true);
       if (err instanceof DOMException && err.name === "AbortError") return;
       setError(t(uiLang, err instanceof Error && err.message === "busy" ? "guideBusy" : "guideError"));
       setTurns(history);
@@ -243,6 +251,21 @@ export function GuidePanel({ placeId, uiLang, initialNarration, initialGuideLang
   // 文字跟着声音走：正在朗读时只显示到当前句；静音、被浏览器拦住、读完了就全显示
   const following = !muted && narrator.supported && (narrator.state === "playing" || narrator.state === "paused");
   const blocked = !muted && narrator.state === "blocked";
+
+  // 第一句音频开始（currentIndex 从 -1 变 0 且在播）或被拦截时记指标；静音的话讲解文字流结束后记一次
+  useEffect(() => {
+    const tm = timerRef.current;
+    if (!tm) return;
+    if (narrator.state === "playing" && narrator.currentIndex >= 0) {
+      tm.markAudio();
+      tm.flush();
+    } else if (narrator.state === "blocked") {
+      tm.markBlocked();
+      tm.flush();
+    } else if (muted && !streaming && latestNarration) {
+      tm.flush();
+    }
+  }, [narrator.state, narrator.currentIndex, muted, streaming, latestNarration]);
   const isPage = layout === "page";
 
   const inputForm = allowFollowUp && (
