@@ -10,7 +10,7 @@
 | 环境变量清单 | `.env.example` | 所有变量及默认值，值留空 |
 | 安卓工程 | `android/` | Capacitor 壳，远程加载网页；见第 6 节 |
 | 已有安卓包 | `ReAroundYou-1.0-remote.apk`（versionCode 1，另附） | 加载地址写死为 Beta 测试地址，仅供对照 |
-| 签名密钥 | **不在交付物内**，由产品负责人另行移交 | `rearound-release.jks` + 口令；丢了就无法给已安装用户覆盖升级 |
+| 签名密钥 | **不在交付物内，也不移交** | 正式版由运维**自建一把新密钥**并保管（见第 6 节）。Beta 包用的密钥只服务测试线 |
 
 ### 1.1 不在包里、需要运维自己准备的私有资源（重要）
 
@@ -23,7 +23,7 @@
 | 高德 Web 服务 Key（`AMAP_KEY`） | 仅中国境内周边数据 | 面向海外可以不配；要配就自行申请 |
 | 语音识别接口（`ASR_*`） | 语音提问，Beta 期未启用 | 不配即可，按钮自动隐藏 |
 | Vercel 项目 `milo-s-code.vercel.app` 与 GitHub 仓库 `chaicl0063-dev/Milo-s-code` | Beta 测试线，只有产品负责人使用 | **不要连接这个仓库部署**。用本压缩包自建仓库；后续更新由产品负责人再打包 |
-| 安卓签名密钥 | 给已安装的 Beta 用户覆盖升级 | 由产品负责人当面或加密渠道移交；收到后妥善保管，不进仓库 |
+| 安卓签名密钥 | 只签过 Beta 测试包，装机人数为个位数 | **不移交**。运维自建新密钥签正式版；Beta 测试者卸载旧包重装一次即可 |
 | 域名 `bubblefrog.fun` 的 DNS | 无 | 由运维按第 5 节指向新部署 |
 
 包里带着的、建议运维改成自己信息的地方：
@@ -102,14 +102,22 @@ cd android && ./gradlew assembleRelease
 # 产物：android/app/build/outputs/apk/release/app-release.apk
 ```
 
-`android/keystore.properties`（不进 git）：
+签名密钥：正式版**由运维自己生成一把新密钥**，不沿用 Beta 的。生成一次，永久保管（丢了就无法给已安装用户升级）：
+
+```bash
+keytool -genkeypair -v -keystore rearound-release.jks -alias rearound -keyalg RSA -keysize 2048 -validity 10000
+```
+
+然后写 `android/keystore.properties`（不进 git；路径用正斜杠）：
 
 ```
-storeFile=D:/path/to/rearound-release.jks
+storeFile=/path/to/rearound-release.jks
 storePassword=…
 keyAlias=rearound
 keyPassword=…
 ```
+
+已装过 Beta 包（1.0）的少数测试者，因为签名不同无法覆盖安装，需要先卸载再装正式版；本机收藏和设置会随卸载清空。正式版一旦对外分发，之后所有版本都必须用这把密钥。
 
 要求：JDK 21（Capacitor 8 的 Gradle 需要）；`android/local.properties` 里 `sdk.dir` 用正斜杠。
 
@@ -119,7 +127,7 @@ keyPassword=…
 
 - `applicationId` 固定 `com.rearound.app`，**对外发过就不能改**，改了等于另一个应用，用户无法覆盖安装。
 - 每次外发 `versionCode` 递增（当前 2，`versionName` 1.1），在 `android/app/build.gradle`。同时把 `components/AboutScreen.tsx` 里的 `APP_VERSION` 改成一致。
-- 必须用同一把签名密钥，否则已安装用户升级失败。验证：`apksigner verify --print-certs app-release.apk`，证书指纹应与上一版一致。
+- 正式版首发后必须一直用同一把签名密钥，否则已安装用户升级失败。验证：`apksigner verify --print-certs app-release.apk`，证书指纹应与上一版一致。首发版与 Beta 包指纹不同是预期的。
 - 发布时把 APK 放到官网可下载的位置（例如仓库 `public/downloads/` 或对象存储），并设置 `NEXT_PUBLIC_APK_URL` / `NEXT_PUBLIC_APK_VERSION` 后重新构建网页。
 
 ### 已知的架构债务

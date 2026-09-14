@@ -227,7 +227,7 @@ v6 变更（2026-09-15）：项目目标改为 Beta 收口并把源码交付运�
 - **14.3 反馈入口**：应用「联系我们」= 预填主题的邮件 + 官网二维码（`public/images/qr-site.svg`，内容为官网地址，以后可换成客服账号码）+ 隐私/条款；官网页脚 Send feedback 同一邮箱。没有表单后台，Beta 期用邮箱。
 - **14.4 限流**：`lib/ratelimit.ts` 按 IP 固定窗口，Upstash Redis 计数，未配置时进程内存兜底，限流自身出错放行。默认额度（10 分钟）：guide/ask 30、plan 10、identify 10、transcribe 20、tts 400；signup 5/小时。可用 `RATE_LIMIT_<桶>=次数/秒` 覆盖。前端对 429 的现有提示：讲解/随手问显示「导游忙」，其余走各自失败文案。
 - **14.5 域名分流**：根目录 `proxy.ts` 按 `SITE_HOSTS` 把官网域名的 `/` `/privacy` `/terms` 重写到 `/site/*`；应用域名零配置。未配置时保持 Beta 单域名布局（应用 `/`，官网 `/site`）。
-- **14.6 安卓**：加载地址改由打包期环境变量 `CAP_SERVER_URL` 决定（默认 Beta 测试地址），`allowNavigation` 只放应用域名；`versionCode 2 / versionName 1.1`，应用内「关于」显示 1.1 · Beta。签名密钥不在交付物内。最终 APK 由运维在域名确定后打包（步骤在 `docs/DEPLOYMENT.md`）。
+- **14.6 安卓**：加载地址改由打包期环境变量 `CAP_SERVER_URL` 决定（默认 Beta 测试地址），`allowNavigation` 只放应用域名；`versionCode 2 / versionName 1.1`，应用内「关于」显示 1.1 · Beta。签名密钥不移交：正式版由运维自建新密钥（用户决定，Beta 包只装过一台手机）。最终 APK 由运维在域名确定后打包（步骤在 `docs/DEPLOYMENT.md`）。
 - **14.7 官网状态词**：顶栏 Beta 标签；下载区在配置 `NEXT_PUBLIC_APK_URL` 前显示「Android beta · coming soon」，配置后显示下载按钮、版本、需联网、Android 7.0+。
 - **14.8 交付物**：源码压缩包（不含 `.env.local`、`node_modules`、签名文件）+ `.env.example` + `docs/DEPLOYMENT.md`（运行要求、Vercel 与自建两种部署、环境变量决策点、域名、APK 打包与版本规则、上线检查单、回滚）。
 - **14.9 延期项（不阻塞 Beta）**：C02 第二版（Wikidata P31）、I03 官网路线联动、桌面 60/40 重排、换模型（Gemini/Groq）、内置前端安卓包、商店上架、账号与支付、数据看板。

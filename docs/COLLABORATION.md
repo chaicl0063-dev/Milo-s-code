@@ -624,7 +624,7 @@ Claude 下一次只交一页：Web 候选地址与提交号、APK 文件/版本/
 ### 交付物
 
 - 源码包：`D:/AI_Projects/ReAroundYou-releases/` 下最新的 `rearound-src-<日期>-<提交号>.zip`（`git archive`，约 27 MB，其中 20 MB 是 `assets/generated/` 的原图；不含 `.env.local`、`node_modules`、`android/keystore.properties`）。打包前核对发现 `android/gradle.properties` 带着本机代理设置，已移到本机用户级配置，仓库文件不再含代理，否则运维那边 Gradle 会连不上。
-- 签名密钥 `D:/AI_Projects/tourguide-keys/`（含说明）由用户单独移交运维，不在源码包里。
+- 签名密钥：用户 2026-09-15 决定**不移交**，正式版由运维自建新密钥（Beta 包只有用户一台手机装过，卸载重装成本为零）。`D:/AI_Projects/tourguide-keys/` 只继续给 Beta 测试线用。手册第 1 节、1.1 节、第 6 节已改。
 - 用户 2026-09-15 追问「交付物里有没有我私有的部分」：对压缩包做了扫描（环境文件、密钥文件、Key 格式字符串、写死的变量值、个人路径、私有链接），结论是不含任何密钥或口令；智谱 Key、Upstash、高德 Key、Vercel 项目与 GitHub 仓库、签名密钥都是用户个人资源，只服务 Beta 测试线，已在 `docs/DEPLOYMENT.md` 第 1.1 节列成表格，要求运维自行申请、不要连接原仓库。包内可改的个人标识：Wikipedia 请求的 User-Agent 里的仓库地址、注释里的本机路径。
 - 已有 `ReAroundYou-1.0-remote.apk`（versionCode 1，加载 Beta 测试地址）仅供对照。
 
@@ -632,4 +632,4 @@ Claude 下一次只交一页：Web 候选地址与提交号、APK 文件/版本/
 
 1. 应用子域名是否用 `app.bubblefrog.fun`（手册与 `.env.example` 按此写，改名只改环境变量）。
 2. `hello@bubblefrog.fun` 开通后请确认收信；开通前隐私页承诺的「删除邮箱」请求无人能收到。
-3. 最终 APK 由运维在域名确定后按手册打包；用同一密钥、`versionCode` 继续递增。
+3. 最终 APK 由运维在域名确定后按手册打包；自建密钥、`applicationId` 不变、`versionCode` 继续递增。
