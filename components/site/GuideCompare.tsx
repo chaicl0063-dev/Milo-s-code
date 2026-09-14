@@ -83,13 +83,13 @@ export function GuideCompare({ appUrl, speech }: { appUrl: string; speech: Speec
                     Resume
                   </button>
                 )}
-                {(playing || paused) && (
+                {(playing || paused || loading) && (
                   <button type="button" onClick={speech.stop} className="text-[13px] font-bold" style={{ color: T.deep }}>
-                    Stop
+                    {loading ? "Cancel" : "Stop"}
                   </button>
                 )}
                 <span className="text-[12px]" style={{ color: T.muted }} aria-live="polite">
-                  {loading ? "Loading audio" : playing ? `Playing${state.durationSec ? ` · ${state.durationSec}s` : ""}` : paused ? "Paused" : done ? `Played · ${state.durationSec ?? ""}s` : errored ? "Audio unavailable right now, the text is above" : state.key && !mine ? "" : ""}
+                  {loading ? "Loading audio" : playing ? `Playing${state.durationSec ? ` · ${state.durationSec}s` : ""}` : paused ? "Paused" : done ? `Played · ${state.durationSec ?? ""}s` : errored ? (state.index > 0 ? "Audio stopped partway, the text is complete above" : "Audio unavailable right now, the text is above") : state.key && !mine ? "" : ""}
                 </span>
               </div>
 

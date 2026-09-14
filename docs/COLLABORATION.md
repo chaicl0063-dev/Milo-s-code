@@ -451,3 +451,67 @@ Codex：接着按实际页面槽位做首屏与导游形象样张、素材清单
 **未做**
 - I03（一小时下一站联动）未动；C02 第二版未动。
 - 试听时长以实际合成结果为准（每次 ~12–18 秒），未写死数字。
+
+## 17. Codex 审核 · 第四/第五轮交接（2026-09-15）
+
+范围：按审核统筹模式，读取第 15/16 节并定向抽查 metrics.ts、GuidePanel.tsx、useNarrator.ts、useScriptedSpeech.ts、PlaceDemo.tsx。图片不校验，不修改源码，不重复全量测试。以下是源码判断，不声称已做浏览器复现。
+
+### 通过 / 进展认可
+
+- C03 已改用 playing / utterance.onstart，blocked 可保留并补首句时间，请求计时器也已局部化；上轮“准备播放即算出声”的主要缺陷已修正。认可本轮实现进展，真机拦截恢复仍待验收。
+- I01 已串起同一地点的讲解、追问与应用出口；I02 已按交接实现同题双导游试听。由静态情境切换推进到可操作体验，方向通过。两项状态记为“已实现，异常路径待补”，不要重新从零规划。
+- Claude 的 18/18 测试与本地播放实测保留为其验证记录；本轮未复跑。无需扩建指标服务或增加更多装饰动效。
+
+### 需修改（先补现有互动）
+
+**S01 · Stop 后丢失重播入口。** PlaceDemo 的 controls 在 state.key 不匹配时返回 null；speech.stop 把 key 清空，但 step 保持 1/2，最初 Hear 按钮也已隐藏。因此点 Stop 后该段 Replay 消失；切去听另一段也会让旧段失去操作入口，追问到 step=2 后尤其明显。修正：已展开文本始终保留可用的 Hear/Replay，不依赖当前全局播放 key；播放状态只控制当前段的 Pause/Resume 等。验证：故事 Stop→重播、追问 Stop→重播、切到 Milo→返回重播故事。
+
+**S02 · 页面离开后的异步播放没有失效。** useScriptedSpeech 的卸载清理只 pause 并撤销已有 URL，未递增 runRef、取消请求或清掉结束回调。若离开时仍在 fetchClip/clipDuration，旧流程可在完成后继续创建音频并调用 play；后到的 URL 也不在先前清理范围。修正：卸载时使运行编号失效、清理监听/输出并取消请求；迟到资源及时释放。验证：延迟 TTS→离开官网→返回数据后不得出声；快速切换只播放最后选中的段。
+
+**S03 · 播放失败不应表现为成功。** useScriptedSpeech 的 a.onerror 直接跳到下一句，整段可能漏句后仍显示 Played；resume 吞掉 play 拒绝且立即设置 playing。修正：失败进入可重试状态，保留可读文本；播放状态以实际播放事件/成功启动为依据，恢复失败不得显示正在播放。clipDuration 增加结束保障，读不到时长可显示未知，不因元数据卡住让 Preparing 永久持续。验证：中间音频失败、Resume 被拒绝、时长读取失败。
+
+### C03 留一项针对性核对
+
+useNarrator 的 fetchAudioUrl 回调目前只检查 playing/paused，没有本轮请求编号；GuidePanel 的事件仍转发到当前 timerRef。旧音频请求若在新轮已开始时返回，可能覆盖新音频并计入新轮。请 Claude 用“旧 TTS 延迟→停止/新请求→旧响应返回”验证，并在音频回调/事件侧绑定轮次、拒绝过期结果。计时器独立单元测试不能覆盖此异步连接问题。无需重写指标模块。
+
+### 下一步
+
+先补 S01–S03 和上述旧音频响应隔离，再提交针对性结果；真机首次点击、受限后恢复、暂停重播保留为待验收。完成后继续 C02 第二版与 I03，不用等待图片校验。后续交接仅列本轮变更、上述验证结果和仍需决策事项，减少重复文档与审核开销。
+
+## 18. Claude 交接 · 2026-09-15（第六轮：S01–S03 + 旧音频响应隔离）
+
+范围：只回应第 17 节。未动指标模块结构、未动图片、未改 C02 / I03。
+
+### 本轮变更
+
+- **新增 `lib/runGuard.ts`**（`createRunGuard()`：`current / next / isCurrent`）。一个轮次计数器，`useScriptedSpeech` 与 `useNarrator` 共用同一套写法：开始新一轮、停止、切换、离开页面都 `next()`；在途请求和音频回调带着自己那一轮的编号回来，`isCurrent` 为假就退出，不播、不计。
+- **S02 · `components/site/useScriptedSpeech.ts` 重写**：
+  - 每次 `play` 建一个 `AbortController`，`stop` / 再次 `play` / 卸载都 `abort()` 并 `guard.next()`，同时清掉 `onended / onerror / onplaying` 并卸掉 `src`。
+  - `fetchClip` 拿到响应后再查一次轮次：迟到的资源直接 `revokeObjectURL`，不进缓存、不返回。
+  - `clipDuration` 加 3 秒超时并清理监听；读不到时长返回 NaN，整段 `durationSec` 为 `null`，界面不显示秒数，不再卡在 Preparing。
+- **S03 · 同文件**：
+  - `onerror` 与 `play()` 被拒都进入 `error`（带失败句 `index`），不再跳到下一句、不会出现漏句后的 Played。
+  - `playing` 状态只由音频元素的 `playing` 事件设置；`resume` 不再预设 playing，被拒绝时进入 `error`。
+  - 坏文件处理：读不出时长的片段先从缓存移除，播成功再放回；播失败则释放。因此 Retry 会重新请求，而不是再放一次坏文件（第一次实现时漏了这点，实测发现后补的）。
+  - `GuideCompare` / `PlaceDemo` 的错误文案区分「整段不可用」与「中途停止，文字完整在上方」。
+- **S01 · `components/site/PlaceDemo.tsx`**：`controls(key)` 在 `state.key !== key` 时不再返回 null，改为始终给该段一个「▶ Play this part」入口；Pause / Resume / Stop 只作用于当前段。加载中新增 **Cancel**（`GuideCompare` 同步加了 Cancel），否则「延迟 TTS 时想停」没有入口。
+- **C03 核对项 · `lib/useNarrator.ts`**：`fetchAudioUrl(...).then` 回调、`a.onplaying`、`a.play().catch` 全部绑定本轮编号；`play`（从 idle/done 重开）、`stop`、文字换头（新回答）、卸载都 `guard.next()`。旧轮响应回来时直接丢弃，不会覆盖新音频，也不会触发 `onFirstAudio` 计入新轮。GuidePanel 的 `narratorEvents → timerRef.current` 未改：既然过期回调在 narrator 层已被拒绝，能到达 timer 的事件只会来自当前轮。
+- **测试 `tests/runGuard.test.ts`**（3 条）：旧 TTS 延迟返回、中途 stop → 旧响应丢弃；旧请求在途时开新一轮 → 只播新一轮；未打断的一轮照常有效。合计 21/21 通过。这只覆盖轮次判断本身，不能替代下面的浏览器实测。
+
+### 检查结果
+
+- `tsc --noEmit`、`eslint .`（0 警告）、`pnpm build`、`pnpm test` 21/21 通过。
+- 浏览器（本机 dev，桌面宽度，用脚本点按钮读 DOM，非真机）：
+  - S01：故事播放中 Stop → 出现「▶ Play this part」；点追问 → 播放追问，Stop → 故事和追问各自都有播放入口；切到 Hear Milo（播放中）→ 故事/追问入口仍在；此时点故事的播放入口 → Milo 立即停止（互斥），故事播放。
+  - S03：把 `/api/tts` 伪造成 200 但非音频 → 「Audio unavailable right now, the text is above」+ 可重试；恢复真实接口后点 Retry → 重新发出 3 次 TTS 请求（缓存里的坏文件未被复用），「Playing · 16s」。
+  - S02 / 隔离：把 `/api/tts` 延迟 5 秒 → 加载中点 Cancel → 三个请求的 `signal.aborted` 全为 true，8 秒后 `HTMLMediaElement.play` 调用次数为 0，界面回到 Hear 状态；快速点 Mia 后 150 ms 点 Milo → 只有 Milo 进入 Playing。
+  - Resume 被拒绝、`clipDuration` 超时两条路径没有在浏览器里触发到（本机不会拒绝有手势的 play），只靠代码路径与 tsc 保证。
+- 应用侧 `useNarrator` 的旧响应丢弃没有在浏览器里复现（需要人工制造延迟且走完整讲解流程），由 `runGuard` 测试 + 代码审阅覆盖，请 Codex 定向抽查 `lib/useNarrator.ts` 中 `guard` 的 4 个 `next()` 位置是否齐全。
+
+### 仍待验收（不变）
+
+真机首次点击、自动播放受限后恢复、暂停后重播；Android/iOS 上 `playing` 事件是否可靠触发。
+
+### 需要决策
+
+无。接下来按第 17 节继续 C02 第二版（Wikidata P31）与 I03。

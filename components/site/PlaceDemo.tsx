@@ -29,15 +29,32 @@ export function PlaceDemo({ photo, appUrl, speech }: { photo: SitePhoto; appUrl:
     void speech.play("follow", DEMO_STORY.followUp.sentences, persona.gender);
   };
 
+  const replay = (key: string) => (key === "story" ? hearStory() : askFollowUp());
+
+  /** 每段自己的操作：不是当前播放段时始终给「Replay」，播放键只控制当前段（S01） */
   const controls = (key: string) => {
-    if (state.key !== key) return null;
+    if (state.key !== key) {
+      return (
+        <button type="button" onClick={() => replay(key)} className="text-[11px] font-bold" style={{ color: T.deep }}>
+          ▶ Play this part
+        </button>
+      );
+    }
     const dur = state.durationSec ? ` · ${state.durationSec}s` : "";
-    if (state.status === "loading") return <span className="text-[11px]" style={{ color: T.muted }}>Preparing audio…</span>;
+    if (state.status === "loading")
+      return (
+        <span className="flex items-center gap-2 text-[11px]" style={{ color: T.muted }}>
+          Preparing audio…
+          <button type="button" onClick={speech.stop} className="font-bold" style={{ color: T.deep }}>
+            Cancel
+          </button>
+        </span>
+      );
     if (state.status === "error")
       return (
         <span className="flex items-center gap-2 text-[11px]" style={{ color: T.muted }}>
-          Audio unavailable, read along instead.
-          <button type="button" onClick={() => (key === "story" ? hearStory() : askFollowUp())} className="font-bold" style={{ color: T.deep }}>
+          {state.index >= 0 ? "Audio stopped partway, the text is complete above." : "Audio unavailable, read along instead."}
+          <button type="button" onClick={() => replay(key)} className="font-bold" style={{ color: T.deep }}>
             Retry
           </button>
         </span>
@@ -64,7 +81,7 @@ export function PlaceDemo({ photo, appUrl, speech }: { photo: SitePhoto; appUrl:
           </button>
         )}
         {state.status === "done" && (
-          <button type="button" onClick={() => (key === "story" ? hearStory() : askFollowUp())} className="font-bold" style={{ color: T.deep }}>
+          <button type="button" onClick={() => replay(key)} className="font-bold" style={{ color: T.deep }}>
             Replay
           </button>
         )}
