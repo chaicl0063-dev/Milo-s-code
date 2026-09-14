@@ -132,3 +132,13 @@ scripts/dev.mjs                开发启动器，负责把 .env.local 里的代�
 3. 用手机浏览器打开 Vercel 给的 https 地址，允许定位。浏览器定位只在 https 下可用，所以本地用局域网 IP 访问拿不到定位是正常的。
 
 线上不需要任何环境变量；第二阶段接 LLM 时再在 Vercel 后台加 `LLM_API_KEY` 等。
+
+## 安卓安装包（Capacitor）
+
+`capacitor.config.ts` + `android/`。第一阶段是「远程加载」：APK 里只有 `app-shell/index.html` 一个占位页，界面从 `server.url`（现在是 milo-s-code.vercel.app，换正式域名后改这一处）加载，网页更新即应用更新。官网做完后再改内置前端。
+
+- 环境：Android SDK 装在 `D:/Android/Sdk`（命令行装的 platform-tools、platforms 35/36、build-tools 35/36），JDK 用 Microsoft OpenJDK 21（Capacitor 8 要求 21）。`android/local.properties` 写 `sdk.dir=D:/Android/Sdk`（properties 文件里反斜杠是转义符，别用反斜杠）。`android/gradle.properties` 里有本机代理设置。
+- 图标与启动图：`node scripts/make-app-assets.mjs`（生成 assets/ 源图）→ `node scripts/make-android-res.mjs`（渲染到 res 各密度）。不用 @capacitor/assets，它自带的旧版 sharp 在 Node 24 跑不起来。
+- 权限：定位、相机、麦克风，见 `AndroidManifest.xml`；WebView 的授权弹窗由 Capacitor 处理。
+- 出包：`cd android && JAVA_HOME=<JDK21> ./gradlew assembleDebug`（调试包）或 `assembleRelease`（签名包，读 `android/keystore.properties`，密钥在 `D:/AI_Projects/tourguide-keys/`，两者都不进 git）。上 Play 用 `bundleRelease` 出 AAB。
+- 应用 ID `com.rearound.app` 是占位，正式发布前改成官网域名倒写；发布后不能改。
