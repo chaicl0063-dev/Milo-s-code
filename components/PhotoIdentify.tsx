@@ -20,7 +20,7 @@ interface Props {
   /** 打开时默认的模式：认地点 / 翻译文字 */
   defaultMode?: PhotoMode;
   /** 自定义触发按钮；不传就是地图右下角的相机圆钮 */
-  trigger?: (open: () => void) => ReactNode;
+  trigger?: (open: (mode?: PhotoMode) => void) => ReactNode;
 }
 
 interface IdentifyResult {
@@ -113,7 +113,10 @@ export function PhotoIdentify({ lang, guideLang, candidates, onSearchName, class
   useEffect(() => {
     if (openTick > 0) inputRef.current?.click();
   }, [openTick]);
-  const openPicker = useCallback(() => setOpenTick((n) => n + 1), []);
+  const openPicker = useCallback((m?: PhotoMode) => {
+    if (m) setMode(m);
+    setOpenTick((n) => n + 1);
+  }, []);
   const open = status !== "idle";
   const matchedPlace = result?.matchId ? candidates.find((p) => p.id === result.matchId) : undefined;
 
@@ -125,7 +128,7 @@ export function PhotoIdentify({ lang, guideLang, candidates, onSearchName, class
       ) : (
         <button
           type="button"
-          onClick={openPicker}
+          onClick={() => openPicker()}
           title={t(lang, "identifyPhoto")}
           aria-label={t(lang, "identifyPhoto")}
           className={`flex h-12 w-12 items-center justify-center rounded-full bg-surface text-ink shadow-[0_6px_16px_rgba(27,31,29,0.14)] ${className}`}
@@ -230,7 +233,7 @@ export function PhotoIdentify({ lang, guideLang, candidates, onSearchName, class
                   </button>
                 )}
                 {status !== "working" && (
-                  <button type="button" onClick={openPicker} className="h-11 rounded-full border border-line px-4 text-[14px] font-semibold text-ink">
+                  <button type="button" onClick={() => openPicker()} className="h-11 rounded-full border border-line px-4 text-[14px] font-semibold text-ink">
                     {t(lang, "retake")}
                   </button>
                 )}

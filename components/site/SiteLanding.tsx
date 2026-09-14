@@ -31,10 +31,10 @@ const SITUATIONS: Situation[] = [
     persona: "mia",
   },
   {
-    key: "eat",
-    label: "Find somewhere locals eat",
-    user: "Somewhere locals actually eat?",
-    guide: "Skip the one with the queue. Two streets back there's a tasca with six tables and a handwritten menu. Ask for whatever the grandmother is cooking today.",
+    key: "what",
+    label: "What's that building?",
+    user: "What's that yellow building with the arches?",
+    guide: "That's the old customs house, from 1802. Ships paid their dues here before unloading. The arches on the ground floor were open then, so carts could drive straight through.",
     city: "Porto · Ribeira",
     persona: "milo",
   },
@@ -47,10 +47,10 @@ const SITUATIONS: Situation[] = [
     persona: "mia",
   },
   {
-    key: "quiet",
-    label: "Avoid the crowds",
-    user: "Too many people here. Somewhere quieter?",
-    guide: "Good call, the terrace is packed right now. There's a smaller one three minutes up the stairs to your left. Same view, no elbows.",
+    key: "rest",
+    label: "Somewhere to sit for a bit",
+    user: "I need to sit down for ten minutes.",
+    guide: "There's a small square about 150 metres towards the church, with benches under the trees. If you'd rather have a coffee, the cafés along the north side face the afternoon sun.",
     city: "Naples · Centro Storico",
     persona: "milo",
   },
@@ -277,6 +277,7 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
 
           {/* 手机演示 */}
           <div className="mx-auto w-[280px] shrink-0 md:mx-0 md:w-[300px] rr-up" style={{ animationDelay: "0.15s" }}>
+            <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">Scripted demo · the app answers about your real surroundings</p>
             <div className="overflow-hidden rounded-[34px] border-[6px] shadow-[0_30px_80px_rgba(0,0,0,0.45)]" style={{ borderColor: T.ink, background: T.bg }}>
               <div className="flex flex-col gap-3 px-4 pb-5 pt-9" style={{ minHeight: 400 }}>
                 <div className="flex items-center gap-2">
@@ -296,8 +297,15 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
                     <Wave active={!done} />
                   </div>
                 </div>
-                <div className="mt-auto flex h-10 items-center rounded-full border px-4 text-[12px]" style={{ borderColor: T.line, color: T.muted, background: "#fff" }}>
-                  Ask {PERSONA[sit.persona].name} anything…
+                <div className="mt-auto flex flex-col gap-2">
+                  {done && (
+                    <a href={appUrl} className="text-[12px] font-bold" style={{ color: T.accent }}>
+                      Try it on your own street →
+                    </a>
+                  )}
+                  <div className="flex h-10 items-center rounded-full border px-4 text-[12px]" style={{ borderColor: T.line, color: T.muted, background: "#fff" }}>
+                    Ask {PERSONA[sit.persona].name} anything…
+                  </div>
                 </div>
               </div>
             </div>
@@ -392,11 +400,11 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
         <p className="text-[12px] font-bold uppercase tracking-[0.16em]" style={{ color: T.gold }}>
           More than the sights
         </p>
-        <h2 className="mt-3 max-w-[760px] font-serif text-[36px] leading-[1.02] md:text-[56px]">It knows where the good coffee is, and which alley to take instead.</h2>
+        <h2 className="mt-3 max-w-[760px] font-serif text-[36px] leading-[1.02] md:text-[56px]">Look, walk, listen. It keeps up with whatever you feel like doing.</h2>
         <div className="mt-10 grid gap-6 md:grid-cols-12">
           {[
-            { photo: PHOTOS.eat, k: "Eat", q: "The place with the queue is fine. The one next to it is better.", span: "md:col-span-7 md:row-span-2", ratio: "aspect-[4/3] md:aspect-auto md:h-full" },
-            { photo: PHOTOS.walk, k: "Walk", q: "If you like it quiet, we go in through the other lane.", span: "md:col-span-5", ratio: "aspect-[4/3]" },
+            { photo: PHOTOS.eat, k: "Look", q: "Point the camera at anything on this street. I'll tell you what it is and what it was.", span: "md:col-span-7 md:row-span-2", ratio: "aspect-[4/3] md:aspect-auto md:h-full" },
+            { photo: PHOTOS.walk, k: "Walk", q: "An hour to spare? I'll string together three stops you can reach on foot.", span: "md:col-span-5", ratio: "aspect-[4/3]" },
             { photo: PHOTOS.listen, k: "Listen", q: "That plain-looking tower? A hundred years ago it was a laboratory.", span: "md:col-span-5", ratio: "aspect-[4/3]" },
           ].map((c) => (
             <figure key={c.k} className={`relative overflow-hidden rounded-[28px] ${c.span} ${c.ratio}`} style={{ minHeight: 260 }}>
@@ -461,7 +469,7 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
           <h2 className="mt-3 max-w-[640px] font-serif text-[36px] leading-[1.02] md:text-[56px]">
             &ldquo;Take the steps on your left. Halfway up, look back. That&rsquo;s the view they put on the postcards, minus the crowd.&rdquo;
           </h2>
-          <p className="mt-6 text-[15px] text-white/80">Milo, somewhere in Naples</p>
+          <p className="mt-6 text-[15px] text-white/80">Milo, somewhere in Naples · example line</p>
         </div>
       </section>
 
@@ -478,7 +486,7 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
               Forever
             </div>
             <ul className="mt-6 flex flex-col gap-2.5 text-[15px] leading-6">
-              {["Places around you, anywhere", "A guided story for any place", "Ask your guide anything", "Translate signs and menus", "Favorites and offline reading"].map((x) => (
+              {["Places around you, anywhere", "A guided story for any place", "Ask your guide anything", "An hour's walking route (free while in beta)", "Translate signs and menus", "Favorites and offline reading"].map((x) => (
                 <li key={x} className="flex gap-3">
                   <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: T.accent }} />
                   {x}
@@ -499,7 +507,7 @@ export function SiteLanding({ appUrl }: { appUrl: string }) {
             </div>
             <ul className="mt-6 flex flex-col gap-2.5 text-[15px] leading-6">
               <li className="font-bold">Everything in Free, plus</li>
-              {["Plan my day: a walking route by time and interest", "Traveler views: what visitors really thought", "Themed walks", "Travel journal"].map((x) => (
+              {["Half-day and full-day routes you can save and adjust", "Traveler views: what visitors really thought", "Themed walks", "Travel journal"].map((x) => (
                 <li key={x} className="flex gap-3">
                   <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: T.accent }} />
                   {x}

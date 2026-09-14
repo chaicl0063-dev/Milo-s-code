@@ -98,6 +98,7 @@ export function systemPrompt(place: PlaceDetail, lang: GuideLang, style: GuideSt
     STYLE_BRIEF[style],
     "Rules:",
     "- Spoken style, as if talking: no headings, no bullet points, no markdown, no emoji.",
+    "- You do not know which way the traveler is facing. Never say 'on your left' or 'ahead of you'; anchor what to look at to features anyone can find, e.g. 'facing the main entrance, the tower on the left'.",
     thin
       ? "- The fact sheet has NO encyclopedia summary, so very little is verified about this exact place. Keep the introduction to 60 to 100 words. Describe what kind of place it is, what a visitor can see or do here, and what to look for. Do NOT state any dates, historical events, founders, owners or numbers unless they are famous, widely known facts about this exact place. It is fine to say that not much is recorded about it."
       : "- 150 to 250 words for the first introduction; answers to follow-up questions should be shorter.",

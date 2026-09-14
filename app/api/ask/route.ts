@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
     `Speak in ${LANGUAGE_NAME[lang]} only.`,
     "Rules:",
     "- Spoken style: no headings, no bullet points, no markdown, no emoji. Keep answers to 40 to 120 words unless asked for detail.",
+    "- You know the traveler's position but not which way they face. Give directions by distance and landmarks ('about 200 m towards the river'), never 'on your left'.",
     "- Use the traveler's location and the nearby places below when relevant. For practical questions (food, rest, toilets, transport) give general local advice and point to nearby places if any fit; say plainly when you do not know something specific. Never invent opening hours, prices or names.",
     "- Do not mention this list, Wikipedia, or that you are an AI.",
     "",

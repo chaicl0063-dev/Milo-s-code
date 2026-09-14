@@ -69,10 +69,13 @@ function assemble(origin: { lat: number; lon: number }, ordered: Place[], notes:
   for (const p of ordered) {
     const meters = haversine(cur.lat, cur.lon, p.lat, p.lon);
     if (meters > MAX_LEG_M) continue;
+    // 一小时是纯步行：远到要乘车的站直接不要，宁可少几站
+    if (budget === "1h" && meters > TRANSIT_THRESHOLD_M) continue;
     const leg = legFor(meters);
     const note = notes.get(p.id);
     const minutes = dwellFor(p, budget, note?.minutes);
-    if (stops.length >= rule.minStops && total + leg.legMinutes + minutes > rule.minutes) break;
+    // 超预算就停：站数是结果，不为凑数超时
+    if (stops.length >= 1 && total + leg.legMinutes + minutes > rule.minutes) break;
     total += leg.legMinutes + minutes;
     stops.push({ ...p, minutes, why: note?.why ?? "", ...leg });
     cur = p;
@@ -170,12 +173,12 @@ export async function buildPlan(input: PlanInput): Promise<RoutePlan> {
     console.warn("[plan] llm failed, using fallback:", err instanceof Error ? err.message : err, rawForLog.slice(0, 300));
   }
 
-  // 模型挑得太少或没挑：按分数补齐
+  // 模型挑得太少或没挑：只用够格的候选补（有百科正文或图、或匹配兴趣），不为凑数塞进不相关的条目
   if (picked.length < rule.minStops) {
     fallback = picked.length === 0;
     for (const p of candidates) {
       if (picked.length >= rule.maxStops) break;
-      if (!picked.includes(p)) picked.push(p);
+      if (!picked.includes(p) && score(p, interests) >= 2) picked.push(p);
     }
   }
 
@@ -183,11 +186,12 @@ export async function buildPlan(input: PlanInput): Promise<RoutePlan> {
   // 截断或丢远站之后不够站数：再从剩余候选里就近补
   if (stops.length < rule.minStops) {
     const used = new Set(stops.map((s) => s.id));
-    const extra = candidates.filter((p) => !used.has(p.id)).slice(0, rule.maxStops);
+    const extra = candidates.filter((p) => !used.has(p.id) && score(p, interests) >= 2).slice(0, rule.maxStops);
     stops = assemble(origin, orderByNearest(origin, [...stops, ...extra]), notes, budget);
   }
   picked = stops;
 
-  const totalMinutes = stops.reduce((sum, s) => sum + s.minutes + s.legMinutes, 0);
+  // 总时长：停留 + 路上，再加一成和 5 分钟缓冲（找路、拍照、等红灯）
+  const totalMinutes = Math.round(stops.reduce((sum, s) => sum + s.minutes + s.legMinutes, 0) * 1.1 + 5);
   return { createdAt: Date.now(), origin, budget, interests, intro, stops, totalMinutes, fallback: fallback || undefined };
 }

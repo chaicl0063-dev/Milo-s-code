@@ -9,12 +9,13 @@ import { formatDistance } from "@/lib/geo";
 import { DEFAULT_PERSONA, PERSONA, type PersonaId } from "@/lib/personas";
 import { getPersona, readCoords, resolveGuideLang } from "@/lib/prefs";
 import type { Budget, Interest, RoutePlan, RouteStop } from "@/lib/route";
-import { saveRoute } from "@/lib/routeStore";
+import { saveRoute, useRoute } from "@/lib/routeStore";
 import { useLanguage } from "@/components/LanguageProvider";
 import { PersonaAvatar } from "@/components/PersonaPicker";
 import { PhotoIdentify } from "@/components/PhotoIdentify";
 import { TabBar, TAB_BAR_HEIGHT } from "@/components/TabBar";
-import { BusIcon, CloseIcon, HeadphonesIcon, MapIcon, NotebookIcon, QuoteIcon, RefreshIcon, RouteIcon, SparkIcon, TranslateIcon, WalkIcon } from "@/components/Icons";
+import { BusIcon, CameraIcon, ChatIcon, CloseIcon, HeadphonesIcon, MapIcon, NotebookIcon, QuoteIcon, RefreshIcon, RouteIcon, SparkIcon, TranslateIcon, WalkIcon } from "@/components/Icons";
+import type { PhotoMode } from "@/components/PhotoIdentify";
 
 type Coords = { lat: number; lon: number };
 
@@ -97,6 +98,7 @@ export function GuideScreen({ llmReady }: { llmReady: boolean }) {
   const [busy, setBusy] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [route] = useRoute();
 
   // 偏好和位置只能在浏览器读
   useEffect(() => {
@@ -153,15 +155,16 @@ export function GuideScreen({ llmReady }: { llmReady: boolean }) {
   const fresh = messages.length <= 1;
 
   /* ---------- 规划 ---------- */
-  function startPlan() {
+  /** 「我有一小时」：默认一小时步行，直接问兴趣；时间更多可在下一步改 */
+  function startPlan(b: Budget = "1h") {
     if (!center) {
       push({ role: "assistant", kind: "text", text: t(lang, "guideNoLocation") });
       return;
     }
-    setBudget(null);
+    setBudget(b);
     setInterests([]);
-    push({ role: "user", text: t(lang, "planToday") });
-    push({ role: "assistant", kind: "time" });
+    push({ role: "user", text: b === "1h" ? t(lang, "haveAnHour") : t(lang, BUDGET_LABEL[b]) });
+    push({ role: "assistant", kind: "interests" });
   }
 
   function chooseBudget(b: Budget) {
@@ -252,8 +255,8 @@ export function GuideScreen({ llmReady }: { llmReady: boolean }) {
     }
   }
 
-  /** 付费占位：导游用一句话说明这个功能将来做什么，并告知尚未开放 */
-  function paid(feature: MessageKey, pitch: MessageKey) {
+  /** 未开放的 Plus 功能：导游用一句话说明将来做什么，并告知尚未开放 */
+  function later(feature: MessageKey, pitch: MessageKey) {
     push({ role: "user", text: t(lang, feature) });
     push({ role: "assistant", kind: "text", text: t(lang, pitch) });
   }
@@ -264,13 +267,31 @@ export function GuideScreen({ llmReady }: { llmReady: boolean }) {
   // 底部悬浮的东西（输入框，聊起来后还有一行快捷胶囊）会盖住最后几条消息，正文要留出同样高度
   const overlayPx = TAB_BAR_HEIGHT + (fresh ? 84 : 140);
 
-  const cards = (openTranslate: () => void) => [
-    { key: "plan", icon: <RouteIcon size={20} />, title: t(lang, "planToday"), hint: t(lang, "planTodayHint"), onClick: startPlan },
-    { key: "translate", icon: <TranslateIcon size={20} />, title: t(lang, "photoTranslate"), hint: t(lang, "photoTranslateHint"), onClick: openTranslate },
-    { key: "views", icon: <QuoteIcon size={20} />, title: t(lang, "travelerViews"), hint: t(lang, "travelerViewsHint"), paid: true, onClick: () => paid("travelerViews", "travelerViewsPitch") },
-    { key: "walk", icon: <WalkIcon size={20} />, title: t(lang, "themedWalk"), hint: t(lang, "themedWalkHint"), paid: true, onClick: () => paid("themedWalk", "themedWalkPitch") },
-    { key: "journal", icon: <NotebookIcon size={20} />, title: t(lang, "travelJournal"), hint: t(lang, "travelJournalHint"), paid: true, onClick: () => paid("travelJournal", "travelJournalPitch") },
-  ];
+  type Card = { key: string; icon: React.ReactNode; title: string; hint: string; later?: boolean; onClick: () => void };
+  /** 三个主入口：看懂眼前、附近值得看、我有一小时；翻译是工具；其余是 Plus 预告 */
+  const cards = (openPhoto: (mode?: PhotoMode) => void): { main: Card[]; tools: Card[]; later: Card[] } => ({
+    main: [
+      { key: "what", icon: <CameraIcon size={20} />, title: t(lang, "whatIsThis"), hint: t(lang, "whatIsThisHint"), onClick: () => openPhoto("identify") },
+      { key: "nearby", icon: <ChatIcon size={20} />, title: t(lang, "nearbyWorth"), hint: t(lang, "nearbyWorthHint"), onClick: () => void ask(t(lang, "nearbyWorthQ")) },
+      { key: "hour", icon: <RouteIcon size={20} />, title: t(lang, "haveAnHour"), hint: t(lang, "haveAnHourHint"), onClick: () => startPlan("1h") },
+    ],
+    tools: [{ key: "translate", icon: <TranslateIcon size={20} />, title: t(lang, "photoTranslate"), hint: t(lang, "photoTranslateHint"), onClick: () => openPhoto("translate") }],
+    later: [
+      { key: "views", icon: <QuoteIcon size={20} />, title: t(lang, "travelerViews"), hint: t(lang, "travelerViewsHint"), later: true, onClick: () => later("travelerViews", "travelerViewsPitch") },
+      { key: "walk", icon: <WalkIcon size={20} />, title: t(lang, "themedWalk"), hint: t(lang, "themedWalkHint"), later: true, onClick: () => later("themedWalk", "themedWalkPitch") },
+      { key: "journal", icon: <NotebookIcon size={20} />, title: t(lang, "travelJournal"), hint: t(lang, "travelJournalHint"), later: true, onClick: () => later("travelJournal", "travelJournalPitch") },
+    ],
+  });
+  const cardButton = (c: Card) => (
+    <button key={c.key} type="button" onClick={c.onClick} className={`flex items-center gap-3 rounded-[16px] border border-line bg-surface px-4 py-3 text-left ${c.later ? "opacity-80" : ""}`}>
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-accent">{c.icon}</span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="text-[15px] font-semibold text-ink">{c.title}</span>
+        <span className="truncate text-[12px] text-muted">{c.hint}</span>
+      </span>
+      {c.later && <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[11px] font-semibold text-faint">{t(lang, "comingSoonPlus")}</span>}
+    </button>
+  );
 
   return (
     <>
@@ -344,6 +365,20 @@ export function GuideScreen({ llmReady }: { llmReady: boolean }) {
                               <Chip key={i} label={t(lang, INTEREST_LABEL[i])} active={interests.includes(i)} onClick={() => toggleInterest(i)} />
                             ))}
                           </div>
+                          <div className="flex flex-wrap items-center gap-2 pl-1 text-[12px] text-faint">
+                            <span>{t(lang, "moreTime")}</span>
+                            {(["1h", "half", "day"] as Budget[]).map((b) => (
+                              <button
+                                key={b}
+                                type="button"
+                                onClick={() => setBudget(b)}
+                                aria-pressed={budget === b}
+                                className={`h-7 rounded-full px-2.5 text-[12px] font-semibold ${budget === b ? "bg-ink text-bg" : "border border-line bg-surface text-muted"}`}
+                              >
+                                {t(lang, BUDGET_LABEL[b])}
+                              </button>
+                            ))}
+                          </div>
                           <p className="pl-1 text-[12px] text-faint">{t(lang, "planFromHere")}</p>
                           <button
                             type="button"
@@ -389,25 +424,30 @@ export function GuideScreen({ llmReady }: { llmReady: boolean }) {
           trigger={(open) =>
             fresh ? (
               <div className="mt-4 flex flex-col gap-2">
-                {cards(open).map((c) => (
-                  <button key={c.key} type="button" onClick={c.onClick} className="flex items-center gap-3 rounded-[16px] border border-line bg-surface px-4 py-3 text-left">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-accent">{c.icon}</span>
-                    <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="text-[15px] font-semibold text-ink">{c.title}</span>
-                      <span className="truncate text-[12px] text-muted">{c.hint}</span>
+                {/* 有进行中的路线：先给「继续」 */}
+                {route && route.stops.length > 0 && (
+                  <Link href={`${homeHref(route.origin.lat, route.origin.lon)}&route=1`} className="flex items-center gap-3 rounded-[16px] bg-ink px-4 py-3 text-bg">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-bg/15 text-bg">
+                      <MapIcon size={20} />
                     </span>
-                    {c.paid && <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[11px] font-semibold text-faint">{t(lang, "paidFeature")}</span>}
-                  </button>
-                ))}
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="text-[15px] font-semibold">{t(lang, "continueRoute")}</span>
+                      <span className="truncate text-[12px] text-bg/70">{t(lang, "routeSummary", { n: route.stops.length, h: formatMinutes(lang, route.totalMinutes) })}</span>
+                    </span>
+                  </Link>
+                )}
+                {cards(open).main.map(cardButton)}
+                {cards(open).tools.map(cardButton)}
+                <p className="mt-3 px-1 text-[11px] font-bold uppercase tracking-[0.12em] text-faint">{t(lang, "laterGroup")}</p>
+                {cards(open).later.map(cardButton)}
               </div>
             ) : (
               <div className="fixed inset-x-0 z-[1001] mx-auto max-w-[520px] px-4" style={{ bottom: `calc(${TAB_BAR_HEIGHT + 62}px + env(safe-area-inset-bottom))` }}>
                 <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
-                  {cards(open).map((c) => (
+                  {[...cards(open).main, ...cards(open).tools].map((c) => (
                     <button key={c.key} type="button" onClick={c.onClick} className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-line bg-surface/95 px-3 text-[12px] font-semibold text-ink backdrop-blur">
                       <span className="text-accent">{c.icon}</span>
                       {c.title}
-                      {c.paid && <span className="text-[10px] font-semibold text-faint">· {t(lang, "paidFeature")}</span>}
                     </button>
                   ))}
                 </div>
@@ -474,6 +514,7 @@ function PlanMessage({ plan, lang, onShow, onRetry }: { plan: RoutePlan; lang: L
         ))}
       </ol>
       <p className="pl-1 text-[12px] text-faint">{t(lang, "routeSummary", { n: plan.stops.length, h: formatMinutes(lang, plan.totalMinutes) })}</p>
+      <p className="pl-1 text-[11px] leading-4 text-faint">{t(lang, "routeOrderNote")}</p>
       <div className="mt-1 flex gap-2">
         <button type="button" onClick={onShow} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-[16px] bg-ink text-[15px] font-bold text-bg">
           <MapIcon size={18} />
