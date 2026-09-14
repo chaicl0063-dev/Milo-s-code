@@ -40,6 +40,8 @@ pnpm dev
 | `pnpm exec tsc --noEmit` | 只做类型检查 |
 | `pnpm lint` | 代码规范检查 |
 
+产品定位、性格、设计系统、已定/未定事项见 [docs/PRODUCT-BRIEF.md](docs/PRODUCT-BRIEF.md)，给设计与文案协作者看的总账。
+
 ## 界面结构
 
 - 首次进入先走「选择您的导游」：讲解语言（8 种）和受众（成人 / 儿童），然后请求定位。两项都可在「我的 → 设置」里改。
