@@ -10,6 +10,7 @@ import { DEFAULT_PERSONA, PERSONA, type PersonaId } from "@/lib/personas";
 import { getPersona, readCoords, resolveGuideLang } from "@/lib/prefs";
 import type { Budget, Interest, RoutePlan, RouteStop } from "@/lib/route";
 import { saveRoute, useRoute } from "@/lib/routeStore";
+import { markEntryClick } from "@/lib/metrics";
 import { useLanguage } from "@/components/LanguageProvider";
 import { PersonaAvatar } from "@/components/PersonaPicker";
 import { PhotoIdentify } from "@/components/PhotoIdentify";
@@ -558,7 +559,7 @@ export function StopCard({ stop, index, lang, compact = false }: { stop: RouteSt
         </p>
         {!compact && stop.why && <p className="mt-0.5 line-clamp-2 text-[12px] leading-4 text-ink-soft">{stop.why}</p>}
       </div>
-      <Link href={talkHref(lang, stop.id)} aria-label={t(lang, "askGuide")} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-bg">
+      <Link href={talkHref(lang, stop.id)} onClick={() => markEntryClick()} aria-label={t(lang, "askGuide")} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-bg">
         <HeadphonesIcon size={18} />
       </Link>
     </div>

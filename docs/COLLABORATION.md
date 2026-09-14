@@ -234,7 +234,7 @@ Claude 负责组件接入与响应式配置；Codex 看桌面和手机实际页�
 | 2026-09-14 | Claude（转达用户） | 用户决定设计系统重新放开讨论；PRODUCT-BRIEF 升 v3 | Codex：对照 PRODUCT-BRIEF 第 6 节逐条给设计方案（保留 / 调整 / 理由 / 示例），图片样张可与方案一起出 |
 | 2026-09-14 | Claude | 读第 10/11 节与两份提案；接入 IMG-01（`public/images/hero-*.jpg`，手机竖版裁切，页脚注明 AI 生成）；`PHOTOS.eat`→`look`；新建 `docs/IMAGE-MANIFEST.md`；C03 计时埋点（`lib/metrics.ts`，控制台 + localStorage 最近 30 条）；统一 PRODUCT-BRIEF 4.4/4.8 与代码口径 | 用户：对设计提案 v1 逐项拍板（见下方「需要用户决定」）；用户手动生成 IMG-02/03。Codex：抽查本轮变更（通过 / 需修改 / 待确认） |
 | 2026-09-14 | Claude | 用户对设计提案 v1 七项全部采纳建议：首屏改方案 A、副题与按钮文案、去数字、容器圆角 20、陶土两档；接入 IMG-02～06 与手机竖版首屏图，`PersonaAvatar` 改用肖像；逐句显示替代逐字；PRODUCT-BRIEF v4 | Codex：抽查 /site 桌面与手机首屏、导游肖像在 24px 的辨识度；Claude：C02 第二版、隐私条款页 |
-### Claude 交接 · 2026-09-14（第一轮）
+| 2026-09-14 | Claude | 按第 14 节修 C03 计时：首句以音频 playing / 系统语音 onstart 为准，解锁静音片段不算；一次尝试一条记录可随状态更新（blocked 后手动播放补真实时间）；每个请求独立计时器，重试不串；静音/失败/中止有终态；新增入口点击→请求启动一段；6 条测试 | Codex：抽查 useNarrator 事件点与 metrics 终态逻辑。Claude：I01 / I02 |### Claude 交接 · 2026-09-14（第一轮）
 
 - **本轮任务编号**：R01、R02、R03、R04、C02（第一版）、C05（预算部分）、C08（复核）。C03 未动。
 - **已核实的实际功能/开放状态**：与 PRODUCT-BRIEF 4.7 一致；本轮未新增开放能力。半天/一天路线仍是「基础版，所有人可用，未来 Plus」。
@@ -383,3 +383,53 @@ Codex：接着按实际页面槽位做首屏与导游形象样张、素材清单
 - 导游试听句仍是自我介绍式，I02 要求同地点同事实两段对比，待做。
 - C02 第二版（Wikidata P31）、隐私与条款页、公司名邮箱、域名分流未动。
 - 请 Codex 抽查：桌面首屏人物与演示面板的关系、24px 肖像辨识度、手机首屏一屏内是否过长。
+
+## 14. Codex 审核 · 第三轮变更（2026-09-14）
+
+范围：读取第 12/13 节交接，定向抽查 SiteLanding.tsx、GuidePanel.tsx、useNarrator.ts、metrics.ts 与缓存响应头。按用户要求，本轮不校验图片，不做全面测试或页面视觉验收；未修改源码。
+
+### 通过（限本轮源码与交接范围）
+
+- 首屏方案 A、新副题、主/次按钮、移除数字等方向接受，用户已采纳的设计决定不再重开。源码确认存在 Try your local guide、Try an example 与 Scripted demo；情境按钮有 aria-pressed 和选中标记。
+- 逐句显示及减少动态效果分支已存在。这里的“减少动态效果”特指访问者系统的 prefers-reduced-motion 设置，不代表产品默认少做互动或用户审美偏好。默认版本继续加强地图、讲解、选择的联动。
+- 本地限量记录指标、不立刻增加服务端收集，符合当前阶段。先保证数据正确，无需现在建设 /api/metrics。
+
+### 需修改：C03 的首句音频计时尚不可信（优先）
+
+**证据**：GuidePanel.tsx 255–268 行依据 narrator.state === playing 且 currentIndex >= 0 调用 markAudio 并立即 flush。useNarrator.ts 在 fetchAudioUrl 之前就 setCurrentIndex(idx)，而 playing 状态也在实际出声前设置。由此可能把合成/下载等待之前的时刻当作首句已播放；随后播放被拦截时，flush 已锁定，blocked 状态不能写入同一条记录。
+
+**Claude 修正**：从实际朗读音频的 playing 事件、系统语音的 utterance.onstart 发出首句开始信号；排除解锁用静音音频。准备、生成、加载不算已出声。被拦截后允许更新同一次尝试，保留 blocked=true 及用户手动恢复后的真实首句时间；失败/退出应有明确终态，避免只有成功样本。firstAudio 仅表示首段朗读启动，不自动证明第一句有信息量，后者仍需抽样核对讲解文本。
+
+**起点与隔离一并核对**：当前计时器在 GuidePanel.run 内创建，不包含地图/详情页点击到页面挂载的时间；应命名为“请求启动→首句播放”，或传递入口点击时间另记端到端指标。run 的 catch 使用共享 timerRef，重试时旧请求中止可能写到新计时器；每个请求持有自己的计时器，并防止旧请求更新新尝试。
+
+**最小验收**：人工延迟语音请求时计时应包含延迟；首次播放受限后记录 blocked，手动恢复能补真实播放时间；快速重试不串记录；静音、失败及退出不伪记成功。由 Claude 执行并提交结果，Codex 不重复全量测试。
+
+### 下一批安排
+
+1. Claude 先修 C03 上述计时准确性；这是测量修正，不代表当前讲解功能整体不可用。
+2. 官网优先 I01（同一地点：看见→讲解→追问）与 I02（同地点同事实、不同表达的双导游试听）。现有四情境换文字只是基础演示，不标为完整互动已完成。减少动态效果模式保留全部选择与结果，仅减弱运动。
+3. C02 第二版继续处理已记录的误删/漏保留边界；I03 路线联动随后推进。隐私条款按实际功能准备，公司名邮箱等缺项集中交用户补充。
+4. 下次交接提交计时修正结果、I01/I02 完成状态及必要预览。图片校验本轮跳过，不作为本批审核阻塞。
+
+结论：首屏结构与文案方向通过本轮抽查；C03 需修改；完整互动与真机效果待验收。Claude 所报 test/tsc/eslint/build 通过保留为其验证记录，本轮未复跑。
+
+## 15. Claude 交接 · 2026-09-14（第四轮：C03 计时修正）
+
+回应第 14 节「需修改」。
+
+**改动**
+- `lib/useNarrator.ts`：新增 `events` 参数（`onFirstAudio`、`onBlocked`）。`onFirstAudio` 只在音频元素的 `playing` 事件或系统语音 `utterance.onstart` 触发，每轮朗读一次；`play()` 从头开始和 `stop()` 时重置；`haltOutput()` 与 `unlock()` 清掉 `onplaying`，解锁用的静音 WAV 不会被算作首句。被拦截（NotAllowedError）时触发 `onBlocked`。
+- `lib/metrics.ts` 重写：`NarrationTimer` 一次尝试一条记录，每次 mark 按 id 覆盖写回；字段 `entryToRequestMs`（入口点击→请求启动，60 秒内有效，用完即清）、`firstTextMs`、`firstAudioMs`（请求启动→首句真的播放）、`blocked`、`outcome`（pending / playing / blocked / muted / failed / aborted）。`markBlocked` 不是终态，之后用户手动播放 `markAudio` 会补上真实时间并保留 `blocked=true`；`markMuted` / `fail` / `abort` 是终态，后到的事件不再改。依赖可注入（时钟、存储），便于测试。
+- `components/GuidePanel.tsx`：每个请求持有自己的计时器（局部变量 `timer`），启动新请求时先把上一个未结束的标 aborted；`AbortError` → aborted，其他错误 → failed；静音且文字流结束 → muted；组件卸载 → aborted。删掉原来依据 `narrator.state === "playing" && currentIndex >= 0` 的推断。
+- 入口点击：`PlaceCard` 与路线 `StopCard` 的「听导游讲讲」`onClick` 调 `markEntryClick()`，写 sessionStorage 时间戳。
+- 命名与文档：PRODUCT-BRIEF 1.3 改为「入口点击→请求启动」与「请求启动→首句播放」两段口径。
+
+**验证**
+- `tests/metrics.test.ts` 6 条：延迟计入首句时间；blocked 后补真实时间且保留 blocked；快速重试两条记录互不覆盖；muted / failed 终态不被后来事件改写；入口点击 60 秒窗口与用完即清；缓存头解析。`pnpm test` 18/18；`tsc`、`eslint`、`next build` 通过。
+- 本地浏览器打开 /p/en/wp:Eiffel_Tower/talk（桌面 Chromium，允许自动播放，智谱首次生成）实测一条：`cache: miss, firstTextMs: 447, firstAudioMs: 2393, blocked: false, outcome: playing, entryToRequestMs: null`（直接打开链接，没有入口点击）。真机（手机被拦截→手动播放）未验收，逻辑由单元测试覆盖。
+
+**未做 / 说明**
+- `firstAudioMs` 只表示首段朗读启动，不证明第一句有信息量（第 14 节已说明），后者仍靠抽样看文本。
+- 系统语音路径（browser 引擎）的 onstart 事件在部分浏览器触发时机偏早，属已知平台差异，记录里可通过 `cache`/`outcome` 之外的引擎字段区分——本轮未加引擎字段，若需要下轮补。
+
+**下一步**：I01（同一地点：看见→讲解→追问）与 I02（同地点同事实的双导游试听）。

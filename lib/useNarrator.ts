@@ -43,7 +43,13 @@ const SILENT_WAV = (() => {
   return typeof btoa === "function" ? `data:audio/wav;base64,${btoa(bin)}` : "";
 })();
 
-export function useNarrator(text: string, lang: GuideLang, streaming: boolean, engine: VoiceEngine = "cloud", voice: VoiceGender = "female") {
+/** 给外面（指标、界面）的事件：第一句真的响起来、被浏览器拦截 */
+export interface NarratorEvents {
+  onFirstAudio?: () => void;
+  onBlocked?: () => void;
+}
+
+export function useNarrator(text: string, lang: GuideLang, streaming: boolean, engine: VoiceEngine = "cloud", voice: VoiceGender = "female", events?: NarratorEvents) {
   const [state, setState] = useState<NarratorState>("idle");
   const [currentIndex, setCurrentIndex] = useState(-1);
   const browserOk = speechSupported();
@@ -62,6 +68,8 @@ export function useNarrator(text: string, lang: GuideLang, streaming: boolean, e
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlCacheRef = useRef<Map<string, Promise<string | null>>>(new Map());
   const cloudFailedRef = useRef(false); // 云端失败后本次朗读退回系统语音
+  const eventsRef = useRef<NarratorEvents | undefined>(events);
+  const announcedRef = useRef(false); // 这一轮朗读是否已经报过「第一句响了」
 
   useEffect(() => {
     textRef.current = text;
@@ -69,7 +77,15 @@ export function useNarrator(text: string, lang: GuideLang, streaming: boolean, e
     langRef.current = lang;
     engineRef.current = engine;
     voiceRef.current = voice;
-  }, [text, streaming, lang, engine, voice]);
+    eventsRef.current = events;
+  }, [text, streaming, lang, engine, voice, events]);
+
+  /** 第一句真的开始出声（音频 playing 事件 / 系统语音 onstart），每轮朗读只报一次 */
+  const announceFirstAudio = useCallback(() => {
+    if (announcedRef.current) return;
+    announcedRef.current = true;
+    eventsRef.current?.onFirstAudio?.();
+  }, []);
 
   const setBoth = useCallback((s: NarratorState) => {
     stateRef.current = s;
@@ -143,12 +159,15 @@ export function useNarrator(text: string, lang: GuideLang, streaming: boolean, e
         const a = getAudio();
         a.onended = finish;
         a.onerror = finish;
+        // 真正出声以 playing 事件为准（不是 play() 被调用），准备和下载不算
+        a.onplaying = announceFirstAudio;
         a.src = url;
         a.play().catch((err: unknown) => {
           // 没有用户手势不许自动播放：停在这一句，等用户点「播放」再从这句继续
           if (err instanceof Error && err.name === "NotAllowedError") {
             busyRef.current = false;
             setBoth("blocked");
+            eventsRef.current?.onBlocked?.();
             return;
           }
           finish();
@@ -165,6 +184,7 @@ export function useNarrator(text: string, lang: GuideLang, streaming: boolean, e
     u.lang = GUIDE_LANG_BCP47[langRef.current];
     const voice = pickVoice(langRef.current);
     if (voice) u.voice = voice;
+    u.onstart = announceFirstAudio;
     u.onend = finish;
     u.onerror = (e) => {
       if (e.error === "interrupted" || e.error === "canceled") {
@@ -174,7 +194,7 @@ export function useNarrator(text: string, lang: GuideLang, streaming: boolean, e
       finish();
     };
     window.speechSynthesis.speak(u);
-  }, [readySentences, setBoth, fetchAudioUrl, getAudio, browserOk]);
+  }, [readySentences, setBoth, fetchAudioUrl, getAudio, browserOk, announceFirstAudio]);
 
   useEffect(() => {
     speakNextRef.current = speakNext;
@@ -191,6 +211,7 @@ export function useNarrator(text: string, lang: GuideLang, streaming: boolean, e
     if (a) {
       a.onended = null;
       a.onerror = null;
+      a.onplaying = null;
       a.pause();
       a.removeAttribute("src");
     }
@@ -202,6 +223,7 @@ export function useNarrator(text: string, lang: GuideLang, streaming: boolean, e
     if (typeof Audio === "undefined") return;
     const a = getAudio();
     if (stateRef.current === "playing" || busyRef.current) return;
+    a.onplaying = null; // 解锁用的静音片段不算「第一句响了」
     if (!a.src) a.src = SILENT_WAV;
     a.play()
       .then(() => {
@@ -233,6 +255,7 @@ export function useNarrator(text: string, lang: GuideLang, streaming: boolean, e
       haltOutput();
       nextIdxRef.current = 0;
       cloudFailedRef.current = false;
+      announcedRef.current = false;
     }
     setBoth("playing");
     window.setTimeout(() => speakNextRef.current(), 30);
@@ -248,6 +271,7 @@ export function useNarrator(text: string, lang: GuideLang, streaming: boolean, e
   const stop = useCallback(() => {
     if (!supported) return;
     haltOutput();
+    announcedRef.current = false;
     nextIdxRef.current = 0;
     setBoth("idle");
     setCurrentIndex(-1);
