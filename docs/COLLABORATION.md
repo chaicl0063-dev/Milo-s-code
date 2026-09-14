@@ -446,7 +446,7 @@ Codex：接着按实际页面槽位做首屏与导游形象样张、素材清单
 
 **验证**
 - `tsc`、`eslint`、`pnpm test` 18/18、`next build` 通过。
-- 本地 1280 宽：见交接末尾「实测」。桌面浏览器面板里的 JS 合成点击不算用户手势，音频可能被拦截进 error 态，此时文字完整且有 Retry；真机点击路径未验收。
+- 本地 1280 宽实测（桌面 Chromium，允许自动播放）：点 Hear its story → 状态「Playing · 22s」，三句逐句高亮，追问按钮出现；点 What should I look for? → 「Playing · 19s」，出口 Open this place in the app / Try it on your own street 出现；再点导游区 Hear Milo → 首屏演示立即停止（互斥生效），Milo 卡显示「✓ selected」与播放状态。真机点击路径与被拦截时的 error 态未验收。
 
 **未做**
 - I03（一小时下一站联动）未动；C02 第二版未动。
