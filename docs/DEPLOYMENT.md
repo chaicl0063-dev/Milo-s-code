@@ -12,6 +12,26 @@
 | 已有安卓包 | `ReAroundYou-1.0-remote.apk`（versionCode 1，另附） | 加载地址写死为 Beta 测试地址，仅供对照 |
 | 签名密钥 | **不在交付物内**，由产品负责人另行移交 | `rearound-release.jks` + 口令；丢了就无法给已安装用户覆盖升级 |
 
+### 1.1 不在包里、需要运维自己准备的私有资源（重要）
+
+源码包已经过扫描：**不含任何密钥、口令、数据库地址或本机环境文件**（`.env.local`、`android/keystore.properties`、`android/local.properties` 都不在包内，代码里也没有写死的 Key）。下面这些是产品负责人个人名下的资源，**只服务 Beta 测试线，不随源码交付，也请不要向产品负责人索要复用**，正式部署请全部自行申请：
+
+| 资源 | Beta 期用途 | 运维需要做的 |
+|---|---|---|
+| 智谱 AI 的 API Key（`LLM_API_KEY`） | 讲解、随手问、路线、拍照识别 | 自行注册智谱，或换 Gemini / Groq 等任何 OpenAI 兼容接口，只改三个环境变量 |
+| Upstash Redis（`KV_REST_API_URL` / `KV_REST_API_TOKEN`） | 邮箱登记、按 IP 限流 | 自建一个 Upstash 库（Vercel Marketplace 一键，或 upstash.com 免费档） |
+| 高德 Web 服务 Key（`AMAP_KEY`） | 仅中国境内周边数据 | 面向海外可以不配；要配就自行申请 |
+| 语音识别接口（`ASR_*`） | 语音提问，Beta 期未启用 | 不配即可，按钮自动隐藏 |
+| Vercel 项目 `milo-s-code.vercel.app` 与 GitHub 仓库 `chaicl0063-dev/Milo-s-code` | Beta 测试线，只有产品负责人使用 | **不要连接这个仓库部署**。用本压缩包自建仓库；后续更新由产品负责人再打包 |
+| 安卓签名密钥 | 给已安装的 Beta 用户覆盖升级 | 由产品负责人当面或加密渠道移交；收到后妥善保管，不进仓库 |
+| 域名 `bubblefrog.fun` 的 DNS | 无 | 由运维按第 5 节指向新部署 |
+
+包里带着的、建议运维改成自己信息的地方：
+
+- `lib/wikipedia.ts` 与 `scripts/fetch-unesco.mjs` 里的 `User-Agent` 写着 Beta 仓库地址。Wikimedia 要求 UA 里有可联系方式，正式部署请改成 `ReAroundYou/1.1 (https://bubblefrog.fun; hello@bubblefrog.fun)` 之类。
+- `docs/` 下的协作文档提到 Beta 地址、本机路径和开发过程，只是记录，与部署无关，可以不看。
+- `android/app/build.gradle`、`README.md` 注释里的 `D:/AI_Projects/…` 是产品负责人的本机路径，按自己的路径改 `keystore.properties` 即可。
+
 ## 2. 运行要求
 
 - Node.js 20 或更新（本机开发用 24），pnpm 10。
