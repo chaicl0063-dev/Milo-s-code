@@ -5,24 +5,14 @@ import { PHOTOS, type SitePhoto } from "@/lib/site/photos";
 import { PlaceDemo } from "@/components/site/PlaceDemo";
 import { GuideCompare } from "@/components/site/GuideCompare";
 import { useScriptedSpeech } from "@/components/site/useScriptedSpeech";
+import { HeroProduct } from "@/components/site/HeroProduct";
 import { BRAND, feedbackMailto } from "@/lib/site/brand";
+import { T } from "@/lib/site/theme";
 
 /* ------------------------------------------------------------------ */
-/* 官网：暖阳配色（暖白 / 墨 / 陶土橙 / 芥末黄），照片打底，情境按钮直接演一段对话。 */
+/* 官网：暖阳配色（暖白 / 墨 / 陶土橙），浅色、产品优先（DESIGN.md，2026-09-15 用户定「浅色底」）。首屏是真机截图里的真应用。 */
 /* ------------------------------------------------------------------ */
 
-const T = {
-  bg: "#FBF6EE",
-  ink: "#1F1D1A",
-  accent: "#D9633A",
-  /** 深一档的陶土：小链接、选中态、小字（设计提案 6.1） */
-  deep: "#A84427",
-  gold: "#C9891C",
-  teal: "#2F5D62",
-  muted: "#6B645A",
-  line: "#E4D9C8",
-  paper: "#F3ECDF",
-} as const;
 
 function Photo({ photo, className = "", style }: { photo: SitePhoto; className?: string; style?: React.CSSProperties }) {
   // eslint-disable-next-line @next/next/no-img-element
@@ -60,13 +50,17 @@ export function SiteLanding({ appUrl, apkUrl, apkVersion }: { appUrl: string; ap
     <div className="min-h-dvh w-full font-sans" style={{ background: T.bg, color: T.ink }}>
       <style>{`
         @keyframes rr-wave { from { transform: scaleY(0.4); } to { transform: scaleY(1.4); } }
-        @keyframes rr-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-        .rr-up { animation: rr-up 0.7s ease-out both; }
+        @keyframes rr-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+        .rr-up { animation: rr-up 540ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+        .rr-up-2 { animation-delay: 120ms; }
+        .rr-up-3 { animation-delay: 240ms; }
+        @media (prefers-reduced-motion: reduce) { @keyframes rr-up { from { opacity: 0; } to { opacity: 1; } } }
+        .rr-nav { background: rgba(247,247,245,0.82); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 1px 0 rgba(31,29,26,0.06); }
       `}</style>
 
       {/* 顶栏 */}
-      <header className="relative z-20">
-        <div className="mx-auto flex max-w-[1200px] items-center justify-between px-5 py-5 md:px-8">
+      <header className="rr-nav sticky top-0 z-30">
+        <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-5 md:px-8">
           <a href="#top" className="flex items-center gap-2.5 text-[15px] font-bold" style={{ color: T.ink }}>
             <span className="relative inline-block h-5 w-5 rounded-full" style={{ background: T.ink }}>
               <span className="absolute left-[5px] top-[5px] h-[10px] w-[10px] rounded-full" style={{ background: T.accent }} />
@@ -90,47 +84,59 @@ export function SiteLanding({ appUrl, apkUrl, apkVersion }: { appUrl: string; ap
         </div>
       </header>
 
-      {/* 首屏（设计提案 v1 方案 A）：左边文案和动作，右边照片 + 演示面板；照片只做视觉，不再承载全部信息 */}
-      <section id="top" className="mx-auto max-w-[1200px] px-5 pb-14 pt-8 md:px-8 md:pb-24 md:pt-14">
-        <div className="grid items-center gap-10 md:grid-cols-[52fr_48fr] md:gap-14">
-          <div className="rr-up">
-            <p className="text-[12px] font-bold uppercase tracking-[0.16em]" style={{ color: T.gold }}>
-              Your AI local guide
+      {/* 首屏（DESIGN.md · 2026-09-15）：左文案，右真机里的真应用。产品即主视觉，照片退到后面的段落 */}
+      <section id="top" className="mx-auto max-w-[1200px] px-5 pb-16 pt-10 md:px-8 md:pb-28 md:pt-20">
+        <div className="grid items-center gap-12 md:grid-cols-[52fr_48fr] md:gap-10">
+          <div>
+            <p className="rr-up text-[12px] font-semibold tracking-[0.04em]" style={{ color: T.deep }}>
+              AI local guide · {BRAND.stage}
             </p>
-            <h1 className="mt-3 font-serif text-[46px] leading-[0.98] md:text-[74px]" style={{ color: T.ink }}>
-              You&rsquo;re already here.
-              <br />
-              Now let&rsquo;s look around.
+            <h1 className="rr-up rr-up-2 mt-4 max-w-[560px] text-[44px] font-semibold leading-[1.05] tracking-[-0.025em] [text-wrap:balance] md:text-[64px]" style={{ color: T.ink }}>
+              Understand the place you&rsquo;re standing in.
             </h1>
-            <p className="mt-5 max-w-[480px] text-[17px] leading-7 md:text-[18px]" style={{ color: T.muted }}>
-              A local guide in your pocket. Find out what you&rsquo;re looking at, ask a question, and keep exploring.
+            <p className="rr-up rr-up-3 mt-6 max-w-[460px] text-[17px] leading-7 md:text-[19px]" style={{ color: T.muted }}>
+              See what&rsquo;s around you, hear the story behind it, ask questions, and keep exploring. Any city, in your language.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="rr-up rr-up-3 mt-8 flex flex-wrap items-center gap-3">
               <a href={appUrl} className={btnPrimary} style={{ background: T.accent }}>
-                Try your local guide
+                Try it where I am
               </a>
-              <a href="#demo" className={btnGhost} style={{ borderColor: T.line, color: T.ink, background: "#fff" }}>
-                Try an example
+              <a href="#how" className={btnGhost} style={{ borderColor: T.line, color: T.ink, background: T.white }}>
+                See how it works
               </a>
             </div>
-            <p className="mt-4 text-[13px]" style={{ color: T.muted }}>
+            <p className="rr-up rr-up-3 mt-4 text-[13px]" style={{ color: T.muted }}>
               Free beta in your browser, no account needed. Android beta app for direct download below.
             </p>
           </div>
 
-          {/* 照片 + 演示面板 */}
-          <div id="demo" className="rr-up" style={{ animationDelay: "0.1s" }}>
-            <div className="overflow-hidden rounded-[20px]" style={{ aspectRatio: "4 / 5", maxHeight: 640 }}>
+          <div className="rr-up rr-up-2 flex justify-center md:justify-end">
+            <HeroProduct appUrl={appUrl} />
+          </div>
+        </div>
+      </section>
+
+      {/* 试听一段：真实地点，脚本化的讲解与追问（I01）。从首屏移到这里，照片在这一段里 */}
+      <section id="demo" className="mx-auto max-w-[1200px] px-5 pb-16 md:px-8 md:pb-24">
+        <div className="grid items-start gap-8 md:grid-cols-[44fr_56fr] md:gap-12">
+          <div className="md:pt-6">
+            <p className="text-[12px] font-semibold tracking-[0.04em]" style={{ color: T.deep }}>
+              Hear a story
+            </p>
+            <h2 className="mt-3 text-[32px] font-semibold leading-[1.08] tracking-[-0.02em] md:text-[44px]" style={{ color: T.ink }}>
+              One real place, the way a guide would tell it.
+            </h2>
+            <p className="mt-4 max-w-[440px] text-[16px] leading-7" style={{ color: T.muted }}>
+              This is a scripted sample from a real tower in Paris, read by Mia&rsquo;s real voice. In the app the story is generated for the place in front of you.
+            </p>
+            <div className="mt-6 overflow-hidden rounded-[20px]" style={{ aspectRatio: "4 / 3" }}>
               <picture>
                 {PHOTOS.hero.portraitSrc && <source media="(max-width: 767px)" srcSet={PHOTOS.hero.portraitSrc} />}
-                <img
-                  src={PHOTOS.hero.portraitSrc ?? PHOTOS.hero.src}
-                  alt={PHOTOS.hero.alt}
-                  fetchPriority="high"
-                  className="h-full w-full object-cover object-[50%_20%]"
-                />
+                <img src={PHOTOS.hero.src} alt={PHOTOS.hero.alt} loading="lazy" className="h-full w-full object-cover object-[50%_30%]" />
               </picture>
             </div>
+          </div>
+          <div className="pt-28 md:pt-24">
             <PlaceDemo photo={PHOTOS.demoPlace} appUrl={appUrl} speech={speech} />
           </div>
         </div>
@@ -141,7 +147,7 @@ export function SiteLanding({ appUrl, apkUrl, apkVersion }: { appUrl: string; ap
         <p className="text-[12px] font-bold uppercase tracking-[0.16em]" style={{ color: T.gold }}>
           How it works
         </p>
-        <h2 className="mt-3 max-w-[700px] font-serif text-[36px] leading-[1.02] md:text-[56px]">Three seconds from &ldquo;what&rsquo;s that?&rdquo; to knowing.</h2>
+        <h2 className="mt-3 max-w-[700px] font-semibold tracking-[-0.02em] text-[36px] leading-[1.08] md:text-[56px]">Three seconds from &ldquo;what&rsquo;s that?&rdquo; to knowing.</h2>
         <ol className="mt-10 grid gap-8 md:grid-cols-3">
           {[
             { n: "1", t: "Open the map", d: "Everything worth a look within a kilometre, from world heritage to the odd little chapel nobody photographs." },
@@ -149,7 +155,7 @@ export function SiteLanding({ appUrl, apkUrl, apkVersion }: { appUrl: string; ap
             { n: "3", t: "Listen and ask", d: "A minute of story in your language, then keep talking. Why the street bends. Where to eat after." },
           ].map((s) => (
             <li key={s.n} className="rounded-[24px] p-7" style={{ background: T.paper }}>
-              <div className="font-serif text-[40px] leading-none" style={{ color: T.accent }}>
+              <div className="font-semibold tracking-[-0.02em] text-[40px] leading-none" style={{ color: T.accent }}>
                 {s.n}
               </div>
               <h3 className="mt-4 text-[20px] font-bold">{s.t}</h3>
@@ -191,7 +197,7 @@ export function SiteLanding({ appUrl, apkUrl, apkVersion }: { appUrl: string; ap
             <p className="text-[12px] font-bold uppercase tracking-[0.16em]" style={{ color: T.gold }}>
               No planning needed
             </p>
-            <h2 className="mt-3 font-serif text-[36px] leading-[1.02] md:text-[52px]">Tell it where you are and how long you have.</h2>
+            <h2 className="mt-3 font-semibold tracking-[-0.02em] text-[36px] leading-[1.08] md:text-[52px]">Tell it where you are and how long you have.</h2>
             <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.12em]" style={{ color: T.muted }}>Sample conversation</p>
             <div className="mt-8 flex flex-col gap-3">
               <div className="self-end max-w-[85%] rounded-[18px] rounded-br-[6px] px-4 py-2.5 text-[15px] leading-6 text-white" style={{ background: T.ink }}>
@@ -218,7 +224,7 @@ export function SiteLanding({ appUrl, apkUrl, apkVersion }: { appUrl: string; ap
         <p className="text-[12px] font-bold uppercase tracking-[0.16em]" style={{ color: T.gold }}>
           More than the sights
         </p>
-        <h2 className="mt-3 max-w-[760px] font-serif text-[36px] leading-[1.02] md:text-[56px]">Look, walk, listen. It keeps up with whatever you feel like doing.</h2>
+        <h2 className="mt-3 max-w-[760px] font-semibold tracking-[-0.02em] text-[36px] leading-[1.08] md:text-[56px]">You&rsquo;re already here. Now let&rsquo;s look around.</h2>
         <div className="mt-10 grid gap-6 md:grid-cols-12">
           {[
             { photo: PHOTOS.look, k: "Look", q: "Point the camera at anything on this street. I'll tell you what it is and what it was.", span: "md:col-span-7 md:row-span-2", ratio: "aspect-[4/3] md:aspect-auto md:h-full" },
@@ -229,7 +235,7 @@ export function SiteLanding({ appUrl, apkUrl, apkVersion }: { appUrl: string; ap
               <Photo photo={c.photo} className="absolute inset-0 transition-transform duration-700 hover:scale-[1.03]" />
               <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(31,29,26,0) 40%, rgba(31,29,26,0.8) 100%)" }} />
               <figcaption className="absolute inset-x-0 bottom-0 p-6 text-white">
-                <div className="font-serif text-[30px] leading-none">{c.k}</div>
+                <div className="font-semibold tracking-[-0.02em] text-[30px] leading-none">{c.k}</div>
                 <p className="mt-2 max-w-[420px] text-[15px] leading-6 text-white/90">&ldquo;{c.q}&rdquo;</p>
               </figcaption>
             </figure>
@@ -242,7 +248,7 @@ export function SiteLanding({ appUrl, apkUrl, apkVersion }: { appUrl: string; ap
         <p className="text-[12px] font-bold uppercase tracking-[0.16em]" style={{ color: T.gold }}>
           Your guides
         </p>
-        <h2 className="mt-3 font-serif text-[36px] leading-[1.02] md:text-[56px]">Two voices. Pick the one you&rsquo;d walk with.</h2>
+        <h2 className="mt-3 font-semibold tracking-[-0.02em] text-[36px] leading-[1.08] md:text-[56px]">Two voices. Pick the one you&rsquo;d walk with.</h2>
         <div className="mt-10">
           <GuideCompare appUrl={appUrl} speech={speech} />
         </div>
@@ -259,7 +265,7 @@ export function SiteLanding({ appUrl, apkUrl, apkVersion }: { appUrl: string; ap
           <p className="text-[12px] font-bold uppercase tracking-[0.16em]" style={{ color: "#F2C98A" }}>
             With you the whole way
           </p>
-          <h2 className="mt-3 max-w-[640px] font-serif text-[36px] leading-[1.02] md:text-[56px]">
+          <h2 className="mt-3 max-w-[640px] font-semibold tracking-[-0.02em] text-[36px] leading-[1.08] md:text-[56px]">
             &ldquo;Facing the church, take the steps on the right. Halfway up, turn around. That&rsquo;s the view they put on the postcards.&rdquo;
           </h2>
           <p className="mt-6 text-[15px] text-white/80">Milo, somewhere in Naples · example line</p>
@@ -271,10 +277,10 @@ export function SiteLanding({ appUrl, apkUrl, apkVersion }: { appUrl: string; ap
         <p className="text-[12px] font-bold uppercase tracking-[0.16em]" style={{ color: T.gold }}>
           Free and Plus
         </p>
-        <h2 className="mt-3 font-serif text-[36px] leading-[1.02] md:text-[56px]">Listening and short walks are free. Plus keeps your longer days.</h2>
+        <h2 className="mt-3 font-semibold tracking-[-0.02em] text-[36px] leading-[1.08] md:text-[56px]">Listening and short walks are free. Plus keeps your longer days.</h2>
         <div className="mt-10 grid max-w-[900px] gap-6 md:grid-cols-2">
           <div className="rounded-[20px] border p-8" style={{ borderColor: T.line, background: "#fff" }}>
-            <div className="font-serif text-[32px]">Free</div>
+            <div className="font-semibold tracking-[-0.02em] text-[32px]">Free</div>
             <div className="text-[14px]" style={{ color: T.muted }}>
               No account needed
             </div>
@@ -294,7 +300,7 @@ export function SiteLanding({ appUrl, apkUrl, apkVersion }: { appUrl: string; ap
             <span className="absolute -top-3 left-8 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.1em] text-white" style={{ background: T.accent }}>
               Coming soon
             </span>
-            <div className="font-serif text-[32px]">Plus</div>
+            <div className="font-semibold tracking-[-0.02em] text-[32px]">Plus</div>
             <div className="text-[14px]" style={{ color: T.muted }}>
               Price to be announced
             </div>
@@ -340,7 +346,7 @@ export function SiteLanding({ appUrl, apkUrl, apkVersion }: { appUrl: string; ap
       <section id="download" className="mx-auto max-w-[1200px] px-5 pb-20 md:px-8">
         <div className="flex flex-col gap-6 rounded-[20px] p-8 md:flex-row md:items-center md:justify-between md:p-12" style={{ background: T.ink, color: T.bg }}>
           <div>
-            <h2 className="font-serif text-[34px] leading-[1.02] md:text-[44px]">Works in your browser today.</h2>
+            <h2 className="font-semibold tracking-[-0.02em] text-[34px] leading-[1.08] md:text-[44px]">Works in your browser today.</h2>
             <p className="mt-3 max-w-[520px] text-[15px] leading-6 text-white/75">
               No install needed. Add it to your home screen for the app feel. The Android beta is a direct download: it needs an internet connection and loads the same app, so it updates with the website.
             </p>

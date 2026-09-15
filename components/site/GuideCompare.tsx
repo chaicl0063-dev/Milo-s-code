@@ -3,10 +3,10 @@
 import { PERSONA, PERSONAS, type PersonaId } from "@/lib/personas";
 import { DEMO_COMPARE, DEMO_PLACE } from "@/lib/site/demo";
 import type { useScriptedSpeech } from "@/components/site/useScriptedSpeech";
+import { T } from "@/lib/site/theme";
 
 type Speech = ReturnType<typeof useScriptedSpeech>;
 
-const T = { ink: "#1F1D1A", accent: "#D9633A", deep: "#A84427", teal: "#2F5D62", muted: "#6B645A", line: "#E4D9C8", paper: "#F3ECDF" } as const;
 
 /**
  * I02 · 同一地点、同一组事实，两位导游各讲一段，方便比较讲述风格。
@@ -42,7 +42,7 @@ export function GuideCompare({ appUrl, speech }: { appUrl: string; speech: Speec
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={`/images/${id}-300.jpg`} alt={`${p.name}, an AI guide character`} width={72} height={72} className="h-[72px] w-[72px] shrink-0 rounded-[16px] object-cover" style={{ background: color }} />
                 <div className="min-w-0">
-                  <h3 className="font-serif text-[34px] leading-none" style={{ color: T.ink }}>
+                  <h3 className="font-semibold tracking-[-0.02em] text-[34px] leading-none" style={{ color: T.ink }}>
                     {p.name}
                     {mine && <span className="ml-2 align-middle text-[12px] font-sans font-bold" style={{ color }}>✓ selected</span>}
                   </h3>

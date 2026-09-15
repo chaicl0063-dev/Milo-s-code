@@ -5,10 +5,10 @@ import { PERSONA } from "@/lib/personas";
 import { DEMO_PLACE, DEMO_STORY } from "@/lib/site/demo";
 import type { SitePhoto } from "@/lib/site/photos";
 import type { useScriptedSpeech } from "@/components/site/useScriptedSpeech";
+import { T } from "@/lib/site/theme";
 
 type Speech = ReturnType<typeof useScriptedSpeech>;
 
-const T = { ink: "#1F1D1A", accent: "#D9633A", deep: "#A84427", gold: "#C9891C", muted: "#6B645A", line: "#E4D9C8", paper: "#F3ECDF" } as const;
 
 /**
  * I01 · 同一个地点，从看见到听懂：真实地点照片 → 点「Hear its story」→ 讲解 → 一个追问 → 进应用。
@@ -121,7 +121,7 @@ export function PlaceDemo({ photo, appUrl, speech }: { photo: SitePhoto; appUrl:
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: T.accent }} aria-hidden />
-            <span className="truncate font-serif text-[18px]" style={{ color: T.ink }}>
+            <span className="truncate font-semibold tracking-[-0.02em] text-[18px]" style={{ color: T.ink }}>
               {DEMO_PLACE.name}
             </span>
           </div>

@@ -633,3 +633,28 @@ Claude 下一次只交一页：Web 候选地址与提交号、APK 文件/版本/
 1. 应用子域名是否用 `app.bubblefrog.fun`（手册与 `.env.example` 按此写，改名只改环境变量）。
 2. `hello@bubblefrog.fun` 开通后请确认收信；开通前隐私页承诺的「删除邮箱」请求无人能收到。
 3. 最终 APK 由运维在域名确定后按手册打包；自建密钥、`applicationId` 不变、`versionCode` 继续递增。
+
+## 21. Claude 交接 · 2026-09-15（第八轮：官网 v2 首屏 · 科技感 + 一眼看出产品）
+
+背景：老板看过官网，意见两条：不够科技感；界面看不出产品是什么。用户拍板**浅色底**。用户转来 GPT 第二轮建议（产品定义式标题、真实产品 UI 做首屏、冷白底 + 蓝强调、designmd.app 的三套浅色系统）。逐条处理写在 PRODUCT-BRIEF 第 15 节，这里只列改动与验证。**首屏先给用户和老板看，通过后再改其余段落。**
+
+### 本轮变更
+
+- **`DESIGN.md`（根目录，新）**：官网设计系统。改编自 designmd.app 的 Apple Premium Cinematic（段落节奏、产品即主视觉、胶囊按钮、克制动效）与 Interactive Product Demo（嵌入真实产品、先做好暂停态）。浅色底、一个强调色、一段深色、无渐变/玻璃/霓虹。designmd.app 当天详情页大面积 522，两份的规则是从目录卡片和 WebFetch 拿到的摘要改写的，不是逐字照搬。
+- **`lib/site/theme.ts`（新）**：官网颜色唯一来源。底色中性近白 `#F7F7F5`，卡片浅面 `#EFEFEC`，文字 `#17181A` / `#66696E`，细边 `#E3E3DF`；强调色仍是陶土橙。五个官网组件原来各自的 `const T` 全部删掉改成 import。
+- **真实截图**：`scripts/shoot-app.mjs` 用本机 Chrome 无头模式 + DevTools 协议拍应用（390×844，2 倍），先往 localStorage 写好已引导/巴黎坐标/Mia/静音，再拍四屏：地图（带圣雅克塔卡片）、地点页、讲解页（Mia 的完整讲解文本）、导游页。输出 `public/images/app/app-*.webp`（61–170 KB）。不依赖 puppeteer。
+- **`components/site/HeroProduct.tsx`（新）**：真机比例设备框（墨色边、长软投影），默认放截图，四个胶囊切换，「Try it live」把截图换成同源 iframe 里的真应用，「Back to screens」退回。
+- **`SiteLanding.tsx`**：顶栏粘性半透明（blur 20 / saturate 180）；首屏左文右机，h1 改 **Understand the place you're standing in.**（GPT 建议：先说产品是什么），副题、按钮 Try it where I am / See how it works；原品牌句下移为「看 走 听」段标题；原照片 + 试听面板整体移到首屏下方的 `#demo` 段；全站标题去衬线改 600 字重紧排；动效改 16px / 540ms / 120ms 错落并尊重 prefers-reduced-motion。
+- **未改**：首屏以下的段落结构、Free/Plus、下载区、页脚只换了字体和颜色底座，没有按 DESIGN.md 重排（等首屏通过）。
+
+### 检查结果
+
+- `tsc`、`eslint`、`pnpm test` 25/25、`pnpm build` 通过。
+- 桌面 1280：h1 两行（加 text-wrap: balance 与 64px 后），截图 webp 加载正常，顶栏 `position: sticky`，四个胶囊在。点「Try it live」后 iframe 载入 `/p/en/wp%3ATour_Saint-Jacques`，同源可读到内页标题「Tour Saint-Jacques · ReAround You」和「Ask the guide」按钮，说明框里跑的是真应用。
+- 手机 375：无横向溢出，h1 三行，设备框 272px 居中。
+- 未验证：真机上的 iframe 内滚动与定位授权；老板的观感。
+
+### 需要决策
+
+1. **首屏方向是否通过**（用户 + 老板）。通过后我按 DESIGN.md 重排其余段落：zig-zag 行、功能一览 bento（每格一张真实截图裁切）、唯一深色段落放下载区。
+2. **强调色**：保留陶土橙（当前，和应用截图一致）还是换成 Milo 深青一路（GPT 的 Cyberprep 方向，更「科技」但要连应用一起改）。不建议 GPT 说的蓝 `#2563EB`，理由在 PRODUCT-BRIEF 15.3。

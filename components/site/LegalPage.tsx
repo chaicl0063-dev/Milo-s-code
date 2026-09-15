@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { BRAND } from "@/lib/site/brand";
+import { T } from "@/lib/site/theme";
 
-const T = { bg: "#FBF6EE", ink: "#1F1D1A", muted: "#6B645A", line: "#E4D9C8", deep: "#A84427" } as const;
 
 /**
  * 隐私 / 条款页的共用外壳：和官网同一套颜色，正文用普通排版，不做花样。
@@ -24,7 +24,7 @@ export function LegalPage({ title, intro, children }: { title: string; intro: st
         </div>
       </header>
       <main className="mx-auto max-w-[820px] px-5 py-10 md:py-14">
-        <h1 className="font-serif text-[40px] leading-[1.02] md:text-[52px]">{title}</h1>
+        <h1 className="font-semibold tracking-[-0.02em] text-[40px] leading-[1.02] md:text-[52px]">{title}</h1>
         <p className="mt-3 text-[13px]" style={{ color: T.muted }}>
           Last updated {BRAND.legalUpdated} · Operated by {BRAND.operator}
         </p>
