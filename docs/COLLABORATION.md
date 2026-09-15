@@ -786,3 +786,24 @@ Claude 下一步**只修 BI-01 / BI-02**，优先限制在 `components/site/Site
 
 本次仅追加验收记录，未改源码、未提交、未部署。
 
+## 27. 用户决定 · 2026-09-15：v3 推倒重来，协作链路简化
+
+用户看过 v3 版面后的原话：「不行，想推倒重来」。三点澄清：**方向对**（浅色、科技产品感、一眼看出产品），**做出来的东西差**；**以用户的判断为准**，不是以规格或 QA 通过为准；**协作继续但简化链路**；本轮文件全部清理。
+
+### 清理
+
+- 删除 `docs/LAUNCH-DESIGN-BRIEF-v1.md`、`docs/REAROUND-YOU-IMPLEMENTATION-SPEC.md`、`docs/screens/`。第 23 到 26 节保留为历史记录，不再作为依据。
+- v3 代码（`components/site/*`、`lib/site/theme.ts`、`DESIGN.md` v2、`public/images/app/*`、`scripts/shoot-app.mjs`）暂留在 `company`，新首屏做出来时替换；截图脚本和真实路线素材可复用。
+
+### 新链路（从第十一轮起）
+
+1. 用户直接给 Claude 方向、参照和反馈；不再经过「需求书 → 实施规格 → 冻结」。
+2. Claude **一次只做一屏**，先首屏，用户看过说「过」再做下一屏；不再一次交九屏。
+3. GPT Work 的角色改为：用户觉得需要时，对已通过的页面做一次 Blocking-only QA；不出规格、不定方向、不写文案。
+4. 文档只留两处：本文件的交接日志（每屏一条：改了什么、用户结论）和 `docs/PRODUCT-BRIEF.md` 的事实总账。
+5. `main` 默认跟随 `company`：`company` 有用户认可的可上线提交，Claude 直接快进 `main` 并推送（Vercel Beta 从 main 部署），不再逐次询问。v3 不推。
+
+### 下一步
+
+Claude 先向用户问清 v3 的「差」具体指什么（哪一眼不舒服、参照物是什么），然后只做新首屏给用户看。
+
