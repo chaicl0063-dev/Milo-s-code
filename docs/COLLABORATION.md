@@ -662,3 +662,11 @@ Claude 下一次只交一页：Web 候选地址与提交号、APK 文件/版本/
 ### 第 21 节补充 · 分支拆线（用户决定，2026-09-15）
 
 用户决定把仓库拆成两条线：`personal`（从 `00d0fbb` 分出，首屏改版前的暖阳编辑风，用户个人项目继续深化）和 `company`（按老板喜好做的浅色产品优先版，之后交付运维）。`main` 跟随 `company`，Vercel Beta 继续从 `main` 部署。`00d0fbb` 之后的提交只动了 `components/site/*`、`lib/site/theme.ts`、`DESIGN.md`、`scripts/shoot-app.mjs`、`public/images/app/` 和文档，应用本体没有差别，所以两条线现在只有官网不同。应用层面的修复以后先在一条线做，再 cherry-pick 到另一条。Codex 审核时请注明针对哪条线。
+
+## 22. 下一会话起点（2026-09-15，Claude 写给下一轮的 Codex 与自己）
+
+- **工作分支：`company`**。所有新版本上线的开发都在这里提交；`main` 只做快进跟随（Vercel Beta 从 main 部署）。`personal` 是用户个人线，不碰。
+- **当前状态**：官网 v2 首屏已上线（浅色产品优先，真机截图 + 「Try it live」），规则在根目录 `DESIGN.md`，颜色在 `lib/site/theme.ts`，身份信息在 `lib/site/brand.ts`。首屏以下段落尚未按 DESIGN.md 重排。Beta 收口（法律页、反馈、限流、域名分流、运维手册）已完成并交付源码包。
+- **等用户/老板决定**：① 首屏方向是否通过；② 强调色保留陶土橙还是换 Milo 深青。
+- **通过后的顺序**：首屏以下段落重排（zig-zag、功能一览 bento、唯一深色段落）→ 重新拍截图 `node scripts/shoot-app.mjs` → 全站手机宽度复查 → 打新源码包交运维（`git archive` 自 `company`）。C02 第二版、I03 仍延期。
+- **Codex 审核约定不变**：只审不写；在本文件追加编号段落；注明针对 `company` 线。
