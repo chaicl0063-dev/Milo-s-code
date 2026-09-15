@@ -658,3 +658,7 @@ Claude 下一次只交一页：Web 候选地址与提交号、APK 文件/版本/
 
 1. **首屏方向是否通过**（用户 + 老板）。通过后我按 DESIGN.md 重排其余段落：zig-zag 行、功能一览 bento（每格一张真实截图裁切）、唯一深色段落放下载区。
 2. **强调色**：保留陶土橙（当前，和应用截图一致）还是换成 Milo 深青一路（GPT 的 Cyberprep 方向，更「科技」但要连应用一起改）。不建议 GPT 说的蓝 `#2563EB`，理由在 PRODUCT-BRIEF 15.3。
+
+### 第 21 节补充 · 分支拆线（用户决定，2026-09-15）
+
+用户决定把仓库拆成两条线：`personal`（从 `00d0fbb` 分出，首屏改版前的暖阳编辑风，用户个人项目继续深化）和 `company`（按老板喜好做的浅色产品优先版，之后交付运维）。`main` 跟随 `company`，Vercel Beta 继续从 `main` 部署。`00d0fbb` 之后的提交只动了 `components/site/*`、`lib/site/theme.ts`、`DESIGN.md`、`scripts/shoot-app.mjs`、`public/images/app/` 和文档，应用本体没有差别，所以两条线现在只有官网不同。应用层面的修复以后先在一条线做，再 cherry-pick 到另一条。Codex 审核时请注明针对哪条线。

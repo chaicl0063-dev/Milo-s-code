@@ -144,3 +144,13 @@ scripts/dev.mjs                开发启动器，负责把 .env.local 里的代�
 - 权限：定位、相机、麦克风，见 `AndroidManifest.xml`；WebView 的授权弹窗由 Capacitor 处理。
 - 出包：`cd android && JAVA_HOME=<JDK21> ./gradlew assembleDebug`（调试包）或 `assembleRelease`（签名包，读 `android/keystore.properties`，密钥在 `D:/AI_Projects/tourguide-keys/`，两者都不进 git）。上 Play 用 `bundleRelease` 出 AAB。
 - 应用 ID `com.rearound.app` 是占位，正式发布前改成官网域名倒写；发布后不能改。
+
+## 分支说明（2026-09-15 起）
+
+| 分支 | 用途 | 官网风格 |
+|---|---|---|
+| `personal` | 用户个人项目线，从 `00d0fbb`（首屏改版前）分出，之后按个人喜好深化 | 暖阳配色、衬线标题、照片打底的编辑风 |
+| `company` | 按老板要求做的交付线，之后打包给运维部署 | 浅色产品优先（`DESIGN.md`），首屏是真机截图里的真应用 |
+| `main` | 跟随 `company`，Vercel Beta 从这里自动部署 | 同 `company` |
+
+两条线共用同一个应用（`app/`、`components/` 里非 `site/` 的部分、`lib/`）。应用层面的修复应先落在一条线，再用 `git cherry-pick` 带到另一条，避免分叉。只有 `components/site/*`、`lib/site/theme.ts`、`DESIGN.md` 和 `docs/` 允许两边不同。
