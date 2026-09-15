@@ -670,3 +670,35 @@ Claude 下一次只交一页：Web 候选地址与提交号、APK 文件/版本/
 - **等用户/老板决定**：① 首屏方向是否通过；② 强调色保留陶土橙还是换 Milo 深青。
 - **通过后的顺序**：首屏以下段落重排（zig-zag、功能一览 bento、唯一深色段落）→ 重新拍截图 `node scripts/shoot-app.mjs` → 全站手机宽度复查 → 打新源码包交运维（`git archive` 自 `company`）。C02 第二版、I03 仍延期。
 - **Codex 审核约定不变**：只审不写；在本文件追加编号段落；注明针对 `company` 线。
+
+## 23. Claude 交接 · 2026-09-15（第九轮：按 GPT Work 冻结的实施规格重做官网九屏 · `company` 线）
+
+依据：`docs/REAROUND-YOU-IMPLEMENTATION-SPEC.md` v1.0（GPT Work 冻结，原件在用户 Documents/Codex 输出目录）与它引用的 `docs/LAUNCH-DESIGN-BRIEF-v1.md`（SHA-256 与规格 §0 记录一致）。两份都已放进仓库。规格 §0 宣布第 21/22 节的「首屏待通过 / 陶土还是深青 / 继续探索设计」三项关闭：强调色冻结为青蓝 `#167C80`，不再比较。
+
+### 本轮变更（全部在 `company`）
+
+- **Tokens**（`lib/site/theme.ts`）：bg `#F7F8FA`、white `#FFFFFF`、paper `#EEF2F6`、ink `#171717`、muted `#5E6673`、line `#DDE3EB`、accent `#167C80`、deep `#116367`、accentSoft `#E7F3F3`、focus、唯一阴影 `0 2px 8px rgba(23,23,23,0.04)`；`gold` / `teal` 兼容别名 = accent。应用全局变量（`app/globals.css`）未动。
+- **九屏**（`components/site/SiteLanding.tsx`，顺序与锚点）：Hero `#top` → The Moment `#moment` → See `#how` → Listen `#demo` → Keep Exploring `#explore` → Guides `#guides` → Real-world Break `#real-world` → Free / Plus `#plus` → Final CTA `#download`。文案按规格 §3 冻结值逐字写入。删除：三列步骤卡、照片上的 SVG 示意路线与「4 stops · 2.1 km」、两小时示例对话、Look/Walk/Listen 三图组、Naples 引语、深色下载块、Plus 长清单。顶栏改不透明底 + 1px 底边；Hero 只做 360ms 淡入；锚点 `scroll-margin-top: 80px`；focus ring 2px。
+- **Hero 展示板**（`HeroProduct.tsx`）：去掉手机外壳与长投影，白底 1px 边的板子。默认 Around you：左 `app-home-focus.webp`（地图下半 + 圣雅克塔地点卡 + 原生 Ask the guide），右 `app-talk-top.webp`（地点名、Mia、原生静音图标、完整首句）。四个胶囊保留，Try it live / Back to screens 移到板外，进入 live 前调用 `speech.stop()`；「Hear the story →」文本链接到 `#demo`。Around 的 live 入口带巴黎示例坐标 `lat/lon + focus`（主 CTA 不带）。**与规格的一处偏差**：规格写「地图/卡片占上部 2/3、讲解占下部 1/3」，实际做成左右并排两块；理由是上下叠放时讲解摘录要缩到原生文字 8px 以下，并排能保持约 12px（桌面）/ 全宽（手机）。识别信息七项都在默认状态可见。
+- **PlaceDemo**：正常文档流白底 1px 边，去掉负 margin、顶部垫高、blur、重阴影；播放前显示样本首句（标 Sample first sentence · Mia），点击后由完整讲解替代不重复；按钮展示名 Hear the story（仍走原 hearStory）；高亮改 accentSoft；步骤、追问、应用链接条件不变。
+- **GuideCompare**：声音选择面板排版（72px 肖像 + 姓名 + 风格 → 播放键 + 状态 → 文本 → 边框按钮 Start with X）；两位交互统一 accent，选中面板 accentSoft 底 + 2px accent 边 + 「✓ Preview selected」。
+- **真实截图**（`scripts/shoot-app.mjs` 重写，`docs/IMAGE-MANIFEST.md` 记录）：四屏重拍并去掉 Next 开发角标；新增三块裁切（home-focus / talk-top / talk-ask，像素区域记在清单）；**路线两图来自真实流程**：脚本在 `/guide` 点「I have an hour.」→「Make the route」→ 等 `/api/plan` 真实返回 → 拍结果 `app-route.webp`（780×1247）→ 点「Show on map」→ 拍 `app-route-map.webp`。这条路线原样存在 `scripts/fixtures/route-paris-1h.json`：Place du Châtelet → Fontaine du Palmier → Rue des Lombards，3 站，应用显示 about 1 h。没有手改任何站点、距离或时长。`--route` 只重跑路线流程；`--site` 拍官网评审图。
+- **其他文件**：`app/site/page.tsx` metadata（title `ReAround You · AI local guide`，description = Hero 副题）；`lib/site/photos.ts` 只改用途注释（square/look/listen 首页不再引用，文件保留）；`DESIGN.md` 升 v2.0.0；`docs/PRODUCT-BRIEF.md` v8 第 16 节。
+
+### 检查结果
+
+- `pnpm lint` 无警告；`tsc --noEmit` 通过；`pnpm test` 25/25；`pnpm build` 通过（/site、/site/privacy、/site/terms 静态生成，Proxy 识别）。
+- 横向溢出：360 / 375 / 430 宽 scrollWidth = innerWidth，无溢出（脚本量得）。
+- 本机浏览器实际操作（dev）：Hero 四个胶囊切换正常；Try it live 后 iframe 载入 `/p/en/wp%3ATour_Saint-Jacques`，同源可读到内页标题「Tour Saint-Jacques · ReAround You」；Back to screens 恢复截图。PlaceDemo：点 Hear the story → Playing · 22s（句子逐句高亮）→ Pause 显示 Paused · 22s / Resume → Resume 播完显示 Played · 22s 并出现「What should I look for?」→ 追问播放 Playing · 19s，两个应用链接出现。GuideCompare：Hear Milo → Playing · 18s + 「Milo ✓ Preview selected」；播放中点 Hear Mia → Milo 立即回到「Hear Milo」，Mia Playing · 16s（互斥）；PlaceDemo 追问开始时 GuideCompare 也停。邮箱表单：输入 test@example.com 提交 → 「You're on the list」（本机无 KV，接口 stored:false，未向真实邮箱发数据）；aria-label「Email address」在。所有锚点目标存在；链接清单：`/`、`/guide`、`/?persona=mia|milo`、`/p/en/wp%3ATour_Saint-Jacques`、`/site/privacy`、`/site/terms`、两个 mailto。APK 无配置分支显示「Android beta · coming soon」；有配置分支只按代码核对（本机未设 `NEXT_PUBLIC_APK_URL`）。
+- **未测**：试听 `error` 态（需要伪造 /api/tts 失败，本轮未做；逻辑沿用第 18 节已验证的版本）；真机 iOS/Android 上的 iframe 滚动与定位授权；`prefers-reduced-motion` 只按 CSS 核对。
+
+### 交回的证据（`docs/screens/`）
+
+`desktop-hero-1280x800.jpg`（首屏原始视口）、`desktop-full-1440.jpg`（整页）、`desktop-section-top/how/demo/explore.jpg`（四个关键段落原尺寸局部）、`mobile-hero-375x812.jpg`（首视口：地图 + 地点名 + Ask the guide 都在第一屏）、`mobile-full-375.jpg`（整页，2 倍）。均由 `node scripts/shoot-app.mjs --site` 对本机 dev 拍摄。
+
+### 剩余 / 给 GPT Work QA 的说明
+
+1. Hero 板内两块并排而非上下（见上），若判为 Blocking 可改为上下但讲解摘录字号会明显变小。
+2. See 屏桌面左栏文字相对右侧 830px 高的截图显得空；规格给的是 40/60 分栏，未加内容填充。
+3. 没有部署、没有动 `main` / `personal`。等 Blocking-only QA；之后按 §8.3 只修阻断项。
+

@@ -43,3 +43,6 @@ next-env.d.ts
 
 # local design previews (served by dev server only)
 public/_design/
+
+# 官网评审截图（scripts/shoot-app.mjs --site 生成，交给评审用，不进仓库）
+docs/screens/

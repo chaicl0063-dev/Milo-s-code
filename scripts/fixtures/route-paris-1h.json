@@ -1,0 +1,77 @@
+{
+  "capturedAt": "2026-09-15T06:44:17.164Z",
+  "createdAt": 1789454645435,
+  "origin": {
+    "lat": 48.8579,
+    "lon": 2.3489
+  },
+  "budget": "1h",
+  "interests": [
+    "any"
+  ],
+  "intro": "Let's take a gentle stroll through some charming spots in Paris.",
+  "stops": [
+    {
+      "id": "wp:Place_du_Châtelet",
+      "source": "wikipedia",
+      "title": "Place du Châtelet",
+      "lat": 48.85763888888889,
+      "lon": 2.3473611111111112,
+      "dist": 116,
+      "description": "Public square in Paris, France",
+      "thumbnail": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8c/Plaza_del_Ch%C3%A2telet%2C_Par%C3%ADs%2C_Francia%2C_2022-10-29%2C_DD_133.jpg/500px-Plaza_del_Ch%C3%A2telet%2C_Par%C3%ADs%2C_Francia%2C_2022-10-29%2C_DD_133.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+      "wikidata": "Q1422975",
+      "wikipedia": {
+        "lang": "en",
+        "title": "Place du Châtelet"
+      },
+      "minutes": 15,
+      "why": "See the bustling square and fountain.",
+      "legMeters": 116,
+      "legMinutes": 1,
+      "legMode": "walk"
+    },
+    {
+      "id": "wp:Fontaine_du_Palmier",
+      "source": "wikipedia",
+      "title": "Fontaine du Palmier",
+      "lat": 48.85749722222222,
+      "lon": 2.3472694444444446,
+      "dist": 127,
+      "description": "Monumental fountain in Paris, France",
+      "thumbnail": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/94/3911ParigiFontanaChatelet.JPG/500px-3911ParigiFontanaChatelet.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+      "wikidata": "Q3076281",
+      "wikipedia": {
+        "lang": "en",
+        "title": "Fontaine du Palmier"
+      },
+      "category": "artwork",
+      "minutes": 15,
+      "why": "Admire the unique fountain's design.",
+      "legMeters": 17,
+      "legMinutes": 1,
+      "legMode": "walk"
+    },
+    {
+      "id": "wp:Rue_des_Lombards",
+      "source": "wikipedia",
+      "title": "Rue des Lombards",
+      "lat": 48.85930555555556,
+      "lon": 2.3491666666666666,
+      "dist": 158,
+      "description": "Street in Paris, France",
+      "thumbnail": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e5/PC010015_Paris_I_rue_des_Lombards_reductwk.JPG/500px-PC010015_Paris_I_rue_des_Lombards_reductwk.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+      "wikidata": "Q3451893",
+      "wikipedia": {
+        "lang": "en",
+        "title": "Rue des Lombards"
+      },
+      "minutes": 15,
+      "why": "Explore the lively, historic street.",
+      "legMeters": 244,
+      "legMinutes": 3,
+      "legMode": "walk"
+    }
+  ],
+  "totalMinutes": 60
+}

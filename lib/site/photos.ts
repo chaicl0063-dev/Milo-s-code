@@ -1,7 +1,11 @@
 /**
  * 官网用的图片。2026-09-14 起全部换成用户手动生成的 AI 品牌氛围图（虚构街景与角色），
  * 原图在 assets/generated/，网页版在 public/images/，清单见 docs/IMAGE-MANIFEST.md。
- * 它们不是真实地点的照片，页脚统一注明。例外：首屏演示用的圣雅克塔是真实照片（Commons，需署名）。
+ * 它们不是真实地点的照片，页脚统一注明。例外：试听演示用的圣雅克塔是真实照片（Commons，需署名）。
+ *
+ * 2026-09-15 官网按 docs/REAROUND-YOU-IMPLEMENTATION-SPEC.md 重排后，摄影只出现在三处：
+ *   hero → S02 The Moment（桌面横图 + 手机竖版）；walk → S05 Keep Exploring；alley → S07 Real-world Break。
+ *   square / look / listen 首页不再引用，文件保留不删。产品截图（public/images/app/）不在这里登记，见 IMAGE-MANIFEST。
  */
 export interface SitePhoto {
   /** 本站 public 下的文件 */
@@ -42,20 +46,20 @@ export const PHOTOS = {
     license: "CC BY-SA 4.0",
     page: "https://commons.wikimedia.org/wiki/File:Tour_Saint-Jacques_au_cr%C3%A9puscule.jpg",
   } as SitePhoto,
-  /** IMG-01：首屏。桌面横图 + 手机竖版（用户另生成的 4:5 版本） */
+  /** IMG-01：S02 The Moment 的大图（原首屏图）。桌面横图 + 手机竖版（用户另生成的 4:5 版本） */
   hero: generated("/images/hero-1672.jpg", "A traveler pausing to look up at an architectural detail on a sunlit street.", "Brand mood image (fictional street)", {
     srcSet: "/images/hero-1200.jpg 1200w, /images/hero-1672.jpg 1672w",
     portraitSrc: "/images/hero-portrait.jpg",
   }),
-  /** IMG-05：路线区氛围图 */
+  /** IMG-05：原路线区氛围图；2026-09-15 起首页不再引用，保留 */
   square: generated("/images/square.jpg", "A small sunlit square with warm facades, café umbrellas and a side street leading away.", "Brand mood image (fictional square)"),
-  /** IMG-04a：Look */
+  /** IMG-04a：Look；2026-09-15 起首页不再引用，保留 */
   look: generated("/images/look.jpg", "A traveler looking up at a carved doorway on a quiet historic street.", "Brand mood image (fictional street)"),
-  /** IMG-04b：Walk */
+  /** IMG-04b：Walk → S05 Keep Exploring 的步行情境图 */
   walk: generated("/images/walk.jpg", "A traveler walking away down a narrow lane with plants and warm plaster walls.", "Brand mood image (fictional lane)"),
-  /** IMG-04c：Listen */
+  /** IMG-04c：Listen；2026-09-15 起首页不再引用，保留 */
   listen: generated("/images/listen.jpg", "A carved church facade and bell tower catching the last light of the day.", "Brand mood image (fictional facade)"),
-  /** IMG-06：傍晚场景屏 */
+  /** IMG-06：S07 Real-world Break 的大图（傍晚街巷，AI 品牌图，不是某座真实城市） */
   alley: generated("/images/dusk.jpg", "A lane at dusk with light from a doorway and a lone walker in the distance.", "Brand mood image (fictional lane at dusk)"),
 } satisfies Record<string, SitePhoto>;
 

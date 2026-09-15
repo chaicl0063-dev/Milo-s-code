@@ -1,6 +1,6 @@
 # ReAround You · 产品设计需求书
 
-版本 2026-09-14 v5 · 供设计与文案协作使用（可直接交给 GPT 或其他协作者）。
+版本 2026-09-15 v8 · 供设计与文案协作使用（可直接交给 GPT 或其他协作者）。
 本文是「已经定下来的事」和「还没定的事」的总账。协作时请引用条目编号，修改已定项请先说明理由。
 v2 变更：吸收 GPT 第一轮反馈（见第 11 节），新增功能状态总账（4.7）和三层结构（1.7）。
 v3 变更：用户决定把设计系统重新放开讨论（第 6 节改为「现行方案，非定稿」，8.1 相关两条移入 8.2）。
@@ -8,6 +8,7 @@ v4 变更：用户采纳设计提案 v1 的七项建议（见第 13 节）；官
 v5 变更：官网互动 I01（同一真实地点：看见→讲解→追问）与 I02（双导游同题对比试听）上线，见 5.6。
 v6 变更（2026-09-15）：项目目标改为 Beta 收口并把源码交付运维团队部署（COLLABORATION 第 19 节）。新增第 14 节：运营主体、域名、邮箱、法律页、限流、版本号；C02 第二版与 I03 延期。
 v7 变更（2026-09-15）：老板要求官网「有科技感、一眼看出产品」，用户定「浅色底」。官网设计系统改为仓库根目录 `DESIGN.md`（浅色、产品优先），首屏改为真机截图里的真应用 + 产品定义式标题；第 6 节视觉基线随之更新，GPT 第二轮建议的处理记录在第 15 节。
+v8 变更（2026-09-15）：GPT Work 出《官网快速上线设计需求 v1》并冻结为《实施规格》v1.0（两份都在 docs/）。官网按九屏一对一重做：冷浅灰底、唯一强调色青蓝 `#167C80`（第 15.3 节的分叉由此关闭）、Manrope、真实截图解释产品、摄影只做情境；见第 16 节。
 
 ---
 
@@ -253,6 +254,14 @@ v7 变更（2026-09-15）：老板要求官网「有科技感、一眼看出产�
   - GPT 首屏草图里的「地图 + 选中建筑 + Mia 一句话 + 声波」是一张合成的示意图。我们用真实截图（地图页里正好是圣雅克塔的卡片 + Ask the guide）达到同样效果，且不会承诺产品没有的状态。
 - **15.4 状态**：首屏、顶栏、试听段、标题字体、配色底座已改（提交见 COLLABORATION 第 21 节），**等用户和老板看首屏**；通过后再按 `DESIGN.md` 改其余段落（zig-zag 行、功能一览 bento、唯一深色段落）。
 - **15.5 设计系统文件**：`DESIGN.md`（根目录）= 官网规则；`lib/site/theme.ts` = 颜色唯一来源；`lib/site/brand.ts` = 身份信息。Codex 审设计时以这三处为准。
+
+## 16. 官网快速上线：设计需求 v1 → 实施规格 v1.0 → 第一轮实现（2026-09-15）
+
+- **16.1 文件**：`docs/LAUNCH-DESIGN-BRIEF-v1.md`（GPT Work 的需求，目标「3 到 5 秒明白这是站在陌生城市里用的本地 AI 导游」，先上线再优化）；`docs/REAROUND-YOU-IMPLEMENTATION-SPEC.md`（GPT Work 冻结的实施规格：九屏映射、tokens、文案、素材合同、QA 只列 Blocking Issues）。官网规则以规格为准，`DESIGN.md` v2 是它的摘要；本文第 6 节的暖阳配色只剩应用内基线。
+- **16.2 已定（由规格冻结，不再讨论）**：背景 `#F7F8FA`、卡片白、文字 `#171717` / `#5E6673`、边线 `#DDE3EB`、**唯一强调色青蓝 `#167C80`**（15.3 里「陶土还是深青」的分叉关闭；应用截图里的陶土色是被展示的产品，不换肤）；字体 Manrope，官网不用衬线；没有深色段落；Hero 是真实截图摘录做成的展示板，不是手机外壳也不是合成屏；摄影只在 The Moment / Keep Exploring / Real-world Break。
+- **16.3 九屏与文案**：Hero「Understand the place you're standing in.」+ Try your local guide / See how it works；The Moment「You're already here. Now let's look around.」；01 SEE「What's that building?」；02 LISTEN「Hear the story behind it.」；03 KEEP EXPLORING「An hour to wander?」；Guides「Choose who's walking with you.」；Real-world Break「Look up. There's more around you than you think.」；Free / Plus「Free during beta. Plus is coming later.」（Free 四项、Plus 一句价值 + Coming soon + 邮箱登记）；Final CTA「Start with the street you're on.」。文案改动先改规格。
+- **16.4 真实素材规则**：产品画面只用 `scripts/shoot-app.mjs` 拍的真实截图，允许裁切与并排，不允许合成或改字；路线两图来自真实一小时流程（`scripts/fixtures/route-paris-1h.json` 记录那条路线）；图注注明 sample / route order, not navigation / 地图署名。
+- **16.5 状态**：第一轮九屏已实现（COLLABORATION 第 23 节，含桌面与手机截图、实际操作结果、lint/test/build）。等 GPT Work 的 Blocking-only QA；通过后按既有职责交付运维（第 14 节），本轮不部署、不动 `main`。
 
 ## 附录：地址
 

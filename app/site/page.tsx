@@ -3,8 +3,8 @@ import { SiteLanding } from "@/components/site/SiteLanding";
 import { appUrlFromEnv } from "@/lib/site/brand";
 
 export const metadata: Metadata = {
-  title: "ReAround You · A local friend in your pocket",
-  description: "You're already here. Tell your AI guide what you feel like, and start walking. Any city, eight languages, free to listen.",
+  title: "ReAround You · AI local guide",
+  description: "See what's around you, hear the story behind it, ask questions, and keep exploring.",
 };
 
 /**
