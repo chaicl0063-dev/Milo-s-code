@@ -91,7 +91,7 @@ export function SiteLanding({ appUrl, apkUrl, apkVersion }: { appUrl: string; ap
             <p className="rr-up text-[12px] font-semibold tracking-[0.04em]" style={{ color: T.deep }}>
               AI local guide · {BRAND.stage}
             </p>
-            <h1 className="rr-up rr-up-2 mt-4 max-w-[560px] text-[44px] font-semibold leading-[1.05] tracking-[-0.025em] [text-wrap:balance] md:text-[64px]" style={{ color: T.ink }}>
+            <h1 className="rr-up rr-up-2 mt-4 max-w-[620px] text-[44px] font-semibold leading-[1.05] tracking-[-0.025em] [text-wrap:balance] md:text-[60px]" style={{ color: T.ink }}>
               Understand the place you&rsquo;re standing in.
             </h1>
             <p className="rr-up rr-up-3 mt-6 max-w-[460px] text-[17px] leading-7 md:text-[19px]" style={{ color: T.muted }}>
