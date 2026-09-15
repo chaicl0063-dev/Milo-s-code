@@ -220,8 +220,9 @@ export function SiteLanding({ appUrl, apkUrl, apkVersion }: { appUrl: string; ap
             </p>
           </div>
           <figure className="lg:col-start-1 lg:row-span-3 lg:row-start-1">
-            <div className="grid grid-cols-2 items-start gap-3 rounded-[20px] border p-3 md:gap-4" style={{ borderColor: T.line, background: T.white, boxShadow: T.shadow }}>
-              {/* 同一条路线：左边地图（编号图钉 + 顺序虚线 + 当前站卡片，裁掉底部 tab），右边导游页里的结果（原尺寸 780×1247，见 IMAGE-MANIFEST） */}
+            {/* BI-01（第 24 节）：手机单列，地图在前、同一路线的结果在后，截图接近原生 1:0.8 尺寸可读；≥768 才双列 */}
+            <div className="grid grid-cols-1 items-start gap-3 rounded-[20px] border p-3 md:grid-cols-2 md:gap-4" style={{ borderColor: T.line, background: T.white, boxShadow: T.shadow }}>
+              {/* 同一条路线：地图（编号图钉 + 顺序虚线 + 当前站卡片，裁掉底部 tab），导游页里的结果（原尺寸 780×1247，见 IMAGE-MANIFEST） */}
               <div className="overflow-hidden rounded-[12px] border" style={{ aspectRatio: "780 / 1560", borderColor: T.line, background: T.paper }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/images/app/app-route-map.webp" alt="ReAround You app: a one-hour walk shown on the map with numbered stops in order, a dotted line between them and the first stop's card" width={780} height={1688} loading="lazy" decoding="async" className="h-full w-full object-cover object-top" />
@@ -329,7 +330,7 @@ export function SiteLanding({ appUrl, apkUrl, apkVersion }: { appUrl: string; ap
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@example.com"
-                    className="h-11 min-w-0 flex-1 rounded-[12px] border px-4 text-[15px] outline-none"
+                    className="h-11 min-h-11 min-w-0 flex-none rounded-[12px] border px-4 text-[15px] outline-none sm:flex-1"
                     style={{ borderColor: T.line, background: T.white, color: T.ink }}
                   />
                   <button type="submit" className="inline-flex h-11 items-center justify-center rounded-full border px-5 text-[14px] font-semibold rr-ghost disabled:opacity-60" style={{ borderColor: T.line, color: T.ink, background: T.white }} disabled={notify === "sending"}>

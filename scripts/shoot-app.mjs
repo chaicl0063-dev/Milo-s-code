@@ -297,6 +297,14 @@ async function main() {
     await device(375, fullMobile, 2, true);
     await sleep(500);
     await save("mobile-full-375", await shootFull(375, fullMobile, 2));
+    // 手机关键段落局部（原尺寸 2×）：BI-01 的路线板、BI-02 的邮箱表单
+    for (const id of ["explore", "plus"]) {
+      const r = await evaluate(`(() => { const e = document.getElementById(${JSON.stringify(id)}); const r = e.getBoundingClientRect(); return { y: r.top + window.scrollY, h: r.height }; })()`);
+      await save(`mobile-section-${id}`, await shoot({ captureBeyondViewport: true, clip: { x: 0, y: r.y, width: 375, height: r.h, scale: 1 } }));
+    }
+    // 邮箱输入框与按钮的实际渲染高度（CSS px）
+    const form = await evaluate(`(() => { const i = document.querySelector('#plus input[type=email]'); const b = document.querySelector('#plus button[type=submit]'); return { input: i && i.getBoundingClientRect().height, button: b && b.getBoundingClientRect().height }; })()`);
+    console.log(`375: email input ${form.input}px, Get notified ${form.button}px`);
 
     // 横向溢出检查
     for (const w of [360, 375, 430]) {
