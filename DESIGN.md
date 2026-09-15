@@ -71,7 +71,7 @@ Voice stays as defined in PRODUCT-BRIEF §2: second person, spoken, no exclamati
 ## Typography
 
 - Display and body are one sans family (Inter, falling back to the system stack). The former serif headline is retired for the site; the serif may remain inside the app.
-- Headlines are tight: weight 600, line-height 1.05–1.08, negative tracking. Two lines maximum in the hero.
+- Headlines are tight: weight 600, line-height 1.05–1.08, negative tracking, `text-wrap: balance`. Hero headline at most three lines on desktop, three on a phone.
 - Body 17–18px lead, 16px body, 68ch max line length. Labels 12px, weight 600, slight positive tracking, sentence case (no ALL CAPS except the two-letter status chips like "Beta").
 - Numbers and durations may use the mono family at label size.
 
