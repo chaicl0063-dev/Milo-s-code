@@ -687,6 +687,7 @@ Claude 下一次只交一页：Web 候选地址与提交号、APK 文件/版本/
 
 ### 检查结果
 
+- 实施提交：`company` 3ef423a（已推 origin/company；`main` 未动）。评审截图不进仓库（`docs/screens/` 已加 .gitignore），由 Claude 直接交给用户转 GPT Work。
 - `pnpm lint` 无警告；`tsc --noEmit` 通过；`pnpm test` 25/25；`pnpm build` 通过（/site、/site/privacy、/site/terms 静态生成，Proxy 识别）。
 - 横向溢出：360 / 375 / 430 宽 scrollWidth = innerWidth，无溢出（脚本量得）。
 - 本机浏览器实际操作（dev）：Hero 四个胶囊切换正常；Try it live 后 iframe 载入 `/p/en/wp%3ATour_Saint-Jacques`，同源可读到内页标题「Tour Saint-Jacques · ReAround You」；Back to screens 恢复截图。PlaceDemo：点 Hear the story → Playing · 22s（句子逐句高亮）→ Pause 显示 Paused · 22s / Resume → Resume 播完显示 Played · 22s 并出现「What should I look for?」→ 追问播放 Playing · 19s，两个应用链接出现。GuideCompare：Hear Milo → Playing · 18s + 「Milo ✓ Preview selected」；播放中点 Hear Mia → Milo 立即回到「Hear Milo」，Mia Playing · 16s（互斥）；PlaceDemo 追问开始时 GuideCompare 也停。邮箱表单：输入 test@example.com 提交 → 「You're on the list」（本机无 KV，接口 stored:false，未向真实邮箱发数据）；aria-label「Email address」在。所有锚点目标存在；链接清单：`/`、`/guide`、`/?persona=mia|milo`、`/p/en/wp%3ATour_Saint-Jacques`、`/site/privacy`、`/site/terms`、两个 mailto。APK 无配置分支显示「Android beta · coming soon」；有配置分支只按代码核对（本机未设 `NEXT_PUBLIC_APK_URL`）。
