@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* 只在支持 hover 的精细指针设备上生效的 hover（官网 V2 按钮反馈用；触屏不模拟悬停） */
+@custom-variant fine (@media (hover: hover) and (pointer: fine));
 
 /*
  * 设计令牌（方向 A · 暖色编辑风）。

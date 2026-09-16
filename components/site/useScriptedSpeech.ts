@@ -8,6 +8,8 @@
  * 每次 play 有一个运行编号：停止、切换、离开页面都会让编号失效，迟到的请求和回调看到编号不对就退出，
  * 迟到的音频地址直接释放，不会在用户已经离开后突然出声（COLLABORATION S02）。
  * 「正在播放」以音频元素的 playing 事件为准，恢复播放被拒绝时不会显示成播放中（S03）。
+ * 全站互斥：每个实例把自己的 stop 登记到模块级表里；任何实例开始 play 时先停掉其它实例（音频、在途请求、界面状态一并复位）。
+ * 官网 V2 首屏与导游区各有一个实例，所以靠这张表而不是靠单实例内部的 halt（2026-09-16 结构轮复核 C02）。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { VoiceGender } from "@/lib/personas";
@@ -26,6 +28,8 @@ export interface SpeechState {
 }
 
 const IDLE: SpeechState = { key: null, status: "idle", index: -1, durationSec: null };
+/** 所有活着的实例的 stop；play 前用它停掉别人 */
+const instances = new Set<() => void>();
 const METADATA_TIMEOUT_MS = 3000;
 
 /** 读一个音频文件的时长；读不到或超时返回 NaN，不让「准备中」卡死 */
@@ -88,6 +92,13 @@ export function useScriptedSpeech(appUrl: string) {
     setState(IDLE);
   }, [halt]);
 
+  useEffect(() => {
+    instances.add(stop);
+    return () => {
+      instances.delete(stop);
+    };
+  }, [stop]);
+
   const fetchClip = useCallback(
     async (sentence: string, gender: VoiceGender, signal: AbortSignal, run: number): Promise<string> => {
       const k = `${gender}:${sentence}`;
@@ -111,6 +122,7 @@ export function useScriptedSpeech(appUrl: string) {
   /** 预载一段并开始播；同一时间只有一段在播 */
   const play = useCallback(
     async (key: string, sentences: string[], gender: VoiceGender) => {
+      for (const other of instances) if (other !== stop) other();
       halt();
       const run = guard.current();
       const controller = new AbortController();
@@ -161,7 +173,7 @@ export function useScriptedSpeech(appUrl: string) {
       };
       playIndex(0);
     },
-    [fetchClip, halt, guard],
+    [fetchClip, halt, guard, stop],
   );
 
   const pause = useCallback(() => {

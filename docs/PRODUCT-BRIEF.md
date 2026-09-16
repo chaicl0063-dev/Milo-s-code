@@ -266,8 +266,16 @@ v9 变更（2026-09-15）：用户否决 v3 官网（方向对、执行差），
 - **16.4 真实素材规则**：产品画面只用 `scripts/shoot-app.mjs` 拍的真实截图，允许裁切与并排，不允许合成或改字；路线两图来自真实一小时流程（`scripts/fixtures/route-paris-1h.json` 记录那条路线）；图注注明 sample / route order, not navigation / 地图署名。
 - **16.5 状态**：第一轮九屏已实现（COLLABORATION 第 23 节，含桌面与手机截图、实际操作结果、lint/test/build）。等 GPT Work 的 Blocking-only QA；通过后按既有职责交付运维（第 14 节），本轮不部署、不动 `main`。
 
+## 17. 官网 V2（/site-v2）：用户 Brief 驱动的重做（2026-09-15）
+
+- **17.1 依据**：用户给出《Homepage V2 Implementation Brief》并在同日给出四轮后续指令，原文存 `docs/SITE-V2-BRIEF.md`；视觉目标图 `assets/reference/site-v4-sample-b-1455.png`。第 15/16 节的青蓝 `#167C80` 与截图展示板路线随 v3 一并作废。
+- **17.2 已定**：浅色底 `#F7F9FC`、唯一强调色蓝 `#1677FF` 贯穿位置/图钉/连线/距离/状态/编号（`lib/site-v2/theme.ts`）；Manrope；无深色段；段落顺序（2026-09-16 起）Hero → The Moment → See & Hear（含追问）→ Keep exploring → Guides → Start + 页脚；「城市图层」概念：真实照片 + 位置 UI，不用手机外壳，不用截图展示板。
+- **17.3 事实规则**：演示地点巴黎圣雅克塔（真实 Commons 照片，含塔顶细部裁切）；周边地点与距离取 /api/nearby 真实结果；一小时路线取 `scripts/fixtures/route-paris-1h.json`（3 站）；「120 m」为演示距离并标注 Sample；不出现假时长、假计数、应用没有的能力；照片上只标一个能看见的地标，站点连线只表示顺序（STOP ORDER），不画沿街假路线。AI 品牌图只做氛围并在页脚声明；用户将用 GPT 重出一套图。
+- **17.4 状态**：静态八屏完成（COLLABORATION 第 28 节）后，GPT 诊断为「跑偏」并给出最终视觉建议（第 30–33 节，`docs/SITE-V2-FINAL-VISUAL-RECOMMENDATION.md`）；2026-09-16 Claude 按建议重排 Hero（真实平视街景、单图钉、一张主卡、无 YOU/连线）并修四个硬伤（第 34 节，**用户已通过**）；同日结构轮（第 35 节）：Ask 并入 See & Hear、去 CityBreak、Keep exploring 换 OSM 真底图 + 真坐标、Guides/Start 压紧、首屏主卡接真实试听；GPT 结构复核（第 36 节）提出的 C01–C05 已收口（第 38 节：全站试听互斥、距离口径、See & Hear 压短、430 首屏、截图脚本），Moment 换成 Ibex73 的塔顶细部真实照片（第 39 节）；用户否定「只换结构不换皮肤」的结果后，2026-09-16 起以 B 样张为唯一验收标准做「样张复刻」：令牌 / 字体（Inter）/ 图标 / 组件全部按样张量出重建，首屏（第 40 节）与全页（第 41 节）完成；GPT 复刻验收（第 42 节）提出 F01–F04 已执行并做交互回归（第 43 节，整页 1440 宽 2598px，比样张目标多 20%，差额为真实内容与必要说明），Keep exploring 的真实地图按用户决定换成整张生成的虚构城市示意插画（第 46 节，图旁标 not a real map，旧真实底图与数据保留备用），**待 Milo 最终接受判断**；动效执行清单 v2（`SITE-V2-MOTION-EXECUTION-CHECKLIST-20260916.md`）经用户 2026-09-16 口头授权后已实现并自检（`SITE-V2-MOTION-SELF-CHECK-20260916.md`：S1–S7 全部通过，开/关动效性能对比无新增长任务）；上线前自检（`SITE-V2-RELEASE-SELF-CHECK-20260916.md`）P01–P10 完成，修正了 1024–1279 首屏与导游卡溢出、360 宽地点卡截断三处断点问题；P04（iOS Safari）与 P08（联系邮箱可收信）BLOCKED，L01–L05 未授权未执行。通过后 `/site-v2` 替换 `/site`。
+- **17.5 文件**：`app/site-v2/page.tsx`、`components/site-v2/*`、`lib/site-v2/{theme,content}.ts`、`scripts/shoot-site-v2.mjs`。
+
 ## 附录：地址
 
 - 应用：https://milo-s-code.vercel.app
-- 官网原型：https://milo-s-code.vercel.app/site
+- 官网原型：https://milo-s-code.vercel.app/site （V2 预览路由 `/site-v2`，未部署）
 - 代码：https://github.com/chaicl0063-dev/Milo-s-code

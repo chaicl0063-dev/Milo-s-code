@@ -807,3 +807,535 @@ Claude 下一步**只修 BI-01 / BI-02**，优先限制在 `components/site/Site
 
 Claude 先向用户问清 v3 的「差」具体指什么（哪一眼不舒服、参照物是什么），然后只做新首屏给用户看。
 
+
+## 28. Claude 交接 · 2026-09-15（官网 V2 · Phase 1 · `company` 线，未提交）
+
+依据：用户给的《Homepage V2 Implementation Brief》（reference 图在 `assets/reference/site-v4-sample-*.png`，只作方向参照，不照抄）。
+新页面挂在 `/site-v2`，`/site` 未动。Phase 1 只做四屏：Hero → The Moment → See & Hear → Keep Exploring。
+
+### 新建文件
+
+- `app/site-v2/page.tsx`（noindex）
+- `components/site-v2/`：`SiteV2Landing.tsx`、`Nav.tsx`、`Hero.tsx`、`Moment.tsx`、`SeeHear.tsx`、`Explore.tsx`、`CityMap.tsx`（示意地图 SVG）、`ui.tsx`（标签、图钉、播放键、波形、识别框等小零件）
+- `lib/site-v2/theme.ts`（V2 令牌：底 #F7F9FC、字 #101318、边 #DCE3EB、唯一强调色 #1677FF）、`lib/site-v2/content.ts`（事实内容）
+- `scripts/shoot-site-v2.mjs`（评审图：桌面整页 1440 / 首屏 1280×800、手机整页 375 / 首屏 375×812、360/375/430 横向溢出检查；输出 `docs/screens/site-v2/`，已 gitignore）
+
+### 复用的旧内容（只取事实，不取版式）
+
+- `lib/site/demo.ts` 的圣雅克塔演示脚本（Mia 三句核对过的事实）与地点路径；`lib/site/brand.ts` 的 `appUrlFromEnv`
+- 应用真实文案："Monument located in Paris, France"、"Today's route · 3 stops · about 1 h"、"Stay 15 min"、"Ask a follow-up…"、"Send"、"AI-generated"
+- 真实一小时路线 `scripts/fixtures/route-paris-1h.json`（3 站，步行约 0.4 km）
+- 图片：圣雅克塔 Commons 照片（署名在图下）、Mia 肖像、两张已有的 AI 街景氛围图（首屏、路线区）。没有新图。
+- 未复用任何 `components/site/*` 组件，未沿用 `lib/site/theme.ts`
+
+### 与 brief 的偏差（均为「事实优先」）
+
+1. 地点用真实的 Tour Saint-Jacques（巴黎 4 区，48.8579° N · 2.3489° E），不用示例里的 Old Bell Tower / Athens；「120 m」沿用 V1 的示例距离。
+2. 路线区显示真实结果「3 stops · about 1 h · about 0.4 km」，不写 brief 示例的「4–6 stops」。
+3. See & Hear 面板是按应用讲解页结构在 V2 视觉系统里重画的产品界面（应用没有波形，这里加了波形和「Sentence 1 of 3」表示逐句播放状态），不是截图。
+4. 地图是示意 SVG（塞纳河、里沃利街、塞瓦斯托波尔大道、塔所在绿地的大致格局），不是 OSM 瓦片。
+5. 首屏街景是现有的 AI 氛围图（虚构街道），叠层 UI 指向 120 m 外的真实地标；Phase 2 页脚会像 V1 一样注明。
+6. Phase 1 按 brief 第 12 节为静态，四种动画留到 Phase 3；页尾一行「Phase 1 preview」是评审提示，正式版删。
+
+验证：`tsc` 与 `eslint` 通过；360/375/430 宽无横向溢出。等用户回答「这像不像一个全新的 ReAround You 网站」再进 Phase 2。
+
+### 28.1 Phase 1B · 视觉对齐（2026-09-15，同日）
+
+用户结论：Phase 1 功能通过、视觉不通过（太编辑风、太空、仍是「大字 + 大图」落地页）。生成的参照图 `assets/reference/site-v4-sample-b-1455.png` 升级为**首要视觉目标**，不再只是灵感。
+
+改动（工程结构不变，只重排视觉）：
+- Hero：照片贴视口右缘并做左缘渐隐；照片上是一整套位置图层——当前位置、到三个真实附近地点（/api/nearby 结果：Place du Châtelet 116 m、Théâtre du Châtelet 184 m、Saint-Merri 196 m）的连线与节点、选中地点卡（播放 + 波形 + 1/3）、Mia 第一句；左栏加四个系统信息格（坐标 / Châtelet, Paris / 60 places within 1 km（真实结果数）/ Guide ready · Mia voice on）。
+- 01 The Moment：三栏。中间照片加识别框、地点卡、白字坐标与区域、「Place found」状态标；右栏「Same place, a deeper layer」四行，对应应用已有能力（What it is / The story behind it / What to look for / Your questions, answered）。
+- 02 See & Hear：三栏。地点卡（16:9 图、名字、Wikidata 描述、类别、播放条、一句介绍、四个核对过的事实、来源行）+ Mia 卡（状态、逐句高亮、Speaking · sentence 1 of 3、追问输入）。
+- 03 Keep exploring：文字直接放地图上；路线线加粗带白描边；站点蓝底编号 + 每站地点卡（名字、类别、停留）；「Your location」蓝气泡；右上 Map / List 切换（应用真实控件）；左下三个元数据格（1 hour · 3 stops / about 0.4 km · walking only / In order · starts where you stand）；右下距离时长标。
+- 全页：段落间距收窄约三成，h2 缩到 40px，蓝色贯穿所有系统元素（编号角标、图标底、连线、图钉、距离、状态、选中边框 #BFD5F6）。
+- `ui.tsx` 新增：Icon 集、Tile、YouCallout、Node、PlaceTag、MapListToggle、card 样式。
+
+仍然不做：假时长（用 1/3 句序代替 0:28）、参照图里不存在于应用的 tabs（Photos / People / In the past）、「Curated by AI + locals」、站点缩略图（Commons 图各有署名要求，暂不接）。
+
+验证：tsc / eslint（仅 no-img-element 提示）通过；360/375/430 无横向溢出。评审图在 `docs/screens/site-v2/`。等用户看过再进 Phase 2。
+
+### 28.2 Phase 2 · 补齐八屏与页脚（2026-09-15，同日）
+
+用户结论：Phase 1B 视觉通过，进 Phase 2；三项小修：不写死「60 places」（改为 Nearby places · Within 1 km）；首屏照片标注 Sample · Paris 4e · street photo illustrative；手机首屏信息格缩小。用户另说：**配图会由 GPT 重新生成一套匹配的新图**，现有图只是占位。
+
+新增（视觉系统不变）：
+- `Ask.tsx`：接在 See & Hear 的 Mia 卡下面（虚线连下来），两问两答，答案全部来自 demo.ts 核对过的事实；标注 Sample conversation · AI-generated。
+- `Guides.tsx`（客户端）：50/50 两块导游面板，肖像 + 编号标签 + 性格词 + 风格说明 + 真实试听（复用 V1 `useScriptedSpeech`，走 /api/tts，同一时间只播一段，逐句高亮）+ Start with X（`/?persona=`）。浏览器实测：点 Hear Mia's voice → 3 个 /api/tts 200 → 状态 Speaking、按钮 Pause。
+- `CityBreak.tsx`：近通栏照片 + 两行字，无其它 UI。
+- `Start.tsx` + `PlusNotify.tsx`（客户端）：白板收尾，左标题与主按钮，右三行真实运行状态；Plus 只占底部一行（Coming soon · Plus + 登记，走 /api/signup）；安卓包由 NEXT_PUBLIC_APK_URL 控制。
+- `Footer.tsx`：来源、照片说明（Commons 署名 + AI 品牌图声明 + 示意地图声明）、法律页、联系、© Blue Hug LLC。
+- `Nav.tsx` 加两个桌面锚点（How it works / Guides）。
+
+**图片槽位**（全部在 `lib/site-v2/content.ts`，换图只改这里）：
+| 槽位 | 用途 | 建议比例 / 尺寸 | 现占位 |
+|---|---|---|---|
+| `STREET.hero` (+`portrait`) | 首屏右侧街景，上面叠位置 UI；左缘会渐隐 | 横 3:2 ≥1672 宽；竖 4:5 ≥900 宽 | hero-1672 / hero-portrait |
+| `PLACE.photo` | 01 识别场景、02 地点卡图、各处缩略图；必须是圣雅克塔本尊 | 4:3 ≥1280 | Commons 真实照片（可保留） |
+| `STREET.walk` | 03 地图右上的街景小图 | 4:5 ≥600 宽 | walk.jpg |
+| `GUIDES[].image` | Mia / Milo 肖像 | 1:1 600 | mia-600 / milo-600 |
+| `CITY_BREAK.src` | 城市呼吸大图，手机裁 4:5 取右侧 | 16:7 ≥1920 宽 | dusk.jpg |
+
+验证：tsc 通过；eslint 只有 next/image 提示；360/375/430 无横向溢出；Guides 试听实测通过。评审图 `docs/screens/site-v2/`。**Phase 3（四种状态动画）等用户看过再做。**
+
+### 28.3 Phase 2.1 · 最后一轮静态修整（2026-09-15，同日）
+
+用户六条要求逐条落地：
+1. 地标照片不再整图重复：首屏用整图（真实 Commons 照片），01 The Moment 用同一张裁出的塔顶细部 `public/images/tour-saint-jacques-detail.jpg`（statues），02 See & Hear 去掉大图改为产品优先（56px 缩略图 + 信息行）。
+2. 不再把 AI 品牌图当作真实地标：首屏底图换成地理正确的圣雅克塔 Commons 照片（图钉是巴黎真实地点），标注改为 Sample · Paris 4e · real places, demo distance；AI 街景只剩 03 的小图与 City break，页脚注明。
+3. Ask 对话缩短约 45%（两问两答各缩成一到两句），去掉重复的输入栏。
+4. Mia / Milo 卡只留：肖像、编号、名字、三个性格词、一句代表句（DEMO_COMPARE 第一句）、试听（只播这一句）、Start with X。删掉风格说明和时长。
+5. 手机更短：整页 16816 → 14672 px；Start 的「When you open it」面板仅桌面显示。
+6. Hero 构图、字体、蓝色系统、地图、段落顺序未动；只把图钉挪到真塔上，手机上附近标签只显示一个（≥640 显示三个）。
+
+验证：tsc 通过；eslint 仅 next/image 提示；360/375/430 无横向溢出。**等用户看图后进 Phase 3（四种状态动画）。**
+
+### 28.4 空间准确性补丁（2026-09-15，同日）
+
+用户指出首屏与第 5 屏的路径标注和图片内容不匹配。按用户给的 SPATIAL ACCURACY PATCH 改，不重做页面：
+- **Hero**：删掉多地点连线与照片上的地点标签；照片上只标一个能看见的地标（塔顶图钉）+ YOU（前景）+ 一条细虚线 + 选中地点卡 + Mia。其他附近地点移到照片下方的非空间列表「Also nearby」。角标改为 Sample · Paris 4e · demo distance。不暗示 AR 或相机方向。
+- **Keep exploring**：连线改细、淡（1.5px，55% 透明，短虚线），只表示站点顺序；蓝底编号站点 1 / 2 / 3 放大为主视觉；加「STOP ORDER」小标；元数据第三格改为 Stop order · not turn-by-turn。不画沿街的假路线。
+- **图片真实性**：所有标注为 Tour Saint-Jacques 的图都是 Commons 真实照片（整图、塔顶细部裁切、缩略图）；AI 品牌图只剩 03 街景小图与 City break，不当作地标证据。
+
+验证：tsc / eslint 通过；360/375/430 无横向溢出。**仍停在 Phase 3 之前。**
+
+## 29. GPT 接入 · 官网 V2（2026-09-15）
+
+用户决定让 GPT 加入官网 V2 的协作。角色仍按第 27 节：**Blocking-only QA**，不出规格、不定方向、不写文案、不写代码；发现阻断项按 `BI-编号` 列出，Claude 只修阻断项。
+
+### 29.1 GPT 需要读的文件（按顺序）
+
+1. `docs/SITE-V2-BRIEF.md` — 用户给的 V2 Brief 原文 + 四轮后续指令原文（B1 视觉对齐、B2 Phase 2 与三项修正、B3 静态修整、B4 空间准确性补丁）。这是依据。
+2. `assets/reference/site-v4-sample-b-1455.png` — 首要视觉目标图（不是照抄）。
+3. 本文件第 28 节（28 → 28.4）— 每轮改了什么、与 Brief 的偏差、用户结论。
+4. `lib/site-v2/content.ts` — 页面上所有事实内容与图片槽位；文件头写明每个数字和句子的来源。
+5. `docs/PRODUCT-BRIEF.md` 第 17 节 — 总账里的登记。
+6. 评审图（本地 `docs/screens/site-v2/`，已 gitignore，由用户随消息提供）：`desktop-hero-1280x800.jpg`、`desktop-full-1440.jpg`、`mobile-hero-375x812.jpg`、`mobile-full-375.jpg`。
+
+### 29.2 已冻结、不再讨论的事
+
+- 视觉方向：浅色底 `#F7F9FC`、唯一强调色蓝 `#1677FF` 作为整页系统语言、Manrope、1px 细边、极轻阴影、12–16px 圆角（`lib/site-v2/theme.ts`）。
+- 段落顺序：Hero → 01 The Moment → 02 See & Hear → Ask → 03 Keep exploring → 04 Choose your guide → City break → Start → Footer。
+- Hero 构图（Phase 1B 通过；B4 后照片上只标一个地标）。
+- 事实边界：地点是巴黎圣雅克塔；周边地点与距离是 /api/nearby 真实结果；一小时路线是应用真实跑出的 3 站；「120 m」是演示距离；不写假时长、假计数、假能力（应用没有的 tabs、"curated by AI + locals" 等一律不出现）。
+- 图片：所有标注 Tour Saint-Jacques 的图 = Commons 真实照片；AI 品牌图只用于氛围（03 小图、City break），且页脚声明。用户将用 GPT 重新生成一套图，槽位与尺寸见 28.2 的表。
+
+### 29.3 GPT 这一轮要看什么
+
+对已通过的静态页做 Blocking-only QA，只列会阻断上线的问题，例如：
+- 事实或声明与应用能力不符；图片被当作它不是的东西；
+- 手机 360 / 375 / 430 宽的溢出、遮挡、不可读；
+- 键盘可达性 / 对比度明显不足；
+- 链接指向错误（应用入口、`/guide`、`?persona=`、隐私与条款）。
+不列：风格偏好、文案润色、"可以更好"。
+
+### 29.4 本地运行与验证
+
+```
+pnpm dev                      # http://localhost:3000/site-v2
+node scripts/shoot-site-v2.mjs   # 评审图 → docs/screens/site-v2/（需本机 Chrome）
+npx tsc --noEmit -p . && npx eslint components/site-v2 lib/site-v2 app/site-v2
+```
+
+### 29.5 下一步
+
+- 用户看图决定是否进 Phase 3（Brief 第 8 节四种状态动画，尊重 prefers-reduced-motion）。
+- GPT 新图到位后换槽位、复拍评审图。
+- 通过后 `/site-v2` 替换 `/site`，按第 27 节规则 `company` → `main`。
+
+## 30. GPT 方向诊断交接 · 2026-09-16
+
+用户最新任务：检查官网 V2 的 Brief、协作记录、视觉目标、评审截图及相关代码，找出协作跑偏根因，提出合理调整建议；所有交付物写入本项目 docs，供 Claude 后续执行。
+
+- 本轮范围按用户最新要求扩展为方向诊断与调整建议；第 29 节的 Blocking-only 限制不用于阻止本轮诊断。原有记录保留为历史。
+- 完整诊断：[SITE-V2-DIRECTION-REVIEW-20260916.md](./SITE-V2-DIRECTION-REVIEW-20260916.md)。
+- 下一轮建议任务：[CLAUDE-SITE-V2-NEXT-PASS.md](./CLAUDE-SITE-V2-NEXT-PASS.md)。
+- 主要发现：参考图被拆成 UI 元素清单；真实照片替换与空间补丁改变了场景但未重新验收整体；手机状态格先于产品演示；静态控件与真实操作混杂；换图槽位和角色约定未随最新任务同步。
+- 已确认局部问题：Moment 标签裁切/覆盖；Hero 手机示例说明被盖住；固定巴黎状态未清楚归属于示例；PlusNotify 对 HTTP 200 + stored:false 仍显示登记成功。
+- 建议顺序：修局部问题 → Hero 桌面/手机静态样张 → Milo 视觉评审 → 再逐段收紧。建议继续停在 Phase 3 前。
+- 状态：诊断与执行建议已交付；没有新页面实现，没有新配图，没有新一轮视觉通过记录。未修改代码、提交、合并或发布。未复跑应用和测试，旧日志测试通过不视为本轮验证。
+
+## 31. 用户明确 B 样张目标 · GPT 最终视觉建议（2026-09-16）
+
+用户希望按上传的 GPT 5.6 样张风格实现，并补充该图来自与 GPT 5.6 讨论、寻找多个参考案例后组合而成。上传图与项目 site-v4-sample-b-1455.png 的 SHA-256 一致。
+
+- 最新综合建议：[SITE-V2-FINAL-VISUAL-RECOMMENDATION.md](./SITE-V2-FINAL-VISUAL-RECOMMENDATION.md)。
+- 以 B 作为多个案例取舍后的综合视觉目标：明亮街景、蓝色空间信息层、紧凑产品演示。结合原 Brief 的案例分工理解，不拼贴各案例的独立段落。
+- GPT 建议把独立 Ask 合入 See & Hear、取消独立 CityBreak 大屏、压紧 Guides/Start，保留体验顺序和真实能力。这是建议的结构修订，不冒充用户逐项批准。
+- 第 30 节诊断与硬伤仍有效；前一任务单关于保持八段/临时照片的安排不作为最终视觉方案。最终结构与视觉建议读新文档。
+- 分享对话未成功读取；本轮依据用户明确请求、图片和已核查本地材料，没有引用未读对话内容。
+- 状态：最终建议已交付，代码未改，待后续局部样张及视觉评审。
+
+## 32. 图片制作与空间/路线防错 · 2026-09-16
+
+用户要求判断是否需要重新生图，并提供给 ChatGPT 的任务文档；要求避免照片 YOU 落点、虚构地图点位及路线常识错误。
+
+- 图片任务：[SITE-V2-IMAGE-BRIEF-FOR-CHATGPT.md](./SITE-V2-IMAGE-BRIEF-FOR-CHATGPT.md)：Hero/Moment 优先找真实街头素材；AI 只做必要氛围图；地图不生图；头像暂留；不做独立 CityBreak。
+- 检查规则：[SITE-V2-SPATIAL-ROUTE-CHECKS.md](./SITE-V2-SPATIAL-ROUTE-CHECKS.md)：事实表、照片锚点、真坐标投影、站序/道路区分、路线可达性与绕行检查、换图后重新验收。
+- 补查应用已有直线距离最近邻排序；本三站样例约378m，六种开放顺序最短约372m，不能据此断言明显舍近求远。步行路网未核验，直线距离不等于实际步行距离。
+- fixture 是来源证据，不是合理性证明；官网估算 x/y 是独立展示错误。广场与其中喷泉分别停留15分钟还需游览价值检查。
+- 本轮仅交文档，未生成图片、改代码或发布。后续应用算法改进独立登记，不随官网任务静默变更。
+
+## 33. 设计评估与三天上线范围 · 2026-09-16
+
+用户要求从设计师角度评价 B 样张与 GPT 5.6 需求稿，并限定三天工作量。
+
+- 结论：方向适合产品；原需求稿作为三天执行清单偏重，需收缩八屏、叠层和动效要求。
+- 具体评价、优先级和三天安排已补入 [SITE-V2-FINAL-VISUAL-RECOMMENDATION.md 第10节](./SITE-V2-FINAL-VISUAL-RECOMMENDATION.md)。
+- 必做：Hero/手机、真实空间表达、紧凑结构、统一排版与上线检查；试听优先复用；全套换图、品牌重做、路网/算法升级与四类动效不列入三天。
+- 这是范围建议，未实施、未发布；先前空间/路线检查仍有效。三天预算基于当前代码和及时反馈，不是工期保证。
+
+## 34. Claude 实现 · Hero 重排 + 硬伤修复（2026-09-16，`company` 线，未提交）
+
+依据：SITE-V2-FINAL-VISUAL-RECOMMENDATION.md 第 8 节、CLAUDE-SITE-V2-NEXT-PASS.md 第 2–5 节、SITE-V2-SPATIAL-ROUTE-CHECKS.md 第 3/4/8 节。本轮只做 Hero 桌面/手机、Moment 局部与四个已确认硬伤；未动 SeeHear / Ask / Explore / Guides / CityBreak / Start 的结构（第 4 节结构修订等 Hero 通过后再做），未开动效，未提交、未发布。
+
+### 34.1 改了什么
+
+| 文件 | 改动 | 原因 |
+|---|---|---|
+| `public/images/hero-street-{1920,1280}.jpg`、`hero-street-square.jpg`、`tour-saint-jacques-street-thumb.jpg` | 新增：Commons 真实平视街景及其正方形裁切、塔冠缩略图 | Hero 主素材，见 34.2 事实表 |
+| `lib/site-v2/content.ts` | `STREET.hero` 换成新照片（含作者/许可/来源页、两种裁切的图钉坐标）；新增 `HERO_META`（第一格 "Paris 4e · Sample area"） | 素材登记集中；固定巴黎状态归属示例（BI-03） |
+| `components/site-v2/Hero.tsx` | 重写：左文右图连续构图，照片左缘淡入；照片上只有一个地标图钉 + 一张主产品卡（缩略图、地名、类别·演示距离、静态播放、Mia 第一句、进入应用该地点的真实链接）；YOU 点、YOU→塔连线、照片上的坐标全部移除；示例角标右上、卡片右中（1024–1279 靠下避开塔身），不再同锚点；手机：标题 → 主按钮 + 文字次入口 → 正方形照片 → 同一张卡（文档流，不绝对定位）→ 信息格；信息格改为一排四个弱边框轻格（xl），桌面左栏 520px | 第 3.1/3.3/3.4 节；BI-01/BI-03；R3 手机首屏 |
+| `components/site-v2/Moment.tsx` | 四个叠层各占一角（左上坐标、右上「What is this?」、中间识别框、左下结果卡，卡限制在容器内）；导语改为用户主动「在地图上点它，或拍照问这是什么」 | BI-01 裁切/覆盖；诊断 3.3 识别叙事（应用真有拍照识别，文案用应用的 whatIsThis） |
+| `components/site-v2/PlusNotify.tsx` | 读 JSON，只有 `ok:true && stored:true` 才显示已登记；`stored:false`、非 2xx、非 JSON、网络错误都保留输入并显示可重试 | BI-02 |
+| `components/site-v2/ui.tsx` | `Tile` 去投影、弱边框、更紧 | 3.4 非交互元数据不与产品卡同重 |
+| `components/site-v2/Footer.tsx`、`Nav.tsx` | 页脚署名两张真实照片，去掉「街景是 AI 图」的旧说法；导航手机高 56px | 署名义务；手机首屏 |
+| `scripts/shoot-site-v2.mjs` | 重写：输出 `docs/screens/site-v2-next/`；hero 7 个宽度 + Moment 局部 + 整页；整页保持正常视口高度分片拍；等字体/图片解码并记录失败资源；`report.json` 记视口/DPR/CSS 高度/像素尺寸/时间；`data-check` 元素的宽度内/祖先裁切（分轴）/遮挡检查；页脚是否拍到；参数解析修正 | NEXT-PASS 第 3 节 |
+
+### 34.2 事实表（SPATIAL-ROUTE-CHECKS 第 3 节）
+
+| 对象 | 依据 | 处理 |
+|---|---|---|
+| 照片（Hero） | 真实地标 Tour Saint-Jacques。来源 Wikimedia Commons `File:Tour_Saint-Jacques_(22284511318).jpg`，摄影 Jorge Láscar，CC BY 2.0（需署名，已在 Hero 图下与页脚署名）。原图 5520×3680，平视，从塔西南侧街对面拍，底部行人/单车/车流。横图 1920/1280 宽整图；手机用正方形裁切（原图 x 500–4180）；卡片缩略图为塔冠裁切 | real_photo；建筑主体在画面左中，右侧天空为 UI 可用区 |
+| 照片（Moment） | 沿用 Fabien Barrau 照片的塔冠细部裁切（CC BY-SA 4.0，已署名） | 未换；只修叠层位置 |
+| YOU | 无拍摄位置与地面对应依据 | 不画在照片上；示例范围由「Sample · Paris 4e」角标 + 信息格「Paris 4e · Sample area」+ 图下小字说明 |
+| 地标标记 | 画面内可辨认的塔顶；横图锚点 (42%, 9%)，正方形裁切 (49%, 9%)，两套坐标分别核对过截图；容器比例变化时 object-position 固定 42% 使塔位置稳定 | 只此一个标记；换裁切需重查 |
+| 距离 | 「120 m」是 V1 起沿用的演示值，不是测量结果 | 卡片显示 "120 m away"，图下与页脚注明 demo distance |
+| 连线 / 地图 / 时长 | 本轮未改 Keep exploring | 沿用第 28.4 节状态（站序线，非道路）；地图真坐标化留待结构轮 |
+
+### 34.3 截图与验证
+
+- 位置：`docs/screens/site-v2-next/`（gitignore）。`hero-{1280x800,1440x900,1024x800,1100x800,375x812,360x812,430x812}.jpg`、`moment-{1440,375}.jpg`、`full-{1440,375}.jpg`、`compare-hero-desktop.jpg`（当前版 / 修改版 / B 顶部，同为 1280 宽）、`compare-hero-mobile.jpg`（375×812 当前 vs 修改）、`report.json`。旧图 `docs/screens/site-v2/` 保留对照。
+- 条件：本机 dev 服务器 `http://localhost:3000`，2026-09-16，Chrome 无头 + CDP，DPR 桌面 1 / 手机 2；整页 CSS 高度 1440 宽 4802px、375 宽 7237px（旧版 7359px）。
+- 通过：`tsc --noEmit` 0 错误；eslint 只有既有 `no-img-element` 警告；360/375/430 无横向溢出；`data-check` 8 处（hero-meta/pin-label/sample/card、moment-coords/action/card）在 7 个宽度全部 ok（无裁切、无遮挡）；375×812 首视口可见地名、播放按钮、Mia 第一句（见 `hero-375x812.jpg`）；1024/1100 宽卡片完整在画面内。
+- PlusNotify：浏览器里用 mock fetch 跑 5 种响应（200+stored:false、500、网络错误、非 JSON 200、stored:true），前四种保留表单并显示重试提示，只有最后一种显示已登记。未向真实名单发送邮箱。
+- 未验证：线上域名/KV 配置；Guides 试听本轮未重跑（组件未改）；Explore 地图仍是示意坐标。
+
+### 34.4 与已冻结内容的差异
+
+- B3（Phase 2.1）「首屏 = 高处夕照塔图」与 B4（空间补丁）「YOU 点 + 一条到塔的细线」：本轮**撤销**，改为平视街景、无 YOU、无连线。这是按最终建议第 3.1/6 节和 NEXT-PASS 第 2B 节的有理由修订，需重新评审 Hero，不沿用 28.1 的「Phase 1B 视觉通过」。
+- Hero 卡片里不再显示「Speaking / Pause / 1 / 3」这类正在播放的状态；播放按钮是静态示意，真实入口是「Open」链接（应用内该地点详情页）。
+- 信息格从 2×2 厚卡改为一排四个轻格，「Your location」改为「Paris 4e · Sample area」。
+
+### 34.5 状态
+
+**待 Milo 视觉评审**（第一天节点：Hero 桌面/手机 + Moment 过渡）。通过后按 SITE-V2-FINAL-VISUAL-RECOMMENDATION.md 第 4 节做结构轮：Ask 并入 See & Hear、去独立 CityBreak、Guides/Start 压紧、Keep exploring 真坐标；再全页复核，最后才考虑动效。
+
+## 35. Claude 实现 · 结构轮（2026-09-16，Hero 通过后；`company` 线，未提交）
+
+用户 2026-09-16 通过 Hero 样张（第 34 节），指示继续结构轮。依据 SITE-V2-FINAL-VISUAL-RECOMMENDATION.md 第 3.3/3.5/3.6/4/10.4 节与 SITE-V2-SPATIAL-ROUTE-CHECKS.md 第 3/5/8 节。未开动效，未提交、未发布。
+
+### 35.1 结构变化（相对第 28 节的八屏）
+
+| 顺序 | 现在 | 处理 |
+|---|---|---|
+| Hero | 不变（第 34 节通过） | 主卡的播放按钮接上真实试听（35.3） |
+| 01 The Moment | 不变 | — |
+| 02 See & Hear | **并入原 Ask 段**：右侧 Mia 面板 = 三句讲述 → 一个追问（"What should I look for?"）→ 回答 → 追问输入示意；右上标「Sample」 | 去掉重复教堂拆除史的第一问；地点卡去掉与讲述重复的 intro 段；不再显示「Speaking · sentence 1 of 3」这种正在播放的状态 |
+| 03 Keep exploring | **真实地图**：OSM 瓦片静态底图 + 真坐标投影（35.2）；去掉示意 CityMap、假街名、Map/List 假控件、压在站点卡旁的 AI 街景小图 | 手机：地图上只有编号盘，地图下完整有序列表（全名、类别、步行段、停留） |
+| 04 Choose your guide | 左标题 + 右两卡并排一条横向带；圆形肖像；手机头像/名字一行、代表句全宽 | 保留真实试听与 `?persona=` 入口；去掉波形装饰 |
+| City break | **取消** | `CityBreak.tsx` 删除；`dusk.jpg` / `walk.jpg` 文件保留（V1 `lib/site/photos.ts` 仍引用） |
+| Start | 紧凑横幅：标题 + 免账号说明 | 主按钮 + Android 一行；去掉「When you open it」状态面板；Plus 一行，邮箱登记默认收起（点 Notify me 才展开） |
+| Footer | 署名两张真实照片 + 地图 © OpenStreetMap contributors；只剩导游肖像是 AI 图 | — |
+
+删除文件：`components/site-v2/Ask.tsx`、`CityBreak.tsx`、`CityMap.tsx`。新增：`HeroPlaceCard.tsx`（客户端）、`public/images/map-chatelet-{desktop,mobile}.jpg`。`content.ts` 去掉 NEARBY / STREET.walk / CITY_BREAK / START_STATES，ROUTE 站点改为真实经纬度，新增 MAP。
+
+### 35.2 事实表 · 地图（SPATIAL-ROUTE-CHECKS 第 3/5 节）
+
+| 对象 | 依据 | 处理 |
+|---|---|---|
+| 底图 | OpenStreetMap 标准瓦片 z18，2026-09-16 一次性拉取 70 张拼合（scratchpad/staticmap.mjs），降饱和 0.35、提亮、罩 32% 页面底色；桌面裁切 1920×800（西经 2.342635 → 东经 2.352934，约 0.52 m / css px @1440），手机裁切 900×900（2.345804 → 2.350632） | 署名「© OpenStreetMap contributors」在地图右下可见并链接到 copyright；页脚再注明 |
+| 地图点 | 稳定 ID 与经纬度来自 `scripts/fixtures/route-paris-1h.json`：起点 48.8579/2.3489；wp:Place_du_Châtelet 48.857639/2.347361；wp:Fontaine_du_Palmier 48.857497/2.347269；wp:Rue_des_Lombards 48.859306/2.349167。Web Mercator 投影到两版裁切，百分比写在 `MAP.*.points`；容器 aspect-ratio 与图片一致，百分比精确 | 真实点位画成小蓝点、不动；1、2 站相距 17 m，编号卡/编号盘挂在旁边用引线连过去，不拉开点位 |
+| 起点 | fixture 的示例起点，不是访客位置 | 标「Start · sample」，图下说明「not your location」 |
+| 连线 | 站序 起点 → 1 → 2 → 3 | 细虚线，文案与元数据都写「Stop order · not turn-by-turn」，不画道路路径 |
+| 距离 / 时长 | 步行段 116 + 17 + 244 m = 377 m ≈ 「about 0.4 km」，legMinutes 1 + 1 + 3；停留 3 × 15 min；总 60 min 是应用的预算，不是测得时长 | 列表逐站显示步行段与停留；「1 hour · 3 stops」为路线预算口径 |
+| 未核验 | 步行路网可达性未查（直线距离 ≠ 步行距离）；广场与其中喷泉各停 15 min 的游览价值（第 32 节已记，属应用算法，不在官网改） | 页面只展示，不声称最优 |
+
+### 35.3 真实试听（FINAL 第 10.4 节「优先」项）
+
+首屏主卡的播放按钮改为真实控件：`HeroPlaceCard.tsx`（"use client"）复用 `useScriptedSpeech` → 应用 `/api/tts`，点击后逐句读 Mia 的三句讲述，卡片里的句子随进度切换，「正在播放」以音频 playing 事件为准。浏览器实测（本机 dev）：Ready → 点击 → Preparing → Speaking，3 次 `/api/tts` 请求，再点 Pause → Paused，再点 Resume → Speaking。Guides 的两处试听保留。See & Hear 的播放条仍是静态示意（面板标「Sample」）。
+
+### 35.4 截图与验证
+
+- `docs/screens/site-v2-next/`：`full-1440.jpg`（CSS 高 3449px，原 4802px）、`full-375.jpg`（5946px，原 7237px）、`compare-full-desktop.jpg`（重构前 / 重构后 / B 三栏同宽）、hero/moment 各图重拍。
+- `tsc --noEmit` 0 错误；eslint 只有既有 `no-img-element` 警告；360/375/430 无横向溢出；`data-check` 元素（含新增 map-attribution、stop-card-1/2/3）在 7 个宽度全部 ok。
+- 未验证：线上 KV / 域名；Guides 试听本轮未重跑（逻辑未改，布局改了）。
+
+### 35.5 状态
+
+**待 Milo 全页视觉评审**（第三天节点前的第二天成果）。之后：跨尺寸/加载/可达性/真实入口复核与上线检查；动效仍未开始。
+
+## 36. GPT 结构轮复核 · 2026-09-16
+
+用户告知“结构轮完成”，已核查第34/35节、最新截图/报告及相关实现。
+
+- 结构目标已落实：Ask合并、CityBreak取消、Guides/Start收紧、真实底图与Hero试听；建议结束结构调整，转收口。
+- 复核与Claude任务：[SITE-V2-STRUCTURE-REVIEW-20260916.md](./SITE-V2-STRUCTURE-REVIEW-20260916.md)。
+- 必修：整页首视口后露旧版米黄背景（原因待运行时复核）；试听hook多实例无跨实例互斥；直线距离仍被呈现为步行信息。
+- 同轮小修：See & Hear长卡与静态假控件；430宽完整短句；合并保存最终七宽报告。
+- 本轮基于截图、代码和保存的报告，未重新实测音频/运行检查；不作已发布或Milo全页通过声明。
+
+## 37. 配图交接进度核对 · 2026-09-16
+
+用户提供 REAROUND-YOU-IMAGE-HANDOFF-2026-09-16.md，询问配图进度。原文已存 [REAROUND-YOU-IMAGE-HANDOFF-2026-09-16.md](./REAROUND-YOU-IMAGE-HANDOFF-2026-09-16.md)。其中下载/裁切步骤是来源文档的建议，未直接视为本轮执行命令。
+
+- 交接资料已收到：候选来源、许可记录、裁切参数、署名和接入建议。附件只有Markdown；文档明确未交付JPEG原图。本轮未独立联网复核它所声称的授权/史料核验。
+- Hero 推荐图 Jorge Láscar / Tour Saint-Jacques (22284511318) 与第34节实际接入的照片相同。当前 content.ts 与 hero-street-1920/1280、hero-street-square 文件可核对；无需重复换图。
+- 新增价值是 Moment 的 Ibex73 / Tour Saint-Jacques, Paris, 2023, détails (1)。当前仍引用 Fabien Barrau 的 tour-saint-jacques-detail.jpg，尚未接入该新候选。应先取得原图、看实际细节及裁切，再判断是否替换；不声称仅凭文字交接就已完成图片验收。
+- 附件手机4:5是素材建议，不覆盖当前已通过的正方形/限高Hero布局。430宽仍需收口；不要机械换成长4:5，把讲解再次挤出首屏。
+- Moment 换图时检查所讲雕像是否实际可见，不沿用未经照片核对的专名/锚点；同步署名、许可链接、裁切修改说明与现用图片清单。
+- 文档记录建造期1509–1525，现产品脚本为1509–1523：登记为来源口径差异，待查原始来源；不要借换图静默改成另一年份，也不要直接判定哪一方错误。
+- 氛围图没有生成，符合当前结构已取消CityBreak和路线旁氛围图的范围；Mia/Milo继续保留；地图不属于图片生成任务。
+- 当前图片进度：Hero已落地，新Moment为候选待下载/实图验收，额外AI图无需制作。此项与第36节收口任务并行，不重开Hero或全套视觉。
+
+## 38. Claude 收口 · 结构轮复核 C01–C05（2026-09-16，`company` 线，未提交）
+
+依据 docs/SITE-V2-STRUCTURE-REVIEW-20260916.md（第 36 节）。全部五项处理完，另做了第 4 节的可追溯性补充。未开动效，未提交、未发布。
+
+| 项 | 做了什么 | 验证 |
+|---|---|---|
+| C01 底色露出 | 运行时读 `.rr2`：offsetHeight = 内容高度（8952 css px，窄视口），背景 rgb(247,249,252)，页面本身没有被压成视口高；米黄是截图脚本 `captureBeyondViewport` 在 html/body 100% 高的页面上视口外的渲染差异。两手都改：`SiteV2Landing` 根节点加 `shrink-0`（body 是纵向 flex，保险）；`shoot-site-v2.mjs` 整页改为真实滚动逐屏拍再拼，不再用 captureBeyondViewport。未改全局 body 配色 | 新 `full-1440.jpg` / `full-375.jpg` 全页底色一致，无分片边界变色 |
+| C02 试听互斥 | `useScriptedSpeech` 加模块级实例登记：任何实例 `play` 前先调用其它所有实例的 `stop`（音频、在途请求、界面状态一并复位）。首屏桌面/手机两张卡改为共用一份 hook 状态（`HeroScene.tsx` 只调用一次 hook，`HeroPlaceCard.tsx` 删除），跨断点不会「看不见的卡还在播」。旧站 `/site` 同一 hook 只有一个实例，行为不变 | 浏览器实测（本机 dev）：Hero 播放中 → Hear Mia：Hero 立即 Ready、Mia Speaking；Mia 暂停 → Hero → Hear Milo：Hero/Mia Ready、Milo Speaking；Milo 播放中 → Hero：Milo Ready、Hero Speaking；暂停 Hero 后三处只有 Hero 为 Paused；共 5 次 `/api/tts`（其余命中缓存） |
+| C03 距离/时间口径 | 去掉「about 0.4 km / walking only」和逐站米数；元数据改为「About 1 hour · planned · 3 stops」「15 min each · suggested stay」「Stop order · not turn-by-turn」；列表步行时间标 "est. N min walk"；地图下说明改为：路线是应用规划、停留为建议、步行时间按地点间距离估算非街上实测、虚线是站序、起点是示例。`content.ts` 的 ROUTE 注释写明口径 | 见 `full-1440.jpg` / `full-375.jpg` 03 段 |
+| C04 See & Hear | 右侧改为 STORY[0] 一句摘录 → 追问 → 回答；地点卡去掉假播放条，改为「Hear Mia tell it · 3 sentences, at the top of the page」（跳回首屏真实试听的链接）；假输入框/Send 改为「Ask your own question in the app」（应用内该地点页的真实链接）。三栏高度接近，不再有长段落撑出的空洞 | `full-1440.jpg` 02 段；`SeeHear` 现在需要 `appUrl` |
+| C05 430 宽首屏 | 手机照片 < 400px 用正方形裁切，≥ 400px 用横图（`min-[400px]:aspect-[3/2]`），两套图钉坐标分别对应；未重排已通过的 Hero | `hero-430x812.jpg` 首屏可见地名、播放按钮、完整第一句与「Open this place in the app」；375/360 不变 |
+| 证据 | `--only` 批次的报告改名 `report-<批次>.json`，不再互相覆盖；失败请求记录 URL 与是否用户取消。本次完整跑一遍：7 个宽度 + Moment + 整页，无失败资源、无 FAIL、无横向溢出 | `docs/screens/site-v2-next/report.json`（2026-09-16 完整批次） |
+| 第 4 节 | 地图生成脚本入库 `scripts/site-v2-static-map.mjs`（fixture 真坐标 → z18 瓦片拼图 → 两版裁切 → 打印 MAP 百分比；瓦片缓存 node_modules/.cache）；`content.ts` 与本日志的边界表述改为「西边界东经 → 东边界东经」 | `node scripts/site-v2-static-map.mjs` 可复现，不重新批量拉瓦片（有缓存） |
+
+工程检查：`tsc --noEmit` 0 错误；eslint 只有既有 `no-img-element` 警告。整页 CSS 高度 1440 → 3365px，375 → 5846px。
+
+状态：**待 Milo 最终视觉 / 上线判断**（第 36 节第 5 节的停止线已达到；未做的只剩发布本身）。
+
+## 39. Claude 接入配图交接 · Moment 换真实细部照（2026-09-16，`company` 线，未提交）
+
+依据第 37 节（GPT 配图交接核对）与 docs/REAROUND-YOU-IMAGE-HANDOFF-2026-09-16.md。用户给的素材目录 `C:\Users\chaic\AppData\Local\Temp\codex-file-preview-mtmJHO\rearound-you-image-handoff-2026-09-16` 本机不存在（同类目录只有 `…\codex-file-preview-iH3ccA\REAROUND-YOU-IMAGE-HANDOFF-2026-09-16.md`，与 docs 内副本相同）；交接文档本来就声明未包含 JPEG，所以按文档第 8 节从 Commons 原图下载接入。
+
+### 39.1 素材登记（交接文档第 7 节格式）
+
+| 文件 / 用途 | 类型 | 真实地标 | 来源 / 摄影者 / 许可 | 原始尺寸 / 裁切 | 主体与 UI 区域 | 地标标记 | YOU / 连线 | 未确认 |
+|---|---|---|---|---|---|---|---|---|
+| `public/images/moment-detail-1800.jpg` / 01 Moment 桌面 | real_photo | Tour Saint-Jacques 塔顶 | Commons `File:Tour Saint-Jacques, Paris, 2023, détails (1).jpg`；Ibex73；CC BY 4.0（署名 + 许可链接 + 注明裁切） | 原图 3728×2417，sha256 `1c1eff556ffe00aabd976ff20b1e7ed45d25cd1897b2d43656a27253a3116dfe`；按文档 3:2 轻裁 x=51,y=0,w=3626,h=2417 → 1800×1200 | 左上尖顶 + 持杖雕像，右上天空放动作标签，左下地点卡，右下坐标 | 可（Commons 文件页标题 + 与首屏同一地标） | 不可，未画 | 雕像身份：应用讲解脚本称顶上持朝圣杖者为圣雅各，页面 alt 只写「a statue with a pilgrim's staff」，不标专名 |
+| `public/images/moment-detail-portrait.jpg` / 01 Moment 手机 4:5 | real_photo | 同上 | 同上 | x=0,y=0,w=1934,h=2417 → 900×1125（保留尖顶与雕像） | 尖顶在左上，识别框 left 17% / top 3% / 44%×55% | 可 | 不可 | — |
+| Hero（`hero-street-*.jpg`） | real_photo | 同上 | Jorge Láscar，CC BY 2.0 | 见第 34.2 节 | — | — | — | 与交接文档推荐一致，不重复换图；文档建议的 4:5 手机裁切不采用（当前正方形/横图方案已通过并收口 430 宽） |
+| Fabien Barrau 夕照裁切 `tour-saint-jacques-detail.jpg` | — | — | — | 已删除（本人未提交的生成文件）；`tour-saint-jacques-{640,720,1280}.jpg` 是 V1 在用的已提交文件，未动 | — | — | — | — |
+
+页面署名：Moment 图下「Photo Ibex73 (CC BY 4.0) · sample location」（手机版附坐标与区域），页脚「Photos of Tour Saint-Jacques: Jorge Láscar (CC BY 2.0) and Ibex73 (CC BY 4.0), via Wikimedia Commons」，均链接到文件页。
+
+### 39.2 布局与核对
+
+- 识别框改为套在尖顶与持杖雕像上，桌面（3:2 图放 4:3 容器，object-cover 居中）与手机（4:5 竖裁）各一组坐标，截图核对过框住的是雕像与尖顶。
+- 坐标条改到右下并加半透明底；手机放不下（会压到地点卡），改写进图下说明。
+- 交接文档记录建造期 1509–1525（Mérimée），应用脚本为 1509–1523：登记为来源口径差异，页面未改年份，待查原始来源后再定。
+- 其余候选 détails (2)–(15) 已看过，(1) 最贴合「看塔顶」的追问答案；(7) 为整个塔冠四角全景，备选。
+
+### 39.3 验证
+
+`tsc --noEmit` 0 错误；eslint 只有既有 `no-img-element` 警告；`moment-1440.jpg` / `moment-375.jpg` / `full-1440.jpg` / `full-375.jpg` 重拍，`data-check` 全部 ok。状态：**待 Milo 最终视觉 / 上线判断**（与第 38 节合并评审）。
+
+## 40. Claude 样张复刻 · 第一步 Hero（2026-09-16，`company` 线，未提交）
+
+用户指出：结构轮结果与 Phase 2.1 极其相似，与 B 样张的字色、图标、构图都没复刻；3.1 的「连续构图」做成了左右分栏。原因（已向用户说明）：我沿用了整套旧视觉令牌和旧组件，只改结构，并用工程检查代替了像不像的检查。本轮改方法：**先量样张，再写；旧组件不复用；验收用同宽并排 + 50% 叠图**。
+
+### 40.1 从样张量出来的依据（1024 宽，×1.406 = 1440）
+
+- 色值（区域取暗像素均值 / 众数）：标题 #0B1943、正文 #4F5F81、副标题蓝 #20619B、小标签 #6D87AC、辅助灰 #98AAC5、导航灰 #697999、页面底 #F9FCFE、卡内浅底 #F5F9FD、卡边 #E5EBEF、主按钮 #006BB4、播放 #0274BF、波形 #3081D0、次按钮描边 #77B1E2、收尾横幅 #EDF7FE → `lib/site-v2/theme.ts` 全部替换（文字改海军蓝系，蓝分三档）。
+- 几何：标题约 46px→64px、700 字重、行高 1.02；副标题 ~16→22px 蓝色；按钮为胶囊、高 40→56px，主按钮左纸飞机右箭头，次按钮白底蓝描边 + 圆圈三角；四个信息格一排在按钮下方（图标 2px 线性、值粗、说明灰）；照片从约 44–50% 处过渡到底色、贴满首屏高度、无圆角；主卡在右侧 62–85%、圆角 16、缩略图 60、标题 20 粗、播放 44 圆、Mia 头像 40；坐标小字飘在天空。
+- 字体：样张字形是 Inter/SF 一类，Manrope 的 a/g 不同 → V2 根节点改 Inter（next/font，只作用于 /site-v2）。
+
+### 40.2 实现
+
+- `theme.ts`、`ui.tsx` 重建（2px 圆头图标含 Navigate/ArrowRight/PlayCircle/Building/Wave；胶囊按钮；16px 圆角卡 + 柔和投影；白环蓝心图钉；粗波形；PlaceTag 缩略图小标签）。
+- `Hero.tsx`（客户端，合并原 HeroScene）：照片 `absolute` 占右侧 64% 视口宽、贴满 540/560px 首屏高、左缘 24% 羽化；左文字块 46% 宽从 5% 边距起；图层与照片同坐标系（z-10，不吃鼠标，卡和标签可点）；塔顶白环图钉 + 「Tour Saint-Jacques · 120 m away」小标签；主卡在塔身右侧天空；天空里淡坐标（示例）。手机：34px 两行标题、副标题、胶囊按钮、文字次入口 → 照片 → 同一张卡 → 信息格。
+- `Nav.tsx`：蓝圆标志 + 品牌、灰链接（How it works / Walks / Guides）、蓝胶囊「Open the app」。
+- 事实边界不变：无 YOU、无连线、只标可见地标、Sample 角标、信息格第一格「Sample location」、120 m 注明演示。
+
+### 40.3 验收
+
+- `docs/screens/site-v2-next/compare-hero-fidelity.jpg`：B（缩放到 1440）/ 我们 / 50% 叠图三行同宽。叠图里标题、副标题、两个按钮、四个信息格的位置与样张基本重合（误差约 10px 内）；主卡在塔身右侧（比样张更靠右约 8%，为不压塔身，属内容真实性差异）。
+- 保留的差异（内容真实性）：不放其它地点的图钉与连线、不放 12 nearby places / 0:28 / Cities / Blog / 搜索 / 语言切换。
+- 手机 375×812 首屏：标题、副标题、主按钮、照片 + 图钉、主卡（地名、播放、Mia 第一句）可见。
+- `tsc` 0 错误；hero 七宽 `data-check` 全部 ok。其余五段（Moment / See & Hear / Explore / Guides / Start / Footer）**尚未复刻**，仍是旧皮肤套新令牌，等 Hero 通过后一并按同一方法做。
+
+状态：**待 Milo 判断「是否已是同一个设计」**。
+
+## 41. Claude 样张复刻 · 全页（2026-09-16，`company` 线，未提交）
+
+用户指示：以 B 样张为唯一验收标准重构全部页面，SITE-V2-FINAL-VISUAL-RECOMMENDATION.md 为指导文档并作为样张未涉及内容的辅助验收；另设本机 06:15 的一次性定时任务（`C:\Users\chaic\.claude\scheduled-tasks\rearound-site-v2-resume\SKILL.md`）在限额中断时续跑。
+
+### 41.1 方法（与第 40 节相同）
+
+先量样张再写：五段分别裁切放大（scratchpad b-s01…b-cta-footer.png），按区域取色（各段底色 #FEFEFE / #FAFCFE / #FCFDFE / 横幅 #EDF7FE、面板标题 #2A3C66、图标圆 #F2F9FE + #2778BF、条目文字 #546B91、用户气泡 #E2F3FD、输入条 #F3F8FC、导游卡描边 #2793FD、横幅小标签 #5A7EAD、页脚文字 #69799A）；几何按 1024 → ×1.406 换算；旧组件不复用；验收用同宽并排。
+
+### 41.2 各段实现（与样张的对应及保留的差异）
+
+| 段 | 按样张做的 | 保留的差异（内容真实性 / 无功能） |
+|---|---|---|
+| 顶栏 | 蓝圆标志 + 品牌、灰链接、蓝胶囊按钮 | 不放搜索、EN、Cities、Blog |
+| Hero | 见第 40 节 | 不放其它地点图钉与连线、12 nearby、0:28 |
+| 01 The Moment | 白色横带；左文 28% / 中 16:9 圆角照片卡 37% / 右面板 21%；照片卡顶部地点小卡、左下白色坐标；面板「SAME PLACE / A DEEPER LAYER」+ 四行圆形图标 | 照片是真实细部照（识别框套在尖顶雕像上，三种比例各一组坐标）；不画 YOU 蓝点；右下「What is this?」是应用真实按钮文案 |
+| 02 See & Hear | 左文 + 蓝色下划线链接；中地点卡（100px 缩略图、标题 20、「类别 | 距离」、带边框播放条、正文）；右对话卡（头像 + Mia AI guide ●、浅底 Mia 气泡、淡蓝用户气泡、底部输入条） | 没有 About/Photos/People/In the past（应用无）→ 四个核对过的事实标签；不写 0:28 → 句数/进度；播放条是**真实试听**（全站互斥）；输入条是进入应用该地点页的真实链接 |
+| 03 Keep exploring | 通栏地图带（桌面重新渲染 OSM z17 1920×640，与样张的矮带接近）；左文 + 蓝描边胶囊按钮 + 一排三项图标元数据；蓝气泡起点 + 光晕、粗蓝虚线站序、蓝底白数字站点、白色地点小卡、右侧「时长 | 站数 ›」白胶囊 | 底图真实、点位真坐标投影（MAP.desktop 已按 z17 重算）；起点标「Start · sample」；不放 Map/List、+/−；不显示公里数；地点小卡无缩略图 |
+| 04 Choose your guide | 左文 32% / 右两卡；大圆形肖像 104px、名字、淡蓝性格标签、引用句、「播放圆 + Hear Mia's voice + 波形图标」；第一张卡蓝描边 | 蓝描边 = 应用默认导游（标 Default）；试听真实；「Start with X」移到卡头右侧（真实入口） |
+| CTA 横幅 | 容器内淡蓝圆角横幅：大蓝定位图标 + 小字距标签 + 粗标题 + 说明；右侧胶囊主按钮 | 不复刻城市剪影插画（装饰性生成图）；标签写「Real places. Real stories.」；横幅下保留极次要的 Plus 一行（登记默认收起） |
+| 页脚 | 一行：标志 + 品牌、灰链接、右侧标语 | 不放社交图标（无真实账号）；下面加一行小字：来源、两张照片与地图署名、AI 说明、© |
+
+其它：段间距 py-10/12；Label 组件改为「01/ THE MOMENT」样式；`ROUTE.stopsLabel` 恢复；地图脚本支持每版不同缩放级（桌面 z17）。
+
+### 41.3 验收
+
+- `docs/screens/site-v2-next/compare-full-fidelity.jpg`：B 原图（1024）与我们整页缩到 1024 并排。整页 1440 宽 3187 css px（缩到 1024 ≈ 2266px，样张 1536px；差额主要来自我们保留的说明文字与 Plus/页脚小字行）。
+- `compare-hero-fidelity.jpg`：首屏三行（B / 我们 / 50% 叠图）。
+- `tsc --noEmit` 0 错误；eslint 只有既有 `no-img-element` 警告；七个宽度 + 整页 `data-check` 全部 ok（1024 宽路线小标改到右上，不再盖住 2 号站卡）；无横向溢出；整页拍到页脚。
+- 未重跑：Guides / SeeHear 真实试听的浏览器点击（逻辑与第 38 节相同，只改了外观与 key）。
+
+状态：**待 Milo 全页视觉判断**。
+
+## 42. GPT 样张复刻验收与前两轮复盘（2026-09-16）
+
+- 用户指出前两轮未有效校准方向，要求验收直接复刻后的结果。详见 `SITE-V2-FIDELITY-REVIEW-20260916.md`。
+- 结论：桌面首屏连续构图、字体配色方向通过；全页复刻暂不通过。不是重开设计方向。
+- GPT复盘：保留旧视觉令牌的建议与样张目标冲突；连续/紧凑未落实成图像比较；前次用结构与工程检查替代视觉验收。已在 FINAL-VISUAL-RECOMMENDATION 顶部加入更正，避免继续沿用旧令牌建议。
+- 实际最新 full-1440 为1440×3183，归一1024宽约2263高，比1536高样张多47.4%；与§41记录3187略有差异，以文件为准。额外高度不能主要归因于署名/Plus。
+- 仅四项修正：F01各段横带密度；F02导游肖像/短文案横卡比例；F03地图舞台高度与真点位同步投影；F04 360/375首屏完整第一句（430当前通过）。
+- 地图代码注释目标1440宽约358高，实际1920/640比例产生480高；缩高必须同步裁切与点位投影，不能拉扁或挪动真实点。
+- 本次为截图与代码复核，未实测最新交互；§41改版后SeeHear/Guides仍需一次试听互斥、暂停恢复、真实入口回归。
+- 保留真实照片、三站地图、事实说明；不增加屏幕、动效或新配图任务。本轮仅写验收文档，未改页面代码、未提交、未发布。
+
+## 43. Claude 执行 F01–F04 + 交互回归（2026-09-16，`company` 线，未提交）
+
+依据第 42 节与 `SITE-V2-FIDELITY-REVIEW-20260916.md`。用户同时追加：地图连线要像样张那样连贯有曲线；并问「2-1-起点-3」的顺序是否合理。
+
+### 43.1 四项修正
+
+| 项 | 做了什么 |
+|---|---|
+| F01 各段密度 | 段 padding 统一 py-10/12 → 逐段 py-7/8（Explore py-4）；Moment 右面板只留四个短标题（解释文字放 title），标题 30px 两行、左栏 32%；See & Hear 去掉与讲述重复的 intro 段，气泡与卡内边距收紧；页脚两行收紧；Start 上下边距收紧。修了一个隐藏 bug：`h2` 常量自带 `lg:text-[42px]`，各段再叠 `lg:text-[…]` 时按类名排序被 42px 压过 → 新增 `h2Base`（无字号），各段字号才真正生效 |
+| F02 导游卡 | 左栏 31%、标题 26px 两行 + 一句 lead + 一行语种短句；卡改横卡：纵向圆角肖像 132×164（约卡宽三分之一）、名字 + Default 标签 + 次要「Start with X」、性格标签、**短引用**（Mia：`DEMO_COMPARE.mia.sentences[1]`「Everything around it was pulled down after the Revolution.」；Milo：`sentences[2]`「Now it's a World Heritage stop on the road to Santiago.」，均为 demo.ts 文件头核对过的事实），试听播的就是这一句；底部「播放圆 + Hear X's voice + 波形图标」 |
+| F03 地图 | 桌面底图重新生成为 z17 **1920×480（4:1）**，四个点位按真坐标重算（you 57.92/64.8、s1 50.44/72.5、s2 50/76.69、s3 59.21/23.31）；底图更退后（饱和 0.26、底色罩 0.42）；站序线加粗；1024–1279 宽 4:1 舞台太矮，这一档按平板处理（文字在上、编号盘、列表在下），完整卡片叠层只在 ≥1280 |
+| F04 窄屏首屏 | 手机去掉次入口文字链接（顶栏有 Open the app），副标题 15px，卡片 p-3、缩略图 48、头像 28，卡片叠住照片下沿 80px；360 / 375 / 430 首屏均可见地名、播放按钮、Mia 身份与完整第一句 + 「Open this place in the app」 |
+| 连线（用户追加） | 站序线改为经过起点 → 1 → 2 → 3 的三次贝塞尔曲线，2 → 3 段刻意向西鼓出再回到 3，不再笔直擦过起点。顺序 **不改**：这是应用真实跑出的 fixture 顺序（起点 → 夏特莱广场 → 棕榈喷泉 → 隆巴尔街）；1、2 站在西南、3 站在东北，所以从 2 回到 3 必然要经过起点附近——第 32 / 44 节核过：当前顺序直线约 378 m，六种顺序中最短 372 m、其余 402–599 m（直线估算，未核步行路网），无明显舍近求远。曲线只是站序示意，页面说明保留「not a walking path」 |
+
+### 43.2 分段同宽对照（`compare-sections-fidelity.jpg`，1440 宽 css px，样张 ×1.406）
+
+| 段 | 样张目标 | 现在 | 差 | 差额来源 |
+|---|---|---|---|---|
+| Hero（含导航） | 636 | 673 | +37 | 顶栏 76 + 首屏 560 + 图下署名行 |
+| 01 The Moment | 335 | 375 | +40 | 图下 Ibex73 署名行（约 20）+ 面板四行略高 |
+| 02 See & Hear | 345 | 443 | +98 | 真实追问的回答气泡（样张只有一问无答，约 60）+ 事实标签行 + 来源行 |
+| 03 Keep exploring | 359 | 417 | +58 | 图下口径说明一行（约 30）+ 上下 16px |
+| 04 Choose your guide | 232 | 308 | +76 | 左栏 26px 标题两行 + lead + 语种句，比卡高；卡本身 196 |
+| CTA + 页脚 | 255 | 382 | +127 | Plus 一行（40）+ 页脚署名/来源/AI 说明段（约 70）+ 边距 |
+| 合计 | 2160 | 2598 | +438（+20%） | 上一批 3183（+47%）→ 本批 2598 |
+
+保留的多出部分都是真实内容或必要说明（真实回答、署名、口径、Plus 入口），不再机械压缩。
+
+### 43.3 交互回归（本机 dev，浏览器实测）
+
+Hero 播放（Speaking）→ 点 See & Hear 播放：Hero 立即 Ready、See & Hear Pause → 点 Hear Mia：See & Hear 回 Hear the story、Mia Pause → 点 Hear Milo：Mia 回 Hear Mia's voice、Milo Pause → 暂停 Milo：Resume → 恢复：Pause。共 8 次 `/api/tts`。真实入口核对：首屏「Open」与 See & Hear 两处 → `/p/en/wp%3ATour_Saint-Jacques`；Guides → `/?persona=mia|milo`；Explore 三处 → `/guide`；Start → `/`；地图署名 → openstreetmap.org/copyright。
+
+### 43.4 证据与检查
+
+- 本批截图：`docs/screens/site-v2-next/`（hero 7 宽、moment、full-1440 2598px、full-375）、`compare-sections-fidelity.jpg`（六段同宽并排，标目标/实际/差）、`compare-full-fidelity.jpg`、`compare-hero-fidelity.jpg`。
+- `tsc --noEmit` 0 错误；eslint 只有既有 `no-img-element` 警告；七宽 + 整页 `data-check` 全部 ok；无横向溢出。
+- 未做：不追加新屏、动效、新图；样张里的社交图标、Map/List、+/−、城市剪影仍不复刻。
+
+状态：**待 Milo 最终接受判断**（第 42 节的四项与交互回归已完成）。
+
+## 44. GPT 地图专项复核（2026-09-16）
+
+- 详见 `SITE-V2-MAP-REVIEW-20260916.md`。最新静态页面密度、导游卡和375首屏有实质改善；本轮不冒充整站/全断点验收。
+- 当前routePath确为Start→1→2→3；视觉上读成2—1—Start—3主要来自点位聚集、编号远离真实点与引线混淆。
+- 重算原始坐标：1/2约17.1m，1440地图上约16.4px。固定起点、不返程的六种直线顺序约378/372/588/599/402/419m。更正§43“六种总长372–378m”：应为当前378、最短372；没有核验实际步行路网。
+- 当前西侧大弧是为了避起点的人为控制偏移，不证明实际路径合理。旧fixture来源真实，不等于适合官网样例或旅游停留安排已通过。
+- 推荐明确修订此前固定旧三地点的建议：保留巴黎/三站/一小时预算范围，选择不重复停留、自然展开的真实应用路线样例，再以真点位编号、短淡引线和适度平滑站序曲线呈现。候选预览先行，不编造新坐标。
+- 不换样例只能做有限清晰度修补，不承诺同样的横向构图；此备选与换样例方案不同时执行。本轮仅写建议，未换fixture、未改代码、未发布，也未开启地图动效。
+
+## 45. Claude 动效执行清单草案（2026-09-16，待批准，未改代码）
+
+- 读了 `SITE-V2-MOTION-PROPOSAL-20260916.md`（方向）与 `SITE-V2-MOTION-FEEDBACK-REVIEW-20260916.md`（范围收敛）。接受收敛：只做 B 真实音频反馈、简化 D 桌面展示区轻显现、统一按钮反馈、原生锚点平滑定位；取消 A（图钉扩散 / 识别框收拢）与 C（路线画线 / 卡片依次出现）。也接受对我口头方案的七条更正（生命周期分开、不写「全部 transform/opacity」、站序揭示不是真实状态、不做按句进度条、性能只对新增开销负责等）。
+- 按方向稿第 6 节的格式写了唯一执行清单：`SITE-V2-MOTION-EXECUTION-CHECKLIST-20260916.md`（M-B1–B4 / M-D1–D4 / M-U1 / M-N1，每项含触发、起止、时长、重播、手机、减少动态、验证、通过条件），并列出保持静态的元素、实现方式、录屏与性能对比的证据要求、估算约 1.5 天。旧 Brief §8 的四类保留为历史。
+- 地图：读了第 44 节与 `SITE-V2-MAP-REVIEW-20260916.md` / `SITE-V2-MAP-IMAGE-PROMPT-20260916.md`。两条路（换真实路线样例重画 vs 整张生成插画）互斥，等用户决定；动效清单不依赖它。§43 里「六种顺序总长 372–378 m」按第 44 节更正为：当前 378 m、六种中最短 372 m、其余 402–599 m（直线估算，未核路网）。
+- 状态：清单待 Milo 批准后开工；地图待用户选方向；06:15 定时任务另行决定。
+
+## 46. Claude 接入生成路线插画（2026-09-16，`company` 线，未提交）
+
+用户改用整张生成插画替代真实地图（`SITE-V2-MAP-IMAGE-PROMPT-20260916.md` 方向），素材验收见 `SITE-V2-MAP-IMAGE-ACCEPTANCE-20260916.md`（桌面通过、手机需另处理）。本节按其「接入要求」执行。
+
+### 46.1 素材登记
+
+| 文件 / 用途 | 类型 | 来源 | 尺寸 / 裁切 | 说明 |
+|---|---|---|---|---|
+| `public/images/route-illustration-2508.jpg`、`-1920.jpg` / 03 桌面整幅 | generated_illustration（虚构城市） | 用户用 ChatGPT 生成，源文件 `C:/Users/chaic/Pictures/2b01f097-b8c9-4a25-875e-8444c4b9aa8c.png`，2508×627，sha256 `654c326e776cef8892461ea72c37d2c4f1960cf75a215ef9e89cf57d73a2df7c` | 整幅 4:1，不裁 | 图上 Start → 1 Public square → 2 City garden → 3 Old market；不是真实地点，不指定城市 |
+| `public/images/route-illustration-mobile.jpg` / 03 手机辅助示意 | 同上 | 同一源文件 | x 1050–2470 全高 → 1000×442（约 3.2:1；375 宽时约 166px 高） | 含起点到 Old market 卡；信息由 HTML 列表承担 |
+
+### 46.2 接入方式（对照验收文档 1–7）
+
+1. 桌面（≥1280）整幅 4:1 通栏；左侧文字块（标签 / 标题 / 说明 / 「Plan an hour in the app」真实按钮 / 两项产品说明）放在插画留白的 5–35%；1440 与 1280 截图左文与 Start 无碰撞，Old market 卡完整。图上不叠任何 SVG 路线、点位、旧地点卡。
+2. 图右下可读角标「Illustrative route · not a real map」（sm+）；手机图太矮，角标隐藏，图下第一行文字「An illustrated example, not a real map: from Start, three stops in order.」承担说明。
+3. 旧巴黎三站名称、经纬度、「Planned by the app for this start point」、OSM 署名全部移除；页脚改为「The route picture in Keep exploring is an AI-generated illustration of a fictional city, not a real map」。
+4. 静态使用，无画线、无光晕循环（与动效清单一致：地图区域静态）。
+5. 手机（<1024）：**选第二种处理**——裁切图作辅助示意 + HTML 有序列表列出三个示例场景（标 Example scene）。1024–1279 同此处理（4:1 图 256–320px 高放不下左文）。
+6. 替代文本：「Illustration of a fictional city map: a dashed route runs from a start point through three example stops, a public square, a city garden and an old market. Not a real map.」不暗示用户位置。
+7. 产品说明改为「About 1 hour · the app plans around your time」「A few stops · in walking order, from where you stand」；「About 1 hour」是产品预算说明，不是插画测量结果。
+
+旧真实底图（`map-chatelet-*.jpg`）、`MAP` 数据与 `scripts/site-v2-static-map.mjs` 保留以备回退，不再显示、不给插画背书。
+
+### 46.3 复核
+
+- `docs/screens/site-v2-next/explore-{1440,1280,375,430}.jpg`（新增 `--only explore` 批次，按 #explore 边界裁视口图）、`full-1440.jpg`（2574 css px）、`full-375.jpg`。
+- `tsc` 0 错误；eslint 只有既有 `no-img-element` 警告；无横向溢出；`data-check` 全部 ok。
+- 未做：地图动效、真实路线样例替换（第 44 节方案与本方案互斥，本轮按用户选择走插画）。
+
+状态：**待 Milo 复核接入后的页面**。
+
+## 47. GPT 地图插画接入复核（2026-09-16）
+
+- 已看最新explore-1440/1280/375/430截图并核对Explore/Footer/content。地图模块在这些尺寸下通过静态接入复核，可收口；不等于全站/动效/全部断点验收。
+- 桌面完整路线和地点卡、左文无碰撞；手机采用裁切辅助图＋HTML三场景列表，信息可读，无需另生手机图。
+- 旧SVG/点位/巴黎三站卡已不渲染，虚构示意说明与页脚来源已同步；页脚OSM为地点数据来源而非插画署名，保留合理。
+- §46.1手机图1000×442比例应为约2.26:1（非3.2:1）；375宽约166高正确，为文档笔误，不影响验收。
+- 详细结果追加在SITE-V2-MAP-IMAGE-ACCEPTANCE-20260916.md。本轮未改页面代码、未点击实测、未提交发布。无需继续地图视觉返工；动效仍按独立清单授权推进。
+
+## 47. 动效执行清单 v2（合入 GPT 技术复核，2026-09-16，待批准，未改代码）
+
+- 按用户指示把 `SITE-V2-MOTION-CHECKLIST-REVIEW-20260916.md` 的 R1–R5 与验收修订**合回**同一份 `SITE-V2-MOTION-EXECUTION-CHECKLIST-20260916.md`，复核文件只作记录，不另建一套要求。
+- 合入要点：R1 取消首屏主卡显现（原 M-D1），显现只对挂载时完全在视口下方的组做 pending，已可见/已滚过/被跨过/获焦/断点或减少动态变化 → 直接 done，无先暗后亮；R2 波形改为 static / running / paused 三种视觉模式，paused 只改 `animation-play-state` 冻结当前帧，参数固定（第 i 柱 1100+(i mod 5)×100 ms、延迟 −(i mod 7)×100 ms、scaleY 0.7–1），Guides 两卡共用 hook 切 key 即复位；R3 按钮内部视觉容器整体缩放、文字链接另列 M-U2、hover 限精细指针、缩放过渡 150 ms；R4 平滑滚动改为挂载期间给 `documentElement` 加专属标记并实测滚动容器；R5 M-B4 逐处沿用现有文案不加状态行，回归覆盖四个入口各一次暂停恢复 + 跨区切换。
+- 验收修订：录屏按 `screencastFrame` 真实时间戳编码、发声以 `playing` 事件日志证明；受控失败用新会话防缓存命中；基线改为同一代码开关动效对比；静态比对以 DOM 位置尺寸为主；性能用生产构建预热先做一对。
+- 状态：清单 v2 **待 Milo 批准**；未改代码、未动 06:15 任务、未提交。
+
+## 48. GPT 上线三阶段验收标准（2026-09-16）
+
+- 用户要求：剩余动效、发布前检查、部署后三步由Claude优先自检，有问题再交GPT复核。
+- 已交付唯一上线验收标准 `SITE-V2-RELEASE-ACCEPTANCE-20260916.md`：M01–M09动效、P01–P10发布前、L01–L05上线；含通过条件、证据、降级/阻断、回退和异常单格式。
+- 动效参数只读执行清单v2，不叠加旧稿；地图已通过部分不重复开设计评审。Claude自行修复常规问题并复测，全通过不增加GPT全量审批。
+- 特别核对正式/site入口与官网根域名重写、NEXT_PUBLIC_APP_URL防回官网、预览noindex不能误带正式页；历史邮箱占位和Plus持久化需确认实际可用。
+- 所有结果汇总到 `SITE-V2-RELEASE-SELF-CHECK-20260916.md`，证据按批次存docs/screens/site-v2-release/。本轮仅制定标准，没有执行代码修改、测试或部署；生产发布沿用已有明确授权，缺失时在候选可审查后请求一次。
+
+## 49. GPT 复核动效v2并分离上线验收职责（2026-09-16）
+
+- 用户要求检查R1–R5及验收修订合入情况，并与三步上线验收相互独立。
+- v2已基本完整合入；本轮在原清单内消除文字链接缩放冲突、直接显示仍过渡的冲突，明确loading静态、独立持续音频可见性观察、客户端辅助组件边界，并补齐Milo暂停恢复录制。版本仍标v2，保留待用户批准状态。
+- 动效清单独立负责实现与自检，输出SITE-V2-MOTION-SELF-CHECK-20260916.md；上线标准删除重复M01–M09测试，改成H01–H03接收动效结果、检查未解决项和版本一致性。
+- 上线报告只引用动效结论，不重设参数或重复同批检查。只有相关代码变化/环境异常才针对性复测。双方旧讨论稿不作为并行指令。
+- 本轮仅修改两份现有文档及本日志，未改页面代码、未执行动效、未部署。
+
+
+## 50. 动效执行清单 v2 实施 + 动效自检 + 上线前自检（Claude，2026-09-16）
+
+- 授权来源：用户在对话中指示「按照执行清单开工吧，做完后根据验收清单自检」；清单文件的「待批准」字样未改，只在其头部加了一行授权记录。全部改动仍**未提交**（company 分支往后推）。
+- **实现**（`components/site-v2/motion.tsx` 新增，`ui.tsx` / `Hero.tsx` / `SeeHear.tsx` / `Guides.tsx` / `Nav.tsx` / `Start.tsx` / `PlusNotify.tsx` / `SiteV2Landing.tsx`、`components/site/useScriptedSpeech.ts`、`app/globals.css`）：`Reveal`（display:contents 包裹层，`data-reveal` pending/revealing/done 直接写属性；仅桌面、仅挂载时整组在视口下方才 pending，滚过/锚点/获焦/断点或减少动态变化 → 直接 done）；`Waveform`/`WaveBars` 三态 `static|running|paused`（`v2-wave` 关键帧，第 i 柱 1100+(i mod 5)×100 ms、延迟 −(i mod 7)×100 ms，paused 只改 `animation-play-state`）；`useVisualActive`（阈值 0 的独立观察器 + `visibilitychange`）；按钮内部视觉容器 `.v2-btn` 按压 `scale(0.98)`（`group-active/btn`），hover 只在自定义变体 `fine`（`@media (hover:hover) and (pointer:fine)`）下；`MotionRoot` 挂载期间给 `<html>` 加 `data-rr2-smooth`，`?motion=0` 关闭全部动效作基线；`useScriptedSpeech` 增加模块级实例表实现四处试听互斥。
+- **证据脚本**：`scripts/motion-evidence.mjs`（CDP 录屏按真实时间戳 ffmpeg 编码、媒体 `playing` 事件日志、S1–S7）、`scripts/motion-perf.mjs`（生产构建开/关动效 Performance 对比，Performance.getMetrics 差值 + PerformanceObserver + 原始 trace）、`scripts/release-check-site-v2.mjs`（七视口截图与溢出/可见性检查、入口表、Plus 表单、素材与运行错误）。
+- **动效自检**（`docs/SITE-V2-MOTION-SELF-CHECK-20260916.md`，证据 `docs/screens/site-v2-motion/2026-09-16T06-25-41/`）：S1–S7 全部 PASS；M-B1–B4、M-D2–D4、M-U1、M-U2、M-N1 全部 PASS，无降级。S4 两次 FAIL 的原因是取证方式：无头 Chrome 合成 touchStart 不进入 `:active`（改为手机仿真下鼠标按下）、Tailwind 4 的 `scale-[0.98]` 是独立 `scale` 属性而非 `transform`；页面代码另加 `touch-action: manipulation`。性能：开 − 关 首屏 −15 ms（噪声内）、滚动 +11 ms、播放 3 s +66 ms（波形动画每秒约 40 次样式重算），双方均 0 长任务、CLS 0。补充取证：播完可重播（`replay-log.json`）、页面不可见时波形冻结而音频不停（`visibility-log.json`，模拟 `visibilitychange`）、生产 CSS 规则摘录（`css-evidence.txt`）。
+- **上线前自检**（`docs/SITE-V2-RELEASE-SELF-CHECK-20260916.md`，证据 `docs/screens/site-v2-release/2026-09-16T06-44-06/`）：P01 tsc 0 错误 / lint 0 错误 6 条既有 img 警告 / build 通过；**P02 首轮发现三处断点问题并修复（FIXED）**：1024–1279 导游卡两列过窄致文字与波形越出卡片（改单列，≥1280 两列）；360 宽 See & Hear 地点卡标题截断、波形硬裁（<400 允许换行、右侧渐隐）；1024/1280 首屏标题三行、信息格与主卡标题被裁（1024–1279 标题 44 px、1280–1439 54 px、≥1440 仍 64 px；信息格 <1440 改 2×2；主卡宽度上限 48%；Hero 改最小高度）。1440 首屏与已通过版本位置无差（S7 0 差异）。修后动效受影响场景复测 S1/S2/S4/S7 PASS（批次 `06-41-12`、`06-45-34`）。P03/P05/P06/P07/P09 PASS；P04 BLOCKED（未测 iOS Safari / Android 真机）；P08 BLOCKED（`hello@bubblefrog.fun` 可收信未确认）；P10 BLOCKED（候选未提交，无可追溯标识）。示例地点页在本机 500 是服务端 fetch 无代理超时（环境），线上同路径 200；`/?persona=` 参数实测写入本机偏好。L01–L05 未授权、未执行。
+- **需 Milo 决定**：真机覆盖缺口是否接受；联系邮箱是否已开通；何时提交形成候选；正式发布与 `/site` 入口切换授权。
+- 生产服务器（3001）测完已停止；开发服务器（3000）保持运行。
