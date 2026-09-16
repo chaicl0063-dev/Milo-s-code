@@ -8,8 +8,8 @@ import { Icon, btnInner, btnPrimary, container } from "@/components/site-v2/ui";
  */
 export function Start({ appUrl, apkUrl, apkVersion }: { appUrl: string; apkUrl?: string; apkVersion?: string }) {
   return (
-    <section id="start" className={`${container} pb-3 pt-3 lg:pt-5`}>
-      <div className="relative overflow-hidden rounded-[18px] bg-(--v2-band) px-6 py-5 md:px-8 lg:px-10 lg:py-6">
+    <section id="start" className={`${container} pb-3 pt-3 lg:pb-6 lg:pt-6`} data-check="start">
+      <div className="relative overflow-hidden rounded-[18px] bg-(--v2-band) px-6 py-5 md:px-8 lg:px-12 lg:py-10">
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/60 blur-2xl" aria-hidden />
         <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between md:gap-8">
           <div className="flex items-start gap-4 md:items-center md:gap-5">

@@ -28,7 +28,7 @@ export function Explore({ appUrl }: { appUrl: string }) {
   );
 
   return (
-    <section id="explore" className="py-6 lg:py-4">
+    <section id="explore" className="v2-screen v2-screen--center py-6 lg:py-10">
       {/* 手机 / 平板 / 1024–1279：标题在插画上方 */}
       <div className={`${container} xl:hidden`}>
         <Label>03 / Keep exploring</Label>
@@ -37,17 +37,18 @@ export function Explore({ appUrl }: { appUrl: string }) {
       </div>
 
       {/* 插画：通栏。桌面整幅 4:1，手机取路线部分 */}
-      <div className="relative mt-5 xl:mt-0">
+      <div className={`${container} relative mt-5 xl:mt-0`}>
         <div className="relative w-full">
           <picture>
-            <source media="(min-width: 1024px)" srcSet={ROUTE_ILLUSTRATION.srcSet} sizes="100vw" width={ROUTE_ILLUSTRATION.width} height={ROUTE_ILLUSTRATION.height} />
+            <source media="(min-width: 1024px)" srcSet={ROUTE_ILLUSTRATION.srcSet} sizes="90vw" width={ROUTE_ILLUSTRATION.width} height={ROUTE_ILLUSTRATION.height} />
             <img src={ROUTE_ILLUSTRATION.mobile.src} alt={ROUTE_ILLUSTRATION.alt} width={ROUTE_ILLUSTRATION.mobile.width} height={ROUTE_ILLUSTRATION.mobile.height} loading="lazy" decoding="async" className="block h-auto w-full" />
           </picture>
+
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-(--v2-line)" aria-hidden />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-(--v2-line)" aria-hidden />
 
-          {/* 桌面：文字直接放在插画左侧留白 */}
-          <div className="absolute left-[5%] top-[8%] hidden w-[30%] xl:block">
+          {/* 桌面：文字放在插画左侧留白；左边界 = 统一舞台左边界，和其他屏的标题起始线一致 */}
+          <div className="absolute left-0 top-[9%] hidden w-[31%] xl:block">
             <Label>03 / Keep exploring</Label>
             <h2 className={`${h2Base} mt-2.5 text-[34px]`}>An hour to wander?</h2>
             <p className={`${lead} mt-2.5 text-[15px]`}>Tell your guide how long you have. You get a short walk with a few stops worth seeing, in order, from where you stand.</p>
@@ -70,7 +71,7 @@ export function Explore({ appUrl }: { appUrl: string }) {
           </div>
 
           {/* 示意说明：sm+ 在图上；手机图太矮，改由图下第一行文字承担 */}
-          <span data-check="route-notice" className="absolute bottom-3 right-[5%] hidden rounded-full border border-(--v2-line) bg-white/92 px-3 py-1 text-[12px] font-semibold text-(--v2-muted) shadow-(--v2-shadow-sm) backdrop-blur-[2px] sm:inline-flex">
+          <span data-check="route-notice" className="absolute bottom-3 right-4 hidden rounded-full border border-(--v2-line) bg-white/92 px-3 py-1 text-[12px] font-semibold text-(--v2-muted) shadow-(--v2-shadow-sm) backdrop-blur-[2px] sm:inline-flex">
             {ROUTE_ILLUSTRATION.notice}
           </span>
         </div>

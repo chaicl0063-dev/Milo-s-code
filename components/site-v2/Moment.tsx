@@ -12,18 +12,18 @@ const LAYER_ICONS = [Icon.Book, Icon.Sound, Icon.Eye, Icon.Chat];
  */
 export function Moment() {
   return (
-    <section id="moment" className="bg-white py-7 lg:py-7">
-      <div className={`${container} grid gap-6 lg:grid-cols-[32fr_35fr_20fr] lg:items-center lg:gap-[3%] [&>*]:min-w-0`}>
+    <section id="moment" className="v2-screen v2-screen--center bg-white py-7 lg:py-10">
+      <div className={`${container} grid gap-6 lg:grid-cols-[30fr_38fr_22fr] lg:items-center lg:gap-[3%] [&>*]:min-w-0`}>
         <div>
           <Label>01 / The moment</Label>
-          <h2 className={`${h2Base} mt-3 text-[32px] md:text-[36px] lg:text-[30px]`}>You&rsquo;re already here. Now let&rsquo;s understand it.</h2>
+          <h2 className={`${h2Base} mt-3 text-[32px] md:text-[36px] lg:text-[34px] xl:text-[40px]`}>You&rsquo;re already here. Now let&rsquo;s understand it.</h2>
           <p className={`${lead} mt-4 max-w-[38ch]`}>You look up at a building you don&rsquo;t know. Tap it on the map, or take a photo and ask what it is. Your guide takes it from there.</p>
         </div>
 
         {/* 照片卡 + 右面板：一个显现组（M-D2）；整组透明度变化，识别框与小卡不单独动 */}
         <Reveal>
-        <figure className="-mx-2 sm:mx-0">
-          <div className="relative overflow-hidden rounded-[14px] bg-(--v2-surface2) shadow-(--v2-shadow-sm) aspect-[4/5] sm:aspect-[4/3] lg:aspect-[16/9]">
+        <figure className="min-w-0 -mx-2 sm:mx-0">
+          <div className="relative overflow-hidden rounded-[14px] bg-(--v2-surface2) shadow-(--v2-shadow-sm) aspect-[4/5] sm:aspect-[4/3] lg:aspect-[7/5] xl:aspect-[4/3]">
             <picture>
               <source media="(max-width: 639px)" srcSet={PLACE.photo.detailPortrait} />
               <img src={PLACE.photo.detail} alt={PLACE.photo.detailAlt} width={1800} height={1200} loading="lazy" decoding="async" className="h-full w-full object-cover object-center lg:object-top" />
@@ -67,7 +67,7 @@ export function Moment() {
         </figure>
 
         {/* 同一个地点，多一层 */}
-        <div className="rounded-[14px] border border-(--v2-line) bg-white p-5 shadow-(--v2-shadow-sm) lg:px-5 lg:py-5">
+        <div className="min-w-0 rounded-[14px] border border-(--v2-line) bg-white p-5 shadow-(--v2-shadow-sm) lg:px-6 lg:py-7">
           <p className="text-[12.5px] font-bold uppercase leading-[1.5] tracking-[0.18em] text-(--v2-ink2)">
             Same place
             <br />a deeper layer
@@ -77,11 +77,11 @@ export function Moment() {
             {LAYERS.map((l, i) => {
               const I = LAYER_ICONS[i];
               return (
-                <li key={l.title} className="flex items-center gap-3.5 py-2.5" title={l.text}>
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-(--v2-line-blue) bg-(--v2-accent-soft) text-(--v2-accent)">
+                <li key={l.title} className="flex items-center gap-3.5 py-2.5 lg:py-4" title={l.text}>
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-(--v2-line-blue) bg-(--v2-accent-soft) text-(--v2-accent) lg:h-11 lg:w-11">
                     <I size={17} />
                   </span>
-                  <p className="min-w-0 text-[14.5px] font-medium leading-tight text-(--v2-ink2)">{l.title}</p>
+                  <p className="min-w-0 text-[14.5px] font-medium leading-tight text-(--v2-ink2) lg:text-[16px]">{l.title}</p>
                 </li>
               );
             })}

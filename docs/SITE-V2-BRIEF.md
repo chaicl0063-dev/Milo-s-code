@@ -156,3 +156,4 @@ Part A/B 保留为历史原文。2026-09-16 起以 `docs/SITE-V2-FINAL-VISUAL-RE
 - 逐轮记录：`docs/COLLABORATION.md` 第 34 节（Hero）、第 35 节（结构轮）、第 38 节（复核收口）、第 39 节（配图接入）、第 40–41 节（样张复刻）、第 43 节（复刻验收 F01–F04 收口）。截图与对照图：`docs/screens/site-v2-next/compare-*.jpg`。
 
 - 2026-09-16（动效与上线自检）：动效清单 v2 已实现并自检通过（`SITE-V2-MOTION-SELF-CHECK-20260916.md`）；上线前自检 P01–P10 完成、三处断点问题已修（`SITE-V2-RELEASE-SELF-CHECK-20260916.md`），P04/P08/P10 BLOCKED 待 Milo 决定，未发布。见 COLLABORATION §50。
+- 2026-09-16（分屏改造）：按 `SITE-V2-HERO-TRANSITION-REQUIREMENTS-20260916.md` v2 做了全站统一容器、六屏分屏、首屏满铺、四格重做、手机菜单与首屏出口转场；自检 `SITE-V2-HERO-TRANSITION-SELF-CHECK-20260916.md` V01–V09 全通过。见 COLLABORATION §51。

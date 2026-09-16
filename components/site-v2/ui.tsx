@@ -38,7 +38,7 @@ export function Meta({ children, className = "" }: { children: ReactNode; classN
 export const h2Base = "font-bold leading-[1.08] tracking-[-0.02em] text-(--v2-ink) [text-wrap:balance]";
 export const h2 = `${h2Base} text-[32px] md:text-[38px] lg:text-[42px]`;
 export const lead = "text-[16px] leading-[1.6] text-(--v2-muted) md:text-[17px]";
-export const container = "mx-auto w-full max-w-[1440px] px-5 md:px-[5%]";
+export const container = "mx-auto w-full px-5 sm:w-[90%] sm:max-w-[1800px] sm:px-0";
 /** 卡片：白底、细边、柔和投影、16px 圆角 */
 export const card = "rounded-[16px] border border-(--v2-line) bg-(--v2-surface) shadow-(--v2-shadow-sm)";
 
@@ -168,15 +168,13 @@ export const Icon = {
 /** 系统信息小格：图标 + 值 + 说明（首屏一排四个）。白底、极淡边、蓝色线性图标 */
 export function Tile({ icon, value, label, live = false }: { icon: ReactNode; value: ReactNode; label: string; live?: boolean }) {
   return (
-    <div className="flex items-start gap-2.5 rounded-[12px] border border-(--v2-line) bg-(--v2-surface) px-3 py-3 shadow-(--v2-shadow-sm)">
-      <span className="mt-0.5 shrink-0 text-(--v2-accent)">{icon}</span>
-      <div className="min-w-0">
-        <p className="whitespace-nowrap text-[14px] font-semibold leading-[1.3] text-(--v2-ink2) tabular-nums lg:text-[15px]">{value}</p>
-        <p className="mt-1 flex items-center gap-1.5 whitespace-nowrap text-[12px] leading-[1.3] text-(--v2-faint) lg:text-[12.5px]">
-          {live && <span className="h-2 w-2 rounded-full bg-[#22B35A]" aria-hidden />}
-          {label}
-        </p>
-      </div>
+    <div className="flex h-full min-w-0 flex-col items-center justify-center gap-1.5 rounded-[12px] border border-(--v2-line) bg-(--v2-surface) px-3 py-3.5 text-center shadow-(--v2-shadow-sm)">
+      <span className="shrink-0 text-(--v2-accent)">{icon}</span>
+      <p className="text-[14px] font-semibold leading-[1.35] text-(--v2-ink2) tabular-nums lg:text-[15px]">{value}</p>
+      <p className="flex items-center justify-center gap-1.5 text-[12px] leading-[1.35] text-(--v2-faint)">
+        {live && <span className="h-2 w-2 shrink-0 rounded-full bg-[#22B35A]" aria-hidden />}
+        {label}
+      </p>
     </div>
   );
 }

@@ -36,11 +36,11 @@ export function SeeHear({ appUrl }: { appUrl: string }) {
   };
 
   return (
-    <section id="see" className="py-7 lg:py-7">
+    <section id="see" className="v2-screen v2-screen--center py-7 lg:py-10">
       <div className={`${container} grid gap-6 lg:grid-cols-[25fr_35fr_27fr] lg:items-start lg:gap-[2.5%] [&>*]:min-w-0`}>
         <div className="lg:pt-2">
           <Label>02 / See &amp; hear</Label>
-          <h2 className={`${h2Base} mt-3 text-[32px] md:text-[38px] lg:text-[36px]`}>
+          <h2 className={`${h2Base} mt-3 text-[32px] md:text-[38px] lg:text-[36px] xl:text-[42px]`}>
             A place is more
             <br />
             than just a name.
@@ -53,9 +53,9 @@ export function SeeHear({ appUrl }: { appUrl: string }) {
 
         {/* 地点卡 + 对话卡：一个显现组（M-D3） */}
         <Reveal>
-        <div ref={waveRef} className="min-w-0 overflow-hidden rounded-[16px] border border-(--v2-line) bg-white p-4 shadow-(--v2-shadow-sm)">
+        <div ref={waveRef} className="min-w-0 overflow-hidden rounded-[16px] border border-(--v2-line) bg-white p-4 shadow-(--v2-shadow-sm) lg:p-6">
           <div className="flex gap-4">
-            <img src={STREET.hero.thumb} alt="" width={100} height={100} loading="lazy" decoding="async" className="h-[88px] w-[88px] shrink-0 rounded-[12px] object-cover lg:h-[100px] lg:w-[100px]" />
+            <img src={STREET.hero.thumb} alt="" width={100} height={100} loading="lazy" decoding="async" className="h-[88px] w-[88px] shrink-0 rounded-[12px] object-cover lg:h-[116px] lg:w-[116px]" />
             <div className="min-w-0 flex-1">
               <p className="text-[20px] font-bold leading-tight tracking-[-0.01em] text-(--v2-ink) min-[400px]:truncate">{PLACE.name}</p>
               <p className="mt-1.5 flex items-center gap-2 text-[13.5px] text-(--v2-muted)">
@@ -85,7 +85,7 @@ export function SeeHear({ appUrl }: { appUrl: string }) {
         </div>
 
         {/* Mia 对话 */}
-        <div className="flex min-w-0 flex-col overflow-hidden rounded-[16px] border border-(--v2-line) bg-white p-4 shadow-(--v2-shadow-sm)">
+        <div className="flex min-w-0 flex-col overflow-hidden rounded-[16px] border border-(--v2-line) bg-white p-4 shadow-(--v2-shadow-sm) lg:p-6">
           <div className="flex items-center gap-3">
             <img src={MIA.image} alt={MIA.name} width={44} height={44} className="h-11 w-11 shrink-0 rounded-full object-cover" />
             <p className="flex items-center gap-2.5 text-[15px]">

@@ -23,18 +23,18 @@ export function Guides({ appUrl }: { appUrl: string }) {
   const [cardsRef, visuallyActive] = useVisualActive<HTMLDivElement>();
 
   return (
-    <section id="guides" className="py-8 lg:py-7">
+    <section id="guides" className="v2-screen v2-screen--center py-8 lg:py-10">
       <div className={`${container} grid gap-6 lg:grid-cols-[31fr_63fr] lg:items-center lg:gap-[3%] [&>*]:min-w-0`}>
         <div>
           <Label>04 / Choose your guide</Label>
-          <h2 className={`${h2Base} mt-3 text-[30px] md:text-[34px] lg:text-[26px]`}>A different perspective for every kind of explorer.</h2>
+          <h2 className={`${h2Base} mt-3 text-[30px] md:text-[34px] lg:text-[28px] xl:text-[34px]`}>A different perspective for every kind of explorer.</h2>
           <p className={`${lead} mt-3 text-[15px]`}>Same tower, same facts, two ways of telling it.</p>
           <p className="mt-1.5 text-[13px] text-(--v2-faint)">Both speak eight languages. Pick one when you open the app.</p>
         </div>
 
         {/* 两张卡：一个显现组（M-D4） */}
         <Reveal>
-        <div ref={cardsRef} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 lg:gap-4 xl:grid-cols-2 xl:gap-[3%]">
+        <div ref={cardsRef} className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-1 lg:gap-4 xl:grid-cols-2 xl:gap-[3%]">
           {GUIDES.map((g) => {
             const id = g.id as PersonaId;
             const persona = PERSONA[id];
@@ -54,11 +54,11 @@ export function Guides({ appUrl }: { appUrl: string }) {
             };
 
             return (
-              <article key={g.id} className={`flex gap-4 rounded-[18px] border bg-white p-3.5 shadow-(--v2-shadow-sm) lg:gap-5 lg:p-4 ${active || isDefault ? "border-[1.5px] border-(--v2-outline)" : "border-(--v2-line)"}`}>
+              <article key={g.id} className={`flex min-w-0 gap-3.5 rounded-[18px] border bg-white p-3.5 min-[400px]:gap-4 lg:p-5 shadow-(--v2-shadow-sm) lg:gap-5 lg:p-4 ${active || isDefault ? "border-[1.5px] border-(--v2-outline)" : "border-(--v2-line)"}`}>
                 {/* 纵向圆角肖像框，占卡宽约三分之一 */}
-                <img src={g.image} alt={`${g.name}, ${persona.gender === "female" ? "female" : "male"} voice`} width={600} height={600} loading="lazy" decoding="async" className="h-[144px] w-[112px] shrink-0 rounded-[26px] object-cover object-top lg:h-[164px] lg:w-[132px] lg:rounded-[30px]" />
+                <img src={g.image} alt={`${g.name}, ${persona.gender === "female" ? "female" : "male"} voice`} width={600} height={600} loading="lazy" decoding="async" className="h-[124px] w-[96px] shrink-0 rounded-[22px] object-cover object-top min-[400px]:h-[144px] min-[400px]:w-[112px] min-[400px]:rounded-[26px] lg:h-[196px] lg:w-[156px] lg:rounded-[30px] xl:h-[224px] xl:w-[176px]" />
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <div className="flex items-center gap-2">
+                  <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                     <h3 className="text-[18px] font-bold leading-none tracking-[-0.01em] text-(--v2-ink)">{g.name}</h3>
                     {isDefault && <span className="rounded-full bg-(--v2-accent-soft) px-2 py-0.5 text-[10.5px] font-semibold text-(--v2-blue)">Default</span>}
                     <a href={`${base}/?persona=${id}`} className="ml-auto inline-flex items-center gap-0.5 whitespace-nowrap text-[12px] font-medium text-(--v2-faint) transition-colors duration-150 fine:hover:text-(--v2-ink) motion-reduce:transition-none">
@@ -72,8 +72,8 @@ export function Guides({ appUrl }: { appUrl: string }) {
                       </li>
                     ))}
                   </ul>
-                  <p className={`mt-3 text-[15px] leading-[1.45] text-(--v2-ink2) ${playing || paused ? "rounded-[4px] bg-(--v2-accent-soft) box-decoration-clone px-1" : ""}`}>&ldquo;{line}&rdquo;</p>
-                  <div className="mt-auto flex items-center gap-3 pt-3.5">
+                  <p className={`mt-3 text-[15px] leading-[1.45] text-(--v2-ink2) lg:mt-4 lg:text-[17px] ${playing || paused ? "rounded-[4px] bg-(--v2-accent-soft) box-decoration-clone px-1" : ""}`}>&ldquo;{line}&rdquo;</p>
+                  <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 pt-3.5">
                     <button type="button" onClick={onClick} disabled={loading} aria-live={mine ? "polite" : undefined} className="group/btn inline-flex touch-manipulation items-center whitespace-nowrap text-[14.5px] font-semibold text-(--v2-blue) disabled:opacity-60">
                       <span className={btnInner}>
                         <PlayButton playing={playing} size={38} label={label} /> {label}

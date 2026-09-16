@@ -123,9 +123,12 @@ async function scenario1(b) {
   log.push({ step: "loaded", state: await b.evaluate(STATE_JS) });
   await shot(b, join(dir, "00-first-viewport.jpg"));
   await sc.start();
-  for (let y = 0; y <= 3000; y += 300) { await b.evaluate(`window.scrollTo(0, ${y}); true`); await sleep(220); }
+  const maxY = await b.evaluate("document.documentElement.scrollHeight - innerHeight");
+  for (let y = 0; y <= maxY; y += 300) { await b.evaluate(`window.scrollTo({ top: ${y}, behavior: 'instant' }); true`); await sleep(200); }
+  await b.evaluate(`window.scrollTo({ top: ${maxY}, behavior: 'instant' }); true`); await sleep(400);
   log.push({ step: "scrolled-to-bottom", state: await b.evaluate(STATE_JS) });
-  for (let y = 3000; y >= 0; y -= 300) { await b.evaluate(`window.scrollTo(0, ${y}); true`); await sleep(160); }
+  for (let y = maxY; y >= 0; y -= 300) { await b.evaluate(`window.scrollTo({ top: ${y}, behavior: 'instant' }); true`); await sleep(140); }
+  await b.evaluate("window.scrollTo({ top: 0, behavior: 'instant' }); true"); await sleep(400);
   log.push({ step: "scrolled-back", state: await b.evaluate(STATE_JS) });
   const rec = await sc.stop("S1"); writeFileSync(join(dir, "log.json"), JSON.stringify(log, null, 1));
   const revealAll = log.at(-1).state.reveal;
@@ -230,12 +233,15 @@ async function scenario7(b) {
   // 开/关动效的 DOM 矩形比对（动效结束、音频 idle）
   const RECTS = `(() => { const sel = ['header a', '#top h1', '#top [data-check="hero-card"]', '#top [data-check="hero-meta"]', '#moment figure', '#moment h2', '#see h2', '#see button', '#explore h2', '#guides article', '#start h2', 'footer nav']; const out = {}; for (const s of sel) { const els = [...document.querySelectorAll(s)]; out[s] = els.map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.x), Math.round(r.y + scrollY), Math.round(r.width), Math.round(r.height)]; }); } return out; })()`;
   await device(b, 1440, 900, 1, false);
-  await nav(b, `${ORIGIN}${PATH}?motion=0`); await b.evaluate(`window.scrollTo(0, 99999); new Promise(r => setTimeout(r, 400))`); await b.evaluate(`window.scrollTo(0, 0); new Promise(r => setTimeout(r, 400))`);
+  const settle = async () => { await b.evaluate(`window.scrollTo({ top: 99999, behavior: 'instant' }); new Promise(r => setTimeout(r, 500))`); await b.evaluate(`window.scrollTo({ top: 0, behavior: 'instant' }); new Promise(r => setTimeout(r, 700))`); };
+  await nav(b, `${ORIGIN}${PATH}?motion=0`); await settle();
   const off = await b.evaluate(RECTS);
-  await nav(b, `${ORIGIN}${PATH}`); await b.evaluate(`window.scrollTo(0, 99999); new Promise(r => setTimeout(r, 600))`); await b.evaluate(`window.scrollTo(0, 0); new Promise(r => setTimeout(r, 600))`);
+  await nav(b, `${ORIGIN}${PATH}`); await settle();
   const on = await b.evaluate(RECTS);
+  // 只比可见元素：display:none 的项矩形恒为 0 宽 0 高，其 y 只反映当时的 scrollY，不构成布局差异
+  const visible = (list) => list.filter((r) => r[2] > 0 && r[3] > 0);
   const diffs = [];
-  for (const k of Object.keys(off)) { if (JSON.stringify(off[k]) !== JSON.stringify(on[k])) diffs.push({ selector: k, off: off[k], on: on[k] }); }
+  for (const k of Object.keys(off)) { if (JSON.stringify(visible(off[k])) !== JSON.stringify(visible(on[k]))) diffs.push({ selector: k, off: off[k], on: on[k] }); }
   const dir = join(OUT, "S7-static-compare"); mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "rects.json"), JSON.stringify({ off, on, diffs }, null, 1));
   await shot(b, join(dir, "on-top.jpg"));

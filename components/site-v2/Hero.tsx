@@ -3,7 +3,7 @@
 import { MIA, PLACE, STORY, STREET } from "@/lib/site-v2/content";
 import { PERSONA } from "@/lib/personas";
 import { useScriptedSpeech } from "@/components/site/useScriptedSpeech";
-import { Avatar, Icon, Pin, PlaceTag, PlayButton, Status, Tile, Waveform, btnGhost, btnIcon, btnInner, btnPrimary } from "@/components/site-v2/ui";
+import { Avatar, Icon, Pin, PlaceTag, PlayButton, Status, Tile, Waveform, btnGhost, btnIcon, btnInner, btnPrimary, container } from "@/components/site-v2/ui";
 import { useVisualActive, waveMode } from "@/components/site-v2/motion";
 
 /**
@@ -19,7 +19,7 @@ export function Hero({ appUrl }: { appUrl: string }) {
   const speech = useScriptedSpeech(appUrl);
   const { landscape, square } = STREET.hero.pin;
   return (
-    <section id="top" className="relative overflow-hidden">
+    <section className="relative flex flex-col overflow-hidden lg:min-h-0 lg:flex-1">
       {/* 桌面：照片贴右、贴满首屏高度，左缘羽化 */}
       <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[64%] lg:block" aria-hidden>
         <img src={STREET.hero.src} srcSet={STREET.hero.srcSet} sizes="64vw" alt="" width={1920} height={1280} fetchPriority="high" decoding="async" className="h-full w-full object-cover object-[42%_50%] [mask-image:linear-gradient(to_right,transparent_0%,rgba(0,0,0,0.55)_12%,#000_24%)]" />
@@ -39,16 +39,21 @@ export function Hero({ appUrl }: { appUrl: string }) {
         <div data-check="hero-pin-label" className="pointer-events-auto absolute -translate-y-1/2 translate-x-5" style={{ left: `${landscape.x}%`, top: `${landscape.y}%` }}>
           <PlaceTag name={PLACE.name} dist={`${PLACE.distance} away`} thumb={STREET.hero.thumb} />
         </div>
-        <SampleChip />
-        {/* 主卡：塔身右侧的天空 */}
-        <div className="pointer-events-auto absolute right-[6%] top-[34%] w-[min(370px,48%)]">
-          <PlaceCard appUrl={appUrl} speech={speech} />
+      </div>
+
+      {/* 桌面：与全站统一舞台对齐的图层（示例角标、主卡的右边界 = 内容容器右边界，需求 v2 §3.3） */}
+      <div className="pointer-events-none absolute inset-0 z-10 hidden lg:block">
+        <div className={`${container} relative h-full`}>
+          <SampleChip className="right-0 top-[4%]" />
+          <div className="pointer-events-auto absolute right-0 top-[30%] w-[min(370px,34%)]">
+            <PlaceCard appUrl={appUrl} speech={speech} />
+          </div>
         </div>
       </div>
 
-      <div className="relative mx-auto grid max-w-[1440px] gap-5 px-5 md:px-[5%] lg:min-h-[540px] lg:grid-cols-[46%_1fr] lg:items-start lg:gap-0 xl:min-h-[560px]">
+      <div className={`${container} relative grid gap-5 lg:min-h-0 lg:flex-1 lg:grid-cols-[46%_1fr] lg:items-center lg:gap-0`}>
         {/* 左：文字块 */}
-        <div className="pt-2 md:pt-6 lg:pt-10 xl:pt-12">
+        <div className="pt-2 md:pt-6 lg:py-10">
           <p className="hidden items-center gap-2.5 text-[13px] font-semibold uppercase tracking-[0.2em] text-(--v2-label) sm:flex">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
               <path d="M2 1v9M2 10l4-4M2 10l5 1" />
@@ -78,7 +83,7 @@ export function Hero({ appUrl }: { appUrl: string }) {
           </div>
 
           {/* 一排四个信息格（桌面）。第一格写明是示例坐标 */}
-          <div className="mt-9 hidden grid-cols-2 gap-2.5 lg:grid xl:mt-11 min-[1440px]:grid-cols-4" data-check="hero-meta">
+          <div className="mt-8 hidden grid-cols-2 gap-2.5 [&>*]:min-w-0 lg:grid xl:mt-10 min-[1440px]:grid-cols-4" data-check="hero-meta">
             <MetaTiles />
           </div>
         </div>
@@ -107,25 +112,35 @@ export function Hero({ appUrl }: { appUrl: string }) {
         </div>
 
         {/* 手机：信息格放在演示之后 */}
-        <div className="grid grid-cols-2 gap-2 lg:hidden">
+        <div className="grid grid-cols-2 gap-2 [&>*]:min-w-0 lg:hidden">
           <MetaTiles />
         </div>
       </div>
 
-      <p className="mx-auto mt-2 max-w-[1440px] px-5 pb-6 text-[11.5px] text-(--v2-faint) md:px-[5%] lg:pb-3 lg:text-right">
-        Photo{" "}
-        <a href={STREET.hero.page} target="_blank" rel="noopener noreferrer" className="pointer-events-auto underline underline-offset-2">
-          {STREET.hero.author}
-        </a>{" "}
-        ({STREET.hero.license}) · {PLACE.distance} is a demo distance
-      </p>
+      {/* 首屏底部一行：左边是静态向下提示（点击定位到正文第一段，不做跳动箭头），右边是照片署名。
+          署名压在照片上，所以桌面给一层浅色底保证可读。 */}
+      <div className={`${container} relative z-10 mt-5 flex flex-col gap-2 pb-6 lg:mt-6 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:pb-7`}>
+        <a href="#moment" data-check="hero-scroll-hint" className="group/btn hidden touch-manipulation items-center self-start rounded-full text-[13px] font-semibold uppercase tracking-[0.16em] text-(--v2-label) transition-colors duration-150 fine:hover:text-(--v2-ink) motion-reduce:transition-none lg:inline-flex">
+          <span className={btnInner}>
+            Scroll to explore
+            <Icon.Chevron size={16} className="rotate-90" />
+          </span>
+        </a>
+        <p className="text-[11.5px] text-(--v2-faint) lg:rounded-full lg:bg-white/80 lg:px-3 lg:py-1 lg:text-(--v2-muted) lg:shadow-(--v2-shadow-sm) lg:backdrop-blur-[3px]">
+          Photo{" "}
+          <a href={STREET.hero.page} target="_blank" rel="noopener noreferrer" className="pointer-events-auto underline underline-offset-2">
+            {STREET.hero.author}
+          </a>{" "}
+          ({STREET.hero.license}) · {PLACE.distance} is a demo distance
+        </p>
+      </div>
     </section>
   );
 }
 
-function SampleChip() {
+function SampleChip({ className = "right-3 top-3 sm:right-5 sm:top-5" }: { className?: string }) {
   return (
-    <span data-check="hero-sample" className="pointer-events-auto absolute right-3 top-3 rounded-full border border-white/70 bg-white/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-(--v2-label) shadow-(--v2-shadow-sm) backdrop-blur-[3px] sm:right-5 sm:top-5">
+    <span data-check="hero-sample" className={`pointer-events-auto absolute rounded-full border border-white/70 bg-white/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-(--v2-label) shadow-(--v2-shadow-sm) backdrop-blur-[3px] ${className}`}>
       Sample · Paris 4e
     </span>
   );
@@ -138,9 +153,8 @@ function MetaTiles() {
         icon={<Icon.Crosshair size={22} />}
         value={
           <>
-            {PLACE.lat}
-            <br />
-            {PLACE.lon}
+            <span className="block whitespace-nowrap">{PLACE.lat}</span>
+            <span className="block whitespace-nowrap">{PLACE.lon}</span>
           </>
         }
         label="Sample location"

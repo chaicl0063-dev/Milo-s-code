@@ -132,18 +132,159 @@ export function Reveal({ children }: { children: ReactNode }) {
   );
 }
 
-/** 挂载期间：<html data-rr2-smooth>（原生平滑锚点）；?motion=0 → .rr2[data-motion="off"]（关闭本轮动效的对比基线）。记录实际滚动容器供验收 */
+/** 挂载期间：<html data-rr2-smooth>（原生平滑锚点）+ <html data-rr2-snap>（桌面原生分屏对齐）；?motion=0 两者都不加。记录实际滚动容器供验收 */
 export function MotionRoot() {
   useEffect(() => {
     const root = document.querySelector<HTMLElement>(".rr2");
     const off = new URLSearchParams(window.location.search).get("motion") === "0";
     if (off && root) root.dataset.motion = "off";
-    if (!off) document.documentElement.dataset.rr2Smooth = "";
+    if (off) {
+      (window as unknown as { __rr2ScrollingElement?: string }).__rr2ScrollingElement = document.scrollingElement?.tagName ?? "none";
+      return () => {
+        if (root) delete root.dataset.motion;
+      };
+    }
+    document.documentElement.dataset.rr2Smooth = "";
+
+    // 分屏对齐用原生 CSS scroll-snap（不吞滚轮、不逐格前进）。只有「每一屏都装得下当前视口」时才打开：
+    // 手机、矮屏、文字放大或任何一屏被内容撑高时一律关闭，回到完整阅读的普通长页（需求 v2 §3.3）。
+    const desktop = window.matchMedia("(min-width: 1024px) and (min-height: 640px)");
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const applySnap = () => {
+      const screens = Array.from(document.querySelectorAll<HTMLElement>(".rr2 .v2-screen"));
+      const fits = screens.length > 0 && screens.every((el) => el.getBoundingClientRect().height <= window.innerHeight + 2);
+      if (desktop.matches && !reduce.matches && fits) document.documentElement.dataset.rr2Snap = "";
+      else delete document.documentElement.dataset.rr2Snap;
+    };
+    applySnap();
+    const onResize = () => applySnap();
+    window.addEventListener("resize", onResize);
+    desktop.addEventListener("change", onResize);
+    reduce.addEventListener("change", onResize);
+    const ro = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(onResize);
+    document.querySelectorAll<HTMLElement>(".rr2 .v2-screen").forEach((el) => ro?.observe(el));
+
+    // 键盘/鼠标激活页内入口后，把程序化焦点给到目标屏，焦点不改变滚动位置（需求 v2 §5）
+    const onAnchor = (e: MouseEvent) => {
+      const a = (e.target as HTMLElement | null)?.closest?.<HTMLAnchorElement>("a[href^='#']");
+      const id = a?.getAttribute("href")?.slice(1);
+      if (!id) return;
+      const target = document.getElementById(id);
+      if (!target) return;
+      window.setTimeout(() => {
+        if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+        target.focus({ preventScroll: true });
+      }, 60);
+    };
+    document.addEventListener("click", onAnchor);
+
     (window as unknown as { __rr2ScrollingElement?: string }).__rr2ScrollingElement = document.scrollingElement?.tagName ?? "none";
     return () => {
       delete document.documentElement.dataset.rr2Smooth;
+      delete document.documentElement.dataset.rr2Snap;
+      window.removeEventListener("resize", onResize);
+      desktop.removeEventListener("change", onResize);
+      reduce.removeEventListener("change", onResize);
+      ro?.disconnect();
+      document.removeEventListener("click", onAnchor);
       if (root) delete root.dataset.motion;
     };
   }, []);
   return null;
+}
+
+/**
+ * 首屏出口转场（需求 v2 §6）。只做一件事：用户从首屏主动向下滚动时，让一层「近白浅蓝底 + 一行字 + 静态箭头」
+ * 淡入 180ms、短暂停留后淡出。它不控制滚动（到 Moment 的对齐交给原生 scroll-snap 与锚点），不占一屏，整次加载只播一次。
+ * 不触发的情况：刷新后恢复到正文位置、带 hash 的深链接、点击任何页内锚点（含导航与 Scroll to explore）、
+ * 手机/矮屏/减少动态效果/关闭动效/无 JS。用户向上滚或按 Escape 立即结束。
+ */
+export function HeroTransition() {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const host = ref.current;
+    if (!host) return;
+    const desktop = window.matchMedia("(min-width: 1024px) and (min-height: 640px)");
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const motionOff = document.querySelector(".rr2")?.getAttribute("data-motion") === "off";
+    // 只在真正从页顶开始、没有深链接、桌面且允许动态时才有资格播放
+    let done = !desktop.matches || reduce.matches || motionOff || window.location.hash !== "" || window.scrollY > 10;
+
+    let timers: number[] = [];
+    const clear = () => {
+      timers.forEach((t) => window.clearTimeout(t));
+      timers = [];
+    };
+    const end = () => {
+      clear();
+      host.dataset.state = "out";
+      timers.push(window.setTimeout(() => host.removeAttribute("data-state"), 260));
+    };
+    const play = () => {
+      if (done) return;
+      done = true;
+      host.dataset.state = "in";
+      timers.push(window.setTimeout(end, 560));
+    };
+    // 点击任何页内锚点 = 主动定位，跳过提示（需求 v2 §6）
+    const onAnchor = (e: MouseEvent) => {
+      const a = (e.target as HTMLElement | null)?.closest?.("a[href^='#']");
+      if (a) {
+        done = true;
+        end();
+      }
+    };
+    const onHash = () => {
+      done = true;
+      end();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") end();
+    };
+    let last = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      const downward = y > last;
+      last = y;
+      if (done) return;
+      if (!downward) return;
+      // 首屏高度的一半之后、越过首屏底之前：交接过程
+      const first = document.querySelector<HTMLElement>("#top");
+      const exit = first ? first.offsetHeight * 0.45 : window.innerHeight * 0.45;
+      if (y > exit) play();
+    };
+    const onMedia = () => {
+      if (!desktop.matches || reduce.matches) {
+        done = true;
+        end();
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("click", onAnchor, true);
+    window.addEventListener("hashchange", onHash);
+    window.addEventListener("keydown", onKey);
+    desktop.addEventListener("change", onMedia);
+    reduce.addEventListener("change", onMedia);
+    return () => {
+      clear();
+      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("click", onAnchor, true);
+      window.removeEventListener("hashchange", onHash);
+      window.removeEventListener("keydown", onKey);
+      desktop.removeEventListener("change", onMedia);
+      reduce.removeEventListener("change", onMedia);
+    };
+  }, []);
+
+  return (
+    <div ref={ref} className="v2-handoff" data-check="hero-handoff" aria-hidden>
+      <p className="flex flex-col items-center gap-3 text-[20px] font-semibold tracking-[-0.01em] text-(--v2-ink2)">
+        Discover a deeper layer
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-(--v2-accent)" aria-hidden>
+          <path d="M12 5v14M6 13l6 6 6-6" />
+        </svg>
+      </p>
+    </div>
+  );
 }

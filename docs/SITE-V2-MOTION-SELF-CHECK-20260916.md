@@ -54,6 +54,13 @@
 - **工程**：`pnpm exec tsc --noEmit` 0 错误；`pnpm lint` 0 错误、6 条既有 `@next/next/no-img-element` 警告（V2 的 `<img>`，之前已登记）；`pnpm build` 通过；七宽 `data-check` 与整页无横向溢出见上线报告 P02。
 - **静态降级**：无。未关闭任何已列入的动效。
 
+## 3.1 分屏改造后的复测（2026-09-16 晚些时候）
+
+`SITE-V2-HERO-TRANSITION-REQUIREMENTS-20260916.md` v2 落地后，页面从 2574px 的长页变成六屏 5400px、统一容器改为 90vw/1800px、首屏满铺、新增首屏出口转场与手机菜单。动效逻辑文件（`Waveform`/`WaveBars`、按钮类、`useScriptedSpeech`、`Reveal`）未改，`MotionRoot` 增加了分屏开关与锚点焦点两件事。
+动效全套 S1–S7 已在新布局的开发服务器上重跑：批次 `docs/screens/site-v2-motion/2026-09-16T09-11-54/`，**七项全部 PASS**。其中两处是取证方式随页面变高而修正，不是实现回退：
+- S1 原先固定滚到 3000px，新页面 5400px 够不到 Guides，显现组停在 pending；改为滚到真实页底。
+- S7 原先用平滑滚动回顶后立刻量矩形，没走完就采样；改为 instant 滚动并忽略 `display:none` 的零尺寸元素（它们的 y 只反映当时的 scrollY）。
+
 ## 4. 结论
 
-清单 v2 列出的 M-B1–B4、M-D2–D4、M-U1、M-U2、M-N1 全部 PASS，证据齐全；动效阶段完成。移交上线阶段的版本标识：HEAD `836fceb` + 上述未提交工作区（以 `git status` 列表与 `docs/screens/site-v2-motion/2026-09-16T06-25-41/report.json` 时间为准）。
+清单 v2 列出的 M-B1–B4、M-D2–D4、M-U1、M-U2、M-N1 全部 PASS，证据齐全；动效阶段完成。分屏改造后已整套复测通过（§3.1）。移交上线阶段的版本标识：提交 `85b07bd` + 分屏改造的工作区改动（见 `SITE-V2-HERO-TRANSITION-SELF-CHECK-20260916.md` §1）。

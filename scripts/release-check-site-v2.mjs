@@ -1,7 +1,7 @@
 /**
  * 官网 V2 上线前自检证据（docs/SITE-V2-RELEASE-ACCEPTANCE-20260916.md P02 / P03 / P05 / P07 / P08 / P09）。
  * 对生产构建（next start）用本机 Chrome 无头 + CDP：
- *   P02 尺寸：360/375/430×812、1024/1100/1280×800、1440×900 首屏截图 + 路线段截图；1440 与 375 整页拼接；每个视口检查横向溢出、
+ *   P02 尺寸：360/375×812、390×844、412×915、430×812、1024/1100/1280×800、1440×900 首屏截图 + 路线段截图；1440 与 375 整页拼接；每个视口检查横向溢出（可见口径，见 CHECK_JS）、
  *            窄屏首张卡片（地名 / 播放按钮 / Mia 身份 / 第一句）可见、1024–1279 路线段为上下排布（标题在图上方、示例场景列表在下）；
  *   P05 入口：枚举页面所有 <a>，本机请求目标（外链只记录，不请求）；
  *   P07 表单：Plus「Notify me」→ 输入测试地址 → 提交，记录 /api/signup 实际响应与界面状态（未配置 KV 时应保留输入并可重试，不得假成功）；
@@ -94,8 +94,18 @@ const CHECK_JS = `(() => {
   const el = (q) => document.querySelector(q);
   const vis = (n) => n && n.offsetParent !== null && n.getClientRects().length > 0;
   const rect = (n) => { const r = n.getBoundingClientRect(); return { x: Math.round(r.x), y: Math.round(r.y + scrollY), w: Math.round(r.width), h: Math.round(r.height), right: Math.round(r.right) }; };
+  // 横向溢出要用「可见」口径：.rr2 是 overflow-x: clip，页面永远不会横向滚动，
+  // 所以 scrollWidth 看不出问题（手机上表现为整段内容变宽、右侧被硬裁）。
+  // 对每个元素求它与所有裁切祖先的交集右边界，只有仍越过视口的才算真溢出。
+  const rr2 = document.querySelector('.rr2');
+  const clipRight = (n) => { let r = Infinity; for (let a = n.parentElement; a && a !== document.body; a = a.parentElement) { if (a === rr2) continue; const o = getComputedStyle(a).overflowX; if (o === 'hidden' || o === 'clip' || o === 'auto' || o === 'scroll') r = Math.min(r, a.getBoundingClientRect().right); } return r; };
   const overflowX = Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - vw;
-  const wide = [...document.querySelectorAll('body *')].filter((n) => { const r = n.getBoundingClientRect(); return r.width > 0 && r.right > vw + 1 && getComputedStyle(n).position !== 'fixed'; }).slice(0, 8).map((n) => ({ tag: n.tagName, cls: (n.className || '').toString().slice(0, 60), right: Math.round(n.getBoundingClientRect().right) }));
+  const wide = [...document.querySelectorAll('.rr2 *')].filter((n) => {
+    const cs = getComputedStyle(n);
+    if (cs.display === 'none' || cs.visibility === 'hidden' || cs.position === 'fixed') return false;
+    const r = n.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && Math.min(r.right, clipRight(n)) > vw + 1;
+  }).slice(0, 10).map((n) => ({ sec: (n.closest('section[id], header, footer') || {}).id || '', tag: n.tagName, cls: (n.className || '').toString().slice(0, 60), over: Math.round(Math.min(n.getBoundingClientRect().right, clipRight(n)) - vw) }));
   const heroCard = [...document.querySelectorAll('[data-check="hero-card"]')].find(vis);
   const hc = heroCard ? { rect: rect(heroCard), text: heroCard.innerText.replace(/\\s+/g, ' ').slice(0, 220), hasPlace: /Tour Saint-Jacques/.test(heroCard.innerText), hasPlay: !!heroCard.querySelector('button[aria-label]'), hasMia: /Mia/.test(heroCard.innerText), firstSentence: (heroCard.innerText.match(/[^\\n]*Saint-Jacques[^\\n]*\\./) || heroCard.innerText.match(/“[^”]+”|"[^"]+"/) || [null])[0] } : null;
   const explore = el('#explore');
@@ -111,7 +121,7 @@ const b = await launch();
 const rt = collectRuntime(b);
 try {
   // P02 / P03：尺寸与静态截图
-  const VIEWPORTS = [[360, 812, true], [375, 812, true], [430, 812, true], [1024, 800, false], [1100, 800, false], [1280, 800, false], [1440, 900, false]];
+  const VIEWPORTS = [[360, 812, true], [375, 812, true], [390, 844, true], [412, 915, true], [430, 812, true], [1024, 800, false], [1100, 800, false], [1280, 800, false], [1440, 900, false]];
   for (const [w, h, mobile] of VIEWPORTS) {
     await device(b, w, h, mobile);
     await nav(b, `${ORIGIN}${PATH}`);
@@ -129,7 +139,7 @@ try {
     let fullHeight = null;
     if (w === 1440 || w === 375) fullHeight = await fullPage(b, w, h, join(dir, "full.jpg"));
     report.viewports[`${w}x${h}`] = { mobile, ...check, fullHeight, shots: ["first-screen.jpg", "explore.jpg", ...(fullHeight ? ["full.jpg"] : [])] };
-    console.log(`vp ${w}x${h}`, JSON.stringify({ overflowX: check.overflowX, wide: check.wide.length, heroCard: check.heroCard && { place: check.heroCard.hasPlace, play: check.heroCard.hasPlay, mia: check.heroCard.hasMia, top: check.heroCard.rect.y }, explore: check.explore }));
+    console.log(`vp ${w}x${h}`, JSON.stringify({ overflowX: check.overflowX, wide: check.wide.length, wideWhere: check.wide.map((x) => `${x.sec}+${x.over}`), heroCard: check.heroCard && { place: check.heroCard.hasPlace, play: check.heroCard.hasPlay, mia: check.heroCard.hasMia, top: check.heroCard.rect.y }, explore: check.explore }));
   }
 
   // P05：入口表（本机请求；外链、mailto、锚点只记录）
@@ -147,7 +157,10 @@ try {
   }
   console.log("links", report.links.map((l) => `${l.href} → ${l.status ?? l.kind}`).join("\n  "));
 
-  // P08：资源与说明
+  // P08：资源与说明。页面现在是六屏 5400px，懒加载图片要先滚过一遍才会开始加载
+  const h = await b.evaluate("document.documentElement.scrollHeight");
+  for (let y = 0; y < h; y += 700) { await b.evaluate(`scrollTo({ top: ${y}, behavior: 'instant' }); true`); await sleep(220); }
+  await b.evaluate("scrollTo({ top: 0, behavior: 'instant' }); true"); await sleep(900);
   const assets = await b.evaluate(`(() => { const imgs = [...document.images].map((i) => ({ src: (i.currentSrc || i.src).replace(location.origin, ''), ok: i.complete && i.naturalWidth > 0, w: i.naturalWidth, h: i.naturalHeight })); const fonts = [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family + ' ' + f.weight); const t = document.body.innerText; return { imgs, fontsLoaded: [...new Set(fonts)], heroFont: getComputedStyle(document.querySelector('.rr2 h1')).fontFamily.slice(0, 80), texts: { illustrativeNotice: /Illustrative route · not a real map/.test(t), illustratedCaption: /illustrat/i.test(t), notRealMap: /not a real map/i.test(t), creditLascar: /Jorge Láscar/.test(t), creditIbex: /Ibex73/.test(t), sampleLocation: /Sample location/.test(t), aiPortraits: /AI-generated/.test(t), contact: (t.match(/hello@[a-z.]+/) || [null])[0] } }; })()`);
   report.assets = assets;
   console.log("assets", JSON.stringify({ imgsFailed: assets.imgs.filter((i) => !i.ok), fonts: assets.fontsLoaded, heroFont: assets.heroFont, texts: assets.texts }));
